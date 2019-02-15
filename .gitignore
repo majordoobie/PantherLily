@@ -1,0 +1,10 @@
+.DS*
+__py*
+*.txt
+*.db
+*.ini
+*/*__py*
+*/*ini
+*/*db
+Images/
+dumps/
