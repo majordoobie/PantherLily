@@ -1,10 +1,9 @@
 #Discord
 from discord.ext import commands
-import discord
 from discord import Embed, Game, Guild
 
 #APIs
-from CoC_APIs.ClashConnectAPI import ClashConnectAPI
+from APIs.ClashConnectAPI import ClashConnectAPI
 from CoC_APIs.CoC_Stats import ClashStats
 from Database.ZuluBot_DB import ZuluDB
 from discordBotAPI import BotAssist
