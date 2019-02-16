@@ -589,12 +589,24 @@ async def info_error(ctx, error):
 
 
 @discord_client.command()
-async def donation(ctx):
+async def donation(ctx, *, user: discord.Member = None):
     """
     Find the donation status of your users account
     """
-    userID = ctx.author.id
-    result = dbconn.get_usersTag((userID,))
+    
+    if user == None:
+        user = ctx.author
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {ctx.author.display_name}")
+            return
+    else:
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {user.display_name}")
+            return
 
     if not result:
         msg = (f"{ctx.author.display_name} was not found in our database. Have they been added?")
@@ -632,18 +644,31 @@ async def donation(ctx):
     lastSun = botAPI.lastSunday()
     donation = dbconn.get_Donations((result[0][0], botAPI.lastSunday()))
     lastSun = datetime.strptime(lastSun, "%Y-%m-%d %H:%M:%S")
+    nextSun = datetime.strptime(botAPI.nextSunday(), "%Y-%m-%d %H:%M:%S")
 
-    
     if len(donation) > 1:
         lastData = datetime.strptime(donation[0][0],"%Y-%m-%d %H:%M:%S" )
         val = (lastData - lastSun)
         if val.days == 0:
-            await ctx.send(f"{donation[-1][2] - donation[0][2]} | 300")
+            remain = nextSun - datetime.utcnow()
+            day = remain.days
+            time = str(timedelta(seconds=remain.seconds)).split(":")
+            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+
         else:
             active = 7 - int(val.days)
-            await ctx.send(f"Only {active} days of data has been recorded. Please "
+            await ctx.send(f"**WARNING**\nOnly {active} days of data has been recorded. Please "
                 "wait a full week before using this metric.")
-            await ctx.send(f"{donation[-1][2] - donation[0][2]} | 300")
+            
+            remain = nextSun - datetime.utcnow()
+            day = remain.days
+            time = str(timedelta(seconds=remain.seconds)).split(":")
+            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+            
 
 @donation.error
 async def mydonations_error(ctx, error):

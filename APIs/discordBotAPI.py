@@ -144,6 +144,17 @@ class BotAssist:
         return_date = monday.strftime('%Y-%m-%d')+" 01:00:00"
         return return_date
 
+    def nextSunday(self):
+        """
+        Method used to return the next sunday; used for the sql update
+        """
+        today = datetime.utcnow()
+        delta = 1 - today.isoweekday()
+        monday = today + timedelta(delta)
+        monday = monday + timedelta(days=7) 
+        return_date = monday.strftime('%Y-%m-%d')+" 01:00:00"
+        return return_date
+
     def get_RoleObj(self, guild, roleStr):
         """
         Method used to retrive a role object
