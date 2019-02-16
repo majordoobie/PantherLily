@@ -30,7 +30,7 @@ class ClashStats():
 
         #Clan Level
         self.clan_tag = jjson['clan']['tag']
-        self.clan_name = jjson['clan']['tag']
+        self.clan_name = jjson['clan']['name']
         self.clan_Level = jjson['clan']['clanLevel']
         self.clan_badgeSmall = jjson['clan']['badgeUrls']['small']
         self.clan_badgeMed = jjson['clan']['badgeUrls']['medium']

@@ -613,85 +613,41 @@ async def donation(ctx):
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
+    res = coc_client.get_member(result[0][0])
+    memStat = ClashStats.ClashStats(res.json())
+
+    in_zulu = "False"
+    if memStat.clan_name == "Reddit Zulu":
+        in_zulu = "True"
+    else:
+        in_zulu = "False"
+    dbconn.update_donations((
+            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+            memStat.tag,
+            memStat.achieve["Friend in Need"]['value'],
+            in_zulu,
+            memStat.trophies
+        ))
+
     lastSun = botAPI.lastSunday()
     donation = dbconn.get_Donations((result[0][0], botAPI.lastSunday()))
     lastSun = datetime.strptime(lastSun, "%Y-%m-%d %H:%M:%S")
 
     
-    return
-    
-    flag = False
-    user_tupe = ()
-    arg = ctx.message.content.split(" ")[1:]
-    if len(arg) == 0:
-        rows = dbconn.get_allUsers()
-        for row in rows:
-            if int(row[4]) == int(ctx.author.id):
-                if row[7] == "True":
-                    user_tupe = row
-                    flag = True
-                else:
-                    msg = (f"User, {row[1]}, active flag is set to False. Please re-add this "
-                    "user using /useradd.")
-                    await ctx.send(embed = Embed(title=f"**Availability Error**", description=msg, color=0xff0000))
-                    return
-
-    elif len(arg) == 1:
-        if arg[0].startswith("#"):
-            pass
+    if len(donation) > 1:
+        lastData = datetime.strptime(donation[0][0],"%Y-%m-%d %H:%M:%S" )
+        val = (lastData - lastSun)
+        if val.days == 0:
+            await ctx.send(f"{donation[-1][2] - donation[0][2]} | 300")
         else:
-            arg[0] = "#"+arg[0]
-        rows = DB.get_allUsers()
-        for row in rows:
-            if str(row[0]) == str(arg[0]):
-                if row[7] == "True":
-                    user_tupe = row
-                    flag = True
-                else:
-                    msg = (f"User, {row[1]}, active flag is set to False. Please re-add this "
-                    "user using /useradd.")
-                    await ctx.send(embed = Embed(title=f"**Availability Error**", description=msg, color=0xff0000))
-                    return
+            active = 7 - int(val.days)
+            await ctx.send(f"Only {active} days of data has been recorded. Please "
+                "wait a full week before using this metric.")
+            await ctx.send(f"{donation[-1][2] - donation[0][2]} | 300")
 
-    if flag == False:
-        msg = (f"Could not find the user {arg[0]} in the database. Please make sure "
-        "that they exists in the clan by using the /lcm command, then add them using /useradd.")
-        await ctx.send(embed = Embed(title=f"**DB ERROR**", description=msg, color=0xff0000))
-
-    # if user exists proceed to calculate their donation
-    if flag:
-        # update the db first
-        user_tag = user_tupe[0]
-        res = coc_client.get_member(user_tag)
-        mem_stat = CoC_Stats(res.json())
-        in_zulu = "False"
-        if mem_stat.currentClan_name == "Reddit Zulu":
-            in_zulu = "True"
-        else:
-            in_zulu = "False"
-        send = DB.update_donations((
-                    datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-                    mem_stat.coc_tag,
-                    mem_stat.total_Donations,
-                    in_zulu,
-                    mem_stat.trophies
-                ))
-        if send != None:
-            msg = f"Operational Error while inserting data."
-            await ctx.send(embed = Embed(title=f"**SQL ERROR**\n{send}", description=msg, color=0xff0000))
-            return
-
-        rows = DB.get_allDonations(user_tupe[0], lastSunday())
-        if len(rows) > 2:
-            cur_donation = rows[-1][2] - rows[0][2]
-            await ctx.send(f"{cur_donation}/300")
-        else:
-            await ctx.send(f"Not enough data to calcualte your progress. "
-            f"current FIN #: {rows[-1][2]}")
-
-# @mydonation.error
-# async def mydonations_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@donation.error
+async def mydonations_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
 
@@ -716,8 +672,7 @@ async def weeklyRefresh(discord_client, botMode):
             wait_time = wait_time - 45
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
-        #await asyncio.sleep(wait_time * 60)
-        await asyncio.sleep(wait_time * .1)
+        await asyncio.sleep(wait_time * 60)
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
@@ -771,7 +726,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Check to see if they are current in zulu or somewhere else
             in_zulu = "False"
-            if memStat.name == "Reddit Zulu":
+            if memStat.clan_name == "Reddit Zulu":
                 in_zulu = "True"
             else:
                 in_zulu = "False"
