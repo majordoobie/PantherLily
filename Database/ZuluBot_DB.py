@@ -159,9 +159,6 @@ class ZuluDB:
             print(msg)
             return msg
 
-            
-
-
     def set_Active(self, tupe):
         """ 
         Change MembersTable active state to True or False. This will dictate if they are 
@@ -207,11 +204,12 @@ class ZuluDB:
             msg     (str):      Message about why the user is not part of the clan
             coc_tag (str):      CoC Clash tag
         """
-        sql_query = ("UPDATE MembersTable SET Note = ? WHERE Tag = ?")
+        sql_query = ("UPDATE MembersTable SET Note = ?, is_Active = ? WHERE Discord_ID = ?")
         cur = self.conn.cursor()
-        cur.execute(sql_query, tupe)
+        result = cur.execute(sql_query, tupe).rowcount
         #cur.execute(sql_query, (msg, coc_tag,))
         self.conn.commit()
+        return result
 
     def set_inPlanning(self, tupe):
         """

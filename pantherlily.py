@@ -240,7 +240,7 @@ async def lcm(ctx):
         for index, user in enumerate(mem_list):
             output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
 
-        await ctx.send("```{}```".format(output))
+        await ctx.send("Current Members in Reddit Zulu\n```{}```".format(output))
 
 @lcm.error
 async def lcm_error(ctx, error):
@@ -481,7 +481,7 @@ async def donation(ctx, *, user: discord.Member = None):
             day = remain.days
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes [Zulu Time]")
             await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
 
         else:
@@ -493,7 +493,7 @@ async def donation(ctx, *, user: discord.Member = None):
             day = remain.days
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes [Zulu Time]")
             await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
 
 @donation.error
@@ -694,6 +694,74 @@ async def useradd(ctx, clash_tag, disc_mention):
 
 @useradd.error
 async def info_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+
+@discord_client.command()
+async def kickuser(ctx, *, member: discord.Member = None):
+
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    if member == None:
+        desc = (f"Mention argument is required")
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        return
+
+    msg = (f"You are about to set {member.display_name} CoC Member status to False "
+        "are you sure you would like to continue?\n(Yes/No)")
+    await ctx.send(msg)
+
+    response = await discord_client.wait_for('message', check = botAPI.yesno_check)
+    if response.content.lower() == 'no':
+        await ctx.send("Terminating function")
+        return
+
+    example = (f"{member.display_name} failed to meet weekly donation quota\n\n"
+        "msgID:546408720872112128\nmsgID:546408729155993615")
+
+    await ctx.send("A kick message is required. You are able to enter any text you "
+        f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
+        "any message IDs you have included in this kick message. To include a message "
+        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
+        f"```{example}```")
+
+    await ctx.send("Please enter your message:")
+
+    def check(m):
+        return m.author.id == ctx.author.id
+
+    response = await discord_client.wait_for('message', check=check)
+    await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
+
+    response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
+    if response2.content.lower() == 'no':
+        await ctx.send("Terminating function")
+        return
+
+    result = dbconn.set_kickNote((response.content, "False", member.id,))
+    if result == 1:
+        desc = (f"Successfully set {member.display_name} active status to False with "
+            "the note provided above.")
+        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
+        return  
+    
+    else:
+        desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+            "user.")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
+        return 
+
+@kickuser.error
+async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
