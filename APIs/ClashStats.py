@@ -1,3 +1,6 @@
+from configparser import ConfigParser
+emoticons = ConfigParser(allow_no_value=True)
+
 class ClashStats():
     def __init__(self, jjson):
         """
@@ -117,6 +120,7 @@ class ClashStats():
             "Cannon Cart" :{},
             "Drop Ship" :{},
             "Baby Dragon" :{},
+            "Baby Dragon2" :{},
             "Night Witch" :{},
             "Wall Wrecker" :{},
             "Battle Blimp" :{},
@@ -125,12 +129,28 @@ class ClashStats():
             "Stone Slammer" :{}
         }
         for i in jjson['troops']:
-            self.troops[i['name']] = {
-                "name" : i['name'],
-                "level": i['level'],
-                "maxLevel" : i['maxLevel'],
-                "village" : i['village']
-            }
+            if i['name'] == "Baby Dragon":
+                if i['village'] == "home":
+                    self.troops['Baby Dragon'] = {
+                        "name" : i['name'],
+                        "level": i['level'],
+                        "maxLevel" : i['maxLevel'],
+                        "village" : i['village']
+                    }
+                else:
+                    self.troops['Baby Dragon2'] = {
+                        "name" : i['name'],
+                        "level": i['level'],
+                        "maxLevel" : i['maxLevel'],
+                        "village" : i['village']
+                    }
+            else:
+                self.troops[i['name']] = {
+                    "name" : i['name'],
+                    "level": i['level'],
+                    "maxLevel" : i['maxLevel'],
+                    "village" : i['village']
+                }
 
         for troop in self.troops.keys():
             if not self.troops[troop]:
@@ -192,3 +212,46 @@ class ClashStats():
                     "level" : 0,
                     "maxLevel": 0
                 }
+
+def statStitcher(memStat, emotLoc):
+    emoticons.read(emotLoc)
+    desc = (f"{memStat.tag}\n{emoticons['townhalls'][str(memStat.townHallLevel)]}")
+
+    troopLevels = (f"{emoticons['troops']['barbarian']} {str(memStat.troops['Barbarian']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['archer']} {str(memStat.troops['Archer']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['goblin']} {str(memStat.troops['Goblin']['level']):<2}|{str(7):<2}")
+    troopLevels += (f"{emoticons['troops']['giant']} {str(memStat.troops['Giant']['level']):<2}|{str(9):<2}\n")
+    troopLevels += (f"{emoticons['troops']['wallbreaker']} {str(memStat.troops['Wall Breaker']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['loon']} {str(memStat.troops['Balloon']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['Wizard']} {str(memStat.troops['Wizard']['level']):<2}|{str(9):<2}")
+    troopLevels += (f"{emoticons['troops']['Healer']} {str(memStat.troops['Healer']['level']):<2}|{str(5):<2}\n")
+    troopLevels += (f"{emoticons['troops']['drag']} {str(memStat.troops['Dragon']['level']):<2}|{str(7):<2}")
+    troopLevels += (f"{emoticons['troops']['pekka']} {str(memStat.troops['P.E.K.K.A']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['minion']} {str(memStat.troops['Minion']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['hogrider']} {str(memStat.troops['Hog Rider']['level']):<2}|{str(8):<2}\n")
+    troopLevels += (f"{emoticons['troops']['valkyrie']} {str(memStat.troops['Valkyrie']['level']):<2}|{str(7):<2}")
+    troopLevels += (f"{emoticons['troops']['golem']} {str(memStat.troops['Golem']['level']):<2}|{str(8):<2}")
+    troopLevels += (f"{emoticons['troops']['witch']} {str(memStat.troops['Witch']['level']):<2}|{str(4):<2}")
+    troopLevels += (f"{emoticons['troops']['lavahound']} {str(memStat.troops['Lava Hound']['level']):<2}|{str(5):<2}\n")
+    troopLevels += (f"{emoticons['troops']['bowler']} {str(memStat.troops['Bowler']['level']):<2}|{str(4):<2}")
+    troopLevels += (f"{emoticons['troops']['miner']} {str(memStat.troops['Miner']['level']):<2}|{str(6):<2}")
+    troopLevels += (f"{emoticons['troops']['babydragon']} {str(memStat.troops['Baby Dragon']['level']):<2}|{str(6):<2}")
+    troopLevels += (f"{emoticons['troops']['icegolem']} {str(memStat.troops['Ice Golem']['level']):<2}|{str(4):<2}")
+    troopLevels += (f"{emoticons['troops']['edrag']} {str(memStat.troops['Electro Dragon']['level']):<2}|{str(3):<2}")
+    
+    spellLevels = (f"{emoticons['spells']['lightning']} {str(memStat.spells['Lightning Spell']['level']):<2}|{str(7):<2}")
+    spellLevels += (f"{emoticons['spells']['heal']} {str(memStat.spells['Healing Spell']['level']):<2}|{str(7):<2}")
+    spellLevels += (f"{emoticons['spells']['rage']} {str(memStat.spells['Rage Spell']['level']):<2}|{str(5):<2}")
+    spellLevels += (f"{emoticons['spells']['jump']} {str(memStat.spells['Jump Spell']['level']):<2}|{str(3):<2}\n")
+    spellLevels += (f"{emoticons['spells']['freeze']} {str(memStat.spells['Freeze Spell']['level']):<2}|{str(7):<2}")
+    spellLevels += (f"{emoticons['spells']['poison']} {str(memStat.spells['Poison Spell']['level']):<2}|{str(5):<2}")
+    spellLevels += (f"{emoticons['spells']['earthquake']} {str(memStat.spells['Earthquake Spell']['level']):<2}|{str(4):<2}")
+    spellLevels += (f"{emoticons['spells']['haste']} {str(memStat.spells['Haste Spell']['level']):<2}|{str(4):<2}\n")
+    spellLevels += (f"{emoticons['spells']['clone']} {str(memStat.spells['Clone Spell']['level']):<2}|{str(5):<2}")
+    spellLevels += (f"{emoticons['spells']['skeleton']} {str(memStat.spells['Skeleton Spell']['level']):<2}|{str(5):<2}")
+    spellLevels += (f"{emoticons['spells']['batspell']} {str(memStat.spells['Bat Spell']['level']):<2}|{str(5)}")
+
+    heroLevels = (f"{emoticons['heroes']['barbking']} {str(memStat.heroes['Barbarian King']['level']):<2}|{str(60):<2}")
+    heroLevels += (f"{emoticons['heroes']['archerqueen']} {str(memStat.heroes['Archer Queen']['level']):<2}|{str(60):<2}")
+    heroLevels += (f"{emoticons['heroes']['grandwarden']} {str(memStat.heroes['Grand Warden']['level']):<2}|{str(30):<2}")
+    return desc, troopLevels, spellLevels, heroLevels

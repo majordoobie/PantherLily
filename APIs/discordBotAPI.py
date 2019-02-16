@@ -86,7 +86,7 @@ class BotAssist:
         else:
             return False
 
-    def is_DiscordUser(self, bot, config, discordUser_ID):
+    def is_DiscordUser(self, guild, config, discordUser_ID):
         """
         Method used to evalute a discord ID. Returns True and object if ID exists
 
@@ -95,7 +95,7 @@ class BotAssist:
             config          (obj):      configparser object
             member_ID       (str):      Discord id number of user 
         """
-        userObj = bot.guild.get_member(int(discordUser_ID))
+        userObj = guild.get_member(int(discordUser_ID))
         if userObj == None:
             return False, None
         else:
@@ -144,11 +144,11 @@ class BotAssist:
         return_date = monday.strftime('%Y-%m-%d')+" 01:00:00"
         return return_date
 
-    def get_RoleObj(self, ctx, roleStr):
+    def get_RoleObj(self, guild, roleStr):
         """
         Method used to retrive a role object
         """
-        for role in ctx.guild.roles:
+        for role in guild.roles:
             if role.name == roleStr:
                 return role
         return None
@@ -172,7 +172,7 @@ class BotAssist:
                 return True, role
         return False, None
         
-    def get_townhallRole(self, ctx, townHallLvl):
+    def get_townhallRole(self, guild, townHallLvl):
         """
         Method used to retrive the object of a townhall role
 
@@ -184,7 +184,7 @@ class BotAssist:
         str_roles = ['th9s', 'th10s', 'th11s', 'th12s']
         for level, str_role in zip(levels, str_roles):
             if townHallLvl == level:
-                return self.get_RoleObj(ctx, str_role)
+                return self.get_RoleObj(guild, str_role)
         return None
 
          
