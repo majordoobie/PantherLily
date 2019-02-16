@@ -765,6 +765,124 @@ async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
+async def search(ctx, option, *query):
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    if option not in ['--tag', '-t', '--mention', '-m', '--name', '-n']:
+        desc = (f"Invalid argument supplied: {option}")
+        await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+        return
+    
+    if option in ['--tag', '-t']:
+        if len(query) != 1:
+            desc = (f"Invalid argument supplied: {''.join(query)}")
+            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+            return
+
+        tag = query[0]
+        results = dbconn.get_user_byTag((tag,))
+        if len(results) > 0:
+            for result in results:
+                if result[8] == '':
+                    note = "Empty"
+                else:
+                    note = result[8]
+                embed = discord.Embed(title=result[1], color=0x00FF80)
+                embed.add_field(name="ClashTag:", value=result[0], inline=False)
+                embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
+                embed.add_field(name="DiscordID:", value=result[4], inline=False)
+                embed.add_field(name="Database Join:", value=result[5], inline=False)
+                embed.add_field(name="Active Status:", value=result[7], inline=False)
+                embed.add_field(name="Profile Note:", value=note, inline=False)
+                await ctx.send(embed=embed)
+            return
+        else:
+            desc = (f"No results found in the database using ClashTag: {tag}")
+            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
+            return
+
+    if option in ['--name', '-n']:
+        if len(query) != 1:
+            desc = (f"Invalid argument supplied: {''.join(query)}")
+            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+            return
+
+        name = ''.join(query)
+        results = dbconn.get_user_byName((name,))
+        if len(results) > 0:
+            for result in results:
+                if result[8] == '':
+                    note = "Empty"
+                else:
+                    note = result[8]
+                embed = discord.Embed(title=result[1], color=0x00FF80)
+                embed.add_field(name="ClashTag:", value=result[0], inline=False)
+                embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
+                embed.add_field(name="DiscordID:", value=result[4], inline=False)
+                embed.add_field(name="Database Join:", value=result[5], inline=False)
+                embed.add_field(name="Active Status:", value=result[7], inline=False)
+                embed.add_field(name="Profile Note:", value=note, inline=False)
+                await ctx.send(embed=embed)
+            return
+        else:
+            desc = (f"No results found in the database using ClashName: {name}\n\nRemember that "
+                "searching by name is case sensitive. Consider using clash tag or discord id.")
+            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
+            return
+
+    if option in ['--mention', '-m']:
+        if len(query) != 1:
+            desc = (f"Invalid argument supplied: {''.join(query)}")
+            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+            return
+
+        query = query[0]
+        if ''.join(query).isdigit():
+            discID = ''.join(query)
+
+        elif ''.join(query).startswith("<"):
+            temp_discID = ''.join(list(query)[2:-1])
+            if temp_discID.startswith("!"):
+                discID = temp_discID[1:]
+            else:
+                discID = temp_discID
+        else:
+            desc = (f"Invalid argument supplied: {''.join(query)}")
+            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+            return
+
+        results = dbconn.get_user_byDiscID((discID,))
+        if len(results) > 0:
+            for result in results:
+                if result[8] == '':
+                    note = "Empty"
+                else:
+                    note = result[8]
+                embed = discord.Embed(title=result[1], color=0x00FF80)
+                embed.add_field(name="ClashTag:", value=result[0], inline=False)
+                embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
+                embed.add_field(name="DiscordID:", value=result[4], inline=False)
+                embed.add_field(name="Database Join:", value=result[5], inline=False)
+                embed.add_field(name="Active Status:", value=result[7], inline=False)
+                embed.add_field(name="Profile Note:", value=note, inline=False)
+                await ctx.send(embed=embed)
+            return
+        else:
+            desc = (f"No results found in the database using Discord ID {discID}.")
+            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
+            return
+
+
+@discord_client.command()
 async def killbot(ctx):
     """ Send kill signal to bot to properly close down databse and config file """
     if botAPI.rightServer(ctx, config):

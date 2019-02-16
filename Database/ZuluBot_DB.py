@@ -290,7 +290,7 @@ class ZuluDB:
         rows = cur.fetchall()
         return rows
 
-    def get_usersTag(self, tupe):
+    def get_user_byDiscID(self, tupe):
         """
         Returns the users clash tag by lookup up their discord ID
 
@@ -307,6 +307,38 @@ class ZuluDB:
         rows = cur.fetchall()
         return rows
         
+    def get_user_byTag(self, tupe):
+        """
+        Returns the users clash tag by lookup up their discord ID
 
+        Parameters:
+            tupe        (tuple):
+
+        Tuple:
+            (clash_tag)
+            clash_tag     (str):      Users Clash ID
+        """
+        sql_query = ("SELECT * FROM MembersTable WHERE Tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, tupe)
+        rows = cur.fetchall()
+        return rows
+
+    def get_user_byName(self, tupe):
+        """
+        Returns the users clash tag by lookup up their discord ID
+
+        Parameters:
+            tupe        (tuple):
+
+        Tuple:
+            (clash_name)
+            clash_name     (str):      Users Clash ID
+        """
+        sql_query = ("SELECT * FROM MembersTable WHERE Name = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, tupe)
+        rows = cur.fetchall()
+        return rows
         
 
