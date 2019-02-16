@@ -301,7 +301,6 @@ class ZuluDB:
 
         Tuple:
             (disc_UserID)
-
             disc_UserID     (str):      Users discord ID
         """
         sql_query = ("SELECT * FROM MembersTable WHERE Discord_ID = ?")

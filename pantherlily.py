@@ -26,7 +26,7 @@ from sys import exit as ex # Avoid exit built in
 import json # delete me
 
 #####################################################################################################################
-                                             # Set up the environment 
+                                             # Set up the environment
 #####################################################################################################################
 # Look for either the dev or live switch
 if len(argv) == 2:
@@ -80,7 +80,7 @@ else:
     dbconn = ZuluDB(dbLoc)
 
 coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
-
+prefx = config[botMode]['bot_Prefix']
 
 #####################################################################################################################
                                              # Discord Commands [info]
@@ -88,14 +88,15 @@ coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 @discord_client.event
 async def on_ready():
     """
-    Simple funciton to display logged in data to terminal 
+    Simple funciton to display logged in data to terminal
     """
     print(f'\n\nLogged in as: {discord_client.user.name} - {discord_client.user.id}\nDiscord Version: {discord.__version__}\n'
         f"\nRunning in [{botMode}] mode\n"
         "------------------------------------------\n"
-        f"Prefix set to:          {config[botMode]['bot_Prefix']}\n"
+        f"Prefix set to:          {prefx}\n"
         f"Config file set to:     {configLoc}\n"
         f"DB File set to:         {dbLoc}\n"
+        f"Current exit node:      {get('https://api.ipify.org').text}\n"
         "------------------------------------------")
 
     game = Game(config[botMode]['game_msg'])
@@ -119,7 +120,7 @@ async def help(ctx):
         embed = Embed(title='NameComingSoon!', description= desc, color=0x8A2BE2)
 
     embed.add_field(name="Commands:", value="-----------", inline=True)
-    
+
     helpp = ("Provides this help menu. \nOptional: -v provide CoC Leaders commands "
     "\nOptional: -vv provide a indepth description of the bot.")
     embed.add_field(name="/help <opt: -v>", value=helpp, inline=False)
@@ -162,74 +163,17 @@ async def help(ctx):
         killit = ("Command to safely terminate the bot.")
         embed.add_field(name="/killswitch", value=killit, inline=False)
 
-    
+
     await ctx.send(embed = embed)
 
 #####################################################################################################################
-                                             # Commands
+                                             # Accountability Functions
 #####################################################################################################################
-
-@discord_client.command()
-async def killbot(ctx):
-    """ Send kill signal to bot to properly close down databse and config file """
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        desc = f"You are attempting to run a command destined for another server."
-        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
-        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
-        return
-
-    if botAPI.authorized(ctx, config):
-        await ctx.send("Tearing down, please hold.")
-        await ctx.send("Closing database..")
-        dbconn.conn.close()
-        with open(configLoc, 'w') as f:
-                config.write(f)
-        await ctx.send("Terminating bot..")
-        await ctx.send("_Later._")
-        await discord_client.logout()
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
-
-@discord_client.command()
-async def newinvite(ctx, *arg):
-    """ Get the channel object to use the invite method of that channel """
-
-    if botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
-
-    else:
-        print("User is using the wrong server")
-        return
-
-    # Try to create the invite object
-    if len(arg) == 1 and arg[0].isdigit():
-        channel = botAPI.invite(discord_client, targetServer, targetChannel)
-        inv = await channel.create_invite(max_age = (int(arg[0]) *60), max_uses = 1 )
-        await ctx.send(inv)
-        return
-
-    elif len(arg) == 0:
-        channel = botAPI.invite(discord_client, targetServer, targetChannel)
-        inv = await channel.create_invite(max_age = 600, max_uses = 1 )
-        await ctx.send(inv)
-        return
-    
-    else:
-        await ctx.send("Wrong arguments used")
-        return
-
 @discord_client.command()
 async def listroles(ctx):
     """ List the roles and ID in the current channel """
-
     if botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
-
+        pass
     else:
         print("User is using the wrong server")
         return
@@ -256,9 +200,7 @@ async def lcm(ctx):
     """ List users in the current clan with their tag """
 
     if botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
-
+        pass
     else:
         print("User is using the wrong server")
         return
@@ -266,7 +208,7 @@ async def lcm(ctx):
     res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
 
     # Quick check to  make sure that the https request was good
-    if int(res.status_code) > 300:
+    if int(res.status_code) != 200:
         embed = Embed(color=0xff0000)
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
@@ -292,83 +234,143 @@ async def lcm(ctx):
             output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
 
         await ctx.send("```{}```".format(output))
-#####################################################################################################################
-                                             # Listers
-#####################################################################################################################
+
 @discord_client.command()
 async def roster(ctx):
     """ Function is used to check what members are in which server """
-    uniqueNames = []
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
 
-    # All members in Reddit Zulu
-    clashMembers = coc_client.get_clanMembers(config['Clash']['zuluclash_tag'])
-    ClashMembers = [ (i['tag'], i['name']) for i in clashMembers.json()['items'] ]
-    ClashMembers.sort(key = lambda tupe_item: tupe_item[1].lower())
-    for member in ClashMembers:
-        if member[1] not in uniqueNames:
-            uniqueNames.append(member[1])
+    # get all clan members
+    res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
 
-    # All members in the planning discord server
-    planMembers = discord_client.get_guild(int(config['Discord']['plandisc_id'])).members  
-    
-    # All members registered 
-    dbMembers = dbconn.get_allUsers()
-    for member in dbMembers:
-        if member[1] not in uniqueNames:
-            uniqueNames.append(member[1])
+    # Quick check to  make sure that the https request was good
+    if int(res.status_code) != 200:
+        embed = Embed(color=0xff0000)
+        msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
+        f"Our current exit node is {get('https://api.ipify.org').text}")
+        embed.add_field(name="Bad Request: {}".format(res.status_code),value=msg)
+        await ctx.send(embed=embed)
+        return
+
+    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+    zbpServer = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+
+    if zuluServer == None or zbpServer == None:
+        await ctx.send("Unable to instantiate the guild object")
+        return
 
     roster = {}
-    for i in uniqueNames:
-        roster[i] = {
-            "Clash"   :   False,
-            "DBZulu"  :   False,
-            "PZulu"   :   False
+    # for zMember in (mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles)):
+    mems = [ mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles) ]
+    mems.sort(key=lambda x: x.display_name.lower())
+    for zMember in mems:
+        roster[zMember.display_name] = {
+            "Clash"       :   False,
+            "zuluServer"  :   True,
+            "zbpServer"   :   False,
+            "database"    :   False
         }
+         # check if member is in zbpServer
+        if zMember.id in ( pMember.id for pMember in zbpServer.members ):
+            roster[zMember.display_name]['zbpServer'] = True
 
+        queryResult = dbconn.get_usersTag((zMember.id,))
+        if len(queryResult) == 1:
+            roster[zMember.display_name]['database'] = True
+
+            if queryResult[0][0] in ( member['tag'] for member in res.json()['memberList'] ):
+                roster[zMember.display_name]['Clash'] = True
+
+
+    line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}\u0080\n")
     for userName in roster.keys():
-        for user in ClashMembers:
-            if user[1] == userName:
-                roster[userName]['Clash'] = True
+        if roster[userName]['zuluServer'] == True:
+            line += f"{emoticons['tracker bot']['true']}"
+        else:
+            line += f"{emoticons['tracker bot']['false']}"
 
-        for user in planMembers:
-            if user.display_name == userName:
-                roster[userName]['PZulu'] = True
+        if roster[userName]['zbpServer'] == True:
+            line += f"{emoticons['tracker bot']['true']}"
+        else:
+            line += f"{emoticons['tracker bot']['false']}"
 
-        for user in dbMembers:
-            if user[1] == userName:
-                roster[userName]['DBZulu'] = True
-
-    line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['database']}\u0080\n")
-    for userName in roster.keys():
         if roster[userName]['Clash'] == True:
             line += f"{emoticons['tracker bot']['true']}"
         else:
             line += f"{emoticons['tracker bot']['false']}"
 
-        if roster[userName]['PZulu'] == True:
-            line += f"{emoticons['tracker bot']['true']}"
-        else:
-            line += f"{emoticons['tracker bot']['false']}"
-
-        if roster[userName]['DBZulu'] == True:
+        if roster[userName]['database'] == True:
             line += f"{emoticons['tracker bot']['true']}"
         else:
             line += f"{emoticons['tracker bot']['false']}"
 
         line += f"  {userName}\n"
+        if len(line) > 1700:
+            await ctx.send(line)
+            line = ''
     await ctx.send(line)
+    await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
+        "to get an up to date list of clan members.")
+#####################################################################################################################
+                                             # Commands for all users
+#####################################################################################################################
+@discord_client.command()
+async def newinvite(ctx, *arg):
+    """ Get the channel object to use the invite method of that channel """
 
-    return
+    if botAPI.rightServer(ctx, config):
+        targetServer = int(config['Discord']['PlanDisc_ID'])
+        targetChannel = int(config['Discord']['PlanDisc_Channel'])
 
+    else:
+        print("User is using the wrong server")
+        return
+
+    # Try to create the invite object
+    if len(arg) == 1 and arg[0].isdigit():
+        channel = botAPI.invite(discord_client, targetServer, targetChannel)
+        inv = await channel.create_invite(max_age = (int(arg[0]) *60), max_uses = 1 )
+        await ctx.send(inv)
+        return
+
+    elif len(arg) == 0:
+        channel = botAPI.invite(discord_client, targetServer, targetChannel)
+        inv = await channel.create_invite(max_age = 600, max_uses = 1 )
+        await ctx.send(inv)
+        return
+
+    else:
+        await ctx.send("Wrong arguments used")
+        return
 
 @discord_client.command()
-async def mystats(ctx):
-    userID = ctx.author.id
-    #result = dbconn.get_usersTag((205344025740312576,)) # FIx this
-    result = dbconn.get_usersTag((userID,))
+async def stats(ctx, *, user: discord.Member = None):
+    if user == None:
+        user = ctx.author
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {ctx.author.display_name}")
+            return
+    else:
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {user.display_name}")
+            return
+
     if len(result) == 0:
         msg = (f"Could not find {ctx.author.display_name} in Zulu's database. Make sure they have "
         "been added.")
+        await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
+        return
+
+    elif len(result) > 1:
+        msg = (f"Found duplicate discord ID entries")
         await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
         return
 
@@ -383,12 +385,109 @@ async def mystats(ctx):
 
     memStat = ClashStats.ClashStats(res.json())
     desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
-    embed = Embed(title = f"{memStat.name}", description=desc, color = 0xE2E21A)
+    embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00ff00)
     embed.add_field(name = "Heroes", value=heroLevels, inline = False)
     embed.add_field(name = "Troops", value=troopLevels, inline = False)
     embed.add_field(name = "Spells", value=spellLevels, inline = False)
     embed.set_thumbnail(url=memStat.league_badgeSmall)
     await ctx.send(embed=embed)
+
+@discord_client.command()
+async def donation(ctx, *, user: discord.Member = None):
+    """
+    Find the donation status of your users account
+    """
+
+    if user == None:
+        user = ctx.author
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {ctx.author.display_name}")
+            return
+    else:
+        userID = user.id
+        result = dbconn.get_usersTag((userID,))
+        if len(result) == 0:
+            await ctx.send(f"No data was found for {user.display_name}")
+            return
+
+    if not result:
+        msg = (f"{ctx.author.display_name} was not found in our database. Have they been added?")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
+        return
+
+    elif len(result) > 1:
+        users =[ i[1] for i in result ]
+        msg = (f"Oh oh, looks like we have duplicate entries with the same discord ID. Users list: {users}")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
+        return
+
+    elif result[0][7] == "False":
+        msg = (f"Sorry {result[0][1]}, I am no longer tracking your donations as your enrollment to Reddit Zulu is set to False. "
+        "Please ping @CoC Leadership if this is a mistake.")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
+        return
+
+    res = coc_client.get_member(result[0][0])
+    memStat = ClashStats.ClashStats(res.json())
+
+    in_zulu = "False"
+    if memStat.clan_name == "Reddit Zulu":
+        in_zulu = "True"
+    else:
+        in_zulu = "False"
+    dbconn.update_donations((
+            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+            memStat.tag,
+            memStat.achieve["Friend in Need"]['value'],
+            in_zulu,
+            memStat.trophies
+        ))
+
+    lastSun = botAPI.lastSunday()
+    donation = dbconn.get_Donations((result[0][0], botAPI.lastSunday()))
+    lastSun = datetime.strptime(lastSun, "%Y-%m-%d %H:%M:%S")
+    nextSun = datetime.strptime(botAPI.nextSunday(), "%Y-%m-%d %H:%M:%S")
+
+    if len(donation) > 1:
+        lastData = datetime.strptime(donation[0][0],"%Y-%m-%d %H:%M:%S" )
+        val = (lastData - lastSun)
+        if val.days == 0:
+            remain = nextSun - datetime.utcnow()
+            day = remain.days
+            time = str(timedelta(seconds=remain.seconds)).split(":")
+            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+
+        else:
+            active = 7 - int(val.days)
+            await ctx.send(f"**WARNING**\nOnly {active} days of data has been recorded. Please "
+                "wait a full week before using this metric.")
+
+            remain = nextSun - datetime.utcnow()
+            day = remain.days
+            time = str(timedelta(seconds=remain.seconds)).split(":")
+            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
+            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+
+
+@donation.error
+async def mydonations_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+
+
+
+#####################################################################################################################
+                                             # Listers
+#####################################################################################################################
+
+   
+
+
 
 #####################################################################################################################
                                              # Donations
@@ -407,9 +506,9 @@ async def useradd(ctx, clash_tag, disc_mention):
         print("User is using the wrong server")
         return
 
-    # If user is authorized to use this command 
+    # If user is authorized to use this command
     if botAPI.authorized(ctx, config):
-        clash_tag = clash_tag.lstrip("#") 
+        clash_tag = clash_tag.lstrip("#")
         if disc_mention.startswith("<") == False:
             msg = (f"Could not interpret the {disc_mention} argument. Make sure "
             "that you are mentioning the user such as @user")
@@ -423,7 +522,7 @@ async def useradd(ctx, clash_tag, disc_mention):
                 disc_mention = member_ID
         # Evaluate if the discord user exists
         exists, disc_userObj = botAPI.is_DiscordUser(ctx.guild, config, disc_mention)
- 
+
         if exists == False:
             msg = (f"User id {disc_mention} does not exist on this server.")
             await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
@@ -462,7 +561,7 @@ async def useradd(ctx, clash_tag, disc_mention):
             msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
             await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
             return
-        
+
         # Retrieve the townHall Role Object
         thLvl_Role = botAPI.get_townhallRole(ctx.guild, memStat.townHallLevel)
         if isinstance(thLvl_Role, discord.Role) == False:
@@ -528,28 +627,28 @@ async def useradd(ctx, clash_tag, disc_mention):
         if error != None:
             if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
                 msg = (f"UNIQUE constraint failed: MembersTable.Tag: {memStat.tag}\n\nUser already exists. Attempting to re-activate {memStat.name}")
-                await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00)) 
+                await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
                 result = dbconn.is_Active((memStat.tag))
                 print(result)
                 if isinstance(result, str):
                     print(result)
-                    await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000)) 
+                    await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                     return
 
                 elif result[7] == "True": # If activ
                     msg = (f"{memStat.name} is already set to active in the database.")
-                    await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000)) 
+                    await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000))
                     return
                 else:
                     result = dbconn.set_Active(("True", memStat.tag))
 
                     if isinstance(result, str):
                         print(result)
-                        await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000)) 
+                        await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                         return
                     else:
                         msg = (f"Successfully set {memStat.name} to active")
-                        await ctx.send(embed = Embed(description=msg, color=0x00FF00)) 
+                        await ctx.send(embed = Embed(description=msg, color=0x00FF00))
             else:
                 await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
                 return
@@ -588,98 +687,36 @@ async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
+
+
+
+
 @discord_client.command()
-async def donation(ctx, *, user: discord.Member = None):
-    """
-    Find the donation status of your users account
-    """
-    
-    if user == None:
-        user = ctx.author
-        userID = user.id
-        result = dbconn.get_usersTag((userID,))
-        if len(result) == 0:
-            await ctx.send(f"No data was found for {ctx.author.display_name}")
-            return
+async def killbot(ctx):
+    """ Send kill signal to bot to properly close down databse and config file """
+    if botAPI.rightServer(ctx, config):
+        pass
     else:
-        userID = user.id
-        result = dbconn.get_usersTag((userID,))
-        if len(result) == 0:
-            await ctx.send(f"No data was found for {user.display_name}")
-            return
-
-    if not result:
-        msg = (f"{ctx.author.display_name} was not found in our database. Have they been added?")
-        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
-        return
-    
-    elif len(result) > 1:
-        users =[ i[1] for i in result ]
-        msg = (f"Oh oh, looks like we have duplicate entries with the same discord ID. Users list: {users}")
-        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
-        return
-    
-    elif result[0][7] == "False":
-        msg = (f"Sorry {result[0][1]}, I am no longer tracking your donations as your enrollment to Reddit Zulu is set to False. "
-        "Please ping @CoC Leadership if this is a mistake.")
-        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
+        desc = f"You are attempting to run a command destined for another server."
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
         return
 
-    res = coc_client.get_member(result[0][0])
-    memStat = ClashStats.ClashStats(res.json())
-
-    in_zulu = "False"
-    if memStat.clan_name == "Reddit Zulu":
-        in_zulu = "True"
+    if botAPI.authorized(ctx, config):
+        await ctx.send("Tearing down, please hold.")
+        await ctx.send("Closing database..")
+        dbconn.conn.close()
+        with open(configLoc, 'w') as f:
+                config.write(f)
+        await ctx.send("Terminating bot..")
+        await ctx.send("_Later._")
+        await discord_client.logout()
     else:
-        in_zulu = "False"
-    dbconn.update_donations((
-            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            memStat.tag,
-            memStat.achieve["Friend in Need"]['value'],
-            in_zulu,
-            memStat.trophies
-        ))
-
-    lastSun = botAPI.lastSunday()
-    donation = dbconn.get_Donations((result[0][0], botAPI.lastSunday()))
-    lastSun = datetime.strptime(lastSun, "%Y-%m-%d %H:%M:%S")
-    nextSun = datetime.strptime(botAPI.nextSunday(), "%Y-%m-%d %H:%M:%S")
-
-    if len(donation) > 1:
-        lastData = datetime.strptime(donation[0][0],"%Y-%m-%d %H:%M:%S" )
-        val = (lastData - lastSun)
-        if val.days == 0:
-            remain = nextSun - datetime.utcnow()
-            day = remain.days
-            time = str(timedelta(seconds=remain.seconds)).split(":")
-            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
-
-        else:
-            active = 7 - int(val.days)
-            await ctx.send(f"**WARNING**\nOnly {active} days of data has been recorded. Please "
-                "wait a full week before using this metric.")
-            
-            remain = nextSun - datetime.utcnow()
-            day = remain.days
-            time = str(timedelta(seconds=remain.seconds)).split(":")
-            msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
-            
-
-@donation.error
-async def mydonations_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
-
-
-
-
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
 
 #####################################################################################################################
-                                             # Functions
+                                             # Loops
 #####################################################################################################################
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
@@ -733,11 +770,11 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Grab users role object
             roleObj_TH = botAPI.get_townhallRole(guild, memStat.townHallLevel)
-            
+
             # find if their TH role has changed
             thRoles =[ role for role in disc_UserObj.roles if role.name.startswith('th') ]
             if len(thRoles) == 0:
-                await disc_UserObj.add_roles(roleObj_TH)     
+                await disc_UserObj.add_roles(roleObj_TH)
             elif len(thRoles) > 1:
                 for role in thRoles:
                     await disc_UserObj.remove_roles(role)
