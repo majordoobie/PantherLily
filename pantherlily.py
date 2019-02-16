@@ -166,6 +166,9 @@ async def help(ctx):
 
     await ctx.send(embed = embed)
 
+@help.error
+async def help_erro(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 #####################################################################################################################
                                              # Accountability Functions
 #####################################################################################################################
@@ -194,6 +197,10 @@ async def listroles(ctx):
         output += "{:<{}} {}\n".format(name[0], max_length, name[1])
 
     await ctx.send("```{}```".format(output))
+
+@listroles.error
+async def listroles_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def lcm(ctx):
@@ -234,6 +241,10 @@ async def lcm(ctx):
             output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
 
         await ctx.send("```{}```".format(output))
+
+@lcm.error
+async def lcm_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def roster(ctx):
@@ -315,6 +326,10 @@ async def roster(ctx):
     await ctx.send(line)
     await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
         "to get an up to date list of clan members.")
+
+@roster.error
+async def roster_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 #####################################################################################################################
                                              # Commands for all users
 #####################################################################################################################
@@ -346,6 +361,10 @@ async def newinvite(ctx, *arg):
     else:
         await ctx.send("Wrong arguments used")
         return
+
+@newinvite.error
+async def newinvite_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def stats(ctx, *, user: discord.Member = None):
@@ -391,6 +410,10 @@ async def stats(ctx, *, user: discord.Member = None):
     embed.add_field(name = "Spells", value=spellLevels, inline = False)
     embed.set_thumbnail(url=memStat.league_badgeSmall)
     await ctx.send(embed=embed)
+
+@stats.error
+async def stats_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def donation(ctx, *, user: discord.Member = None):
@@ -473,26 +496,13 @@ async def donation(ctx, *, user: discord.Member = None):
                 f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
             await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
 
-
 @donation.error
 async def mydonations_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-
-
-
 #####################################################################################################################
-                                             # Listers
+                                             # Admin Commands
 #####################################################################################################################
-
-   
-
-
-
-#####################################################################################################################
-                                             # Donations
-#####################################################################################################################
-
 @discord_client.command()
 async def useradd(ctx, clash_tag, disc_mention):
     """
@@ -686,11 +696,6 @@ async def useradd(ctx, clash_tag, disc_mention):
 async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-
-
-
-
-
 @discord_client.command()
 async def killbot(ctx):
     """ Send kill signal to bot to properly close down databse and config file """
@@ -714,6 +719,10 @@ async def killbot(ctx):
     else:
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
+
+@killbot.error
+async def killbot_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 #####################################################################################################################
                                              # Loops
@@ -802,6 +811,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # update users table
             dbconn.update_users((memStat.tag, memStat.townHallLevel, memStat.league_name))
+
 
 if __name__ == "__main__":
     discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
