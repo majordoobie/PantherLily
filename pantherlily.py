@@ -772,6 +772,60 @@ async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
+async def addnote(ctx, *, member: discord.Member = None):
+    if member == None:
+        desc = (f"Invalid argument used")
+        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        return
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    result = dbconn.get_user_byDiscID((member.id,))
+    if len(result) == 1:
+        example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
+        await ctx.send(f"What would you like to add {ctx.author.display_name}? "
+            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\nExample\n```{example}```\nEnter message:")
+
+        def check(m):
+            return m.author.id == ctx.author.id
+
+        response = await discord_client.wait_for('message', check=check)
+        await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
+
+        response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
+        if response2.content.lower() == 'no':
+            await ctx.send("Terminating function")
+            return
+
+        oldNote = dbconn.get_user_byDiscID((member.id,))
+        note = oldNote[0][8]
+        note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+        note += f"{response.content}"
+        result = dbconn.set_kickNote((note, "False", member.id,))
+        if result == 1:
+            desc = (f"Successfully set {member.display_name} active status to False with "
+                "the note provided above.")
+            await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
+            return  
+        
+        else:
+            desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+                "user.")
+            await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
+            return 
+
+    else:
+        await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
+
+@discord_client.command()
 async def search(ctx, option, *query):
     if botAPI.rightServer(ctx, config):
         pass
@@ -895,6 +949,7 @@ async def search_error(ctx, error):
 
 @discord_client.command()
 async def deletenote(ctx, *, member : discord.Member = None):
+    """ Function used to delete notes for the user supplieds database """
     if member == None:
         desc = (f"Invalid argument used")
         await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
@@ -937,8 +992,6 @@ async def deletenote(ctx, *, member : discord.Member = None):
 @deletenote.error
 async def deletenote_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
-
-
 
 @discord_client.command()
 async def viewnote(ctx, *, member : discord.Member = None):
@@ -1006,6 +1059,13 @@ async def viewnote(ctx, *, member : discord.Member = None):
                 else:
                     await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
                         f"**Content:**\n{msg.clean_content}")
+            return
+    
+    await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
+
+@viewnote.error
+async def viewnote_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def getmessage(ctx, msgID):
@@ -1042,6 +1102,10 @@ async def getmessage(ctx, msgID):
     else:
         await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
             f"**Content:**\n{msg.clean_content}")
+
+@getmessage.error
+async def getmsg_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
