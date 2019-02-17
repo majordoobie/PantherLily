@@ -12,12 +12,15 @@ from APIs import ClashStats
 from Database.ZuluBot_DB import ZuluDB
 
 #New Functions
+import aiohttp
 import asyncio
 from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
+import io
 from os import path
 import pandas as pd
+import re
 from requests import get
 from sys import argv
 from sys import exit as ex # Avoid exit built in
@@ -747,7 +750,11 @@ async def kickuser(ctx, *, member: discord.Member = None):
         await ctx.send("Terminating function")
         return
 
-    result = dbconn.set_kickNote((response.content, "False", member.id,))
+    oldNote = dbconn.get_user_byDiscID((member.id,))
+    note = oldNote[0][8]
+    note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+    note += f"{response.content}"
+    result = dbconn.set_kickNote((note, "False", member.id,))
     if result == 1:
         desc = (f"Successfully set {member.display_name} active status to False with "
             "the note provided above.")
@@ -881,7 +888,163 @@ async def search(ctx, option, *query):
             await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
             return
 
+@search.error
+async def search_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
+
+@discord_client.command()
+async def deletenote(ctx, *, member : discord.Member = None):
+    if member == None:
+        desc = (f"Invalid argument used")
+        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        return
+
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    result = dbconn.get_user_byDiscID((member.id,))
+    if len(result) == 1:
+        note = result[0][8]
+        await ctx.send(f"The current note set for {member.display_name} is:\n\n```{note}```\n\n "
+            "Would you like to proceed with deleting this note? This action cannot be undone.\n(Yes/No)")
+        response = await discord_client.wait_for('message', check = botAPI.yesno_check)
+        if response.content.lower() == "no":
+            await ctx.send("Terminating function")
+            return
+        else: 
+            note = f"[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nDeleted by {ctx.author.display_name}"
+            res = dbconn.set_kickNote((note, result[0][7], member.id,))
+            if res == 1:
+                desc = (f"Successfully cleared {member.display_name} note in the database")
+                await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
+                return  
+            
+            else:
+                desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+                    "user.")
+                await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
+                return 
+
+@deletenote.error
+async def deletenote_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+
+
+@discord_client.command()
+async def viewnote(ctx, *, member : discord.Member = None):
+    if member == None:
+        desc = (f"Invalid argument used")
+        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        return
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+        
+    result = dbconn.get_user_byDiscID((member.id,))
+    if len(result) == 1:
+        note = result[0][8]
+        ids = []
+        search = False
+        if re.findall("msgID:.\d+", note, re.IGNORECASE):
+            for i in re.findall("msgID:.\d+", note, re.IGNORECASE):
+                ids.append(re.search("\d+", i).group())
+        if ids:
+            search = True
+        await ctx.send(f"Current Notes for {member.display_name}:\n```{note}```")
+        if search:
+            await ctx.send(f"Message IDs found, would you like those messages retrieved?\n(Yes/No)")
+            try:
+                response = await discord_client.wait_for('message', check = botAPI.yesno_check, timeout=30)
+                if response.content.lower() == 'no':
+                    return
+            except asyncio.TimeoutError:
+                await ctx.send("Just letting you know.. I am no longer waiting for a response")
+                return
+            
+            for msgID in ids:
+                zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+                leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+                try:
+                    await ctx.send("Loading.. ")
+                    msg = await leaderChannel.get_message(int(msgID))
+                except discord.Forbidden as e:
+                    msg = (f"Permission denied to view {leaderChannel.name}\n{e}")
+                    await ctx.send(embed = discord.Embed(title="Forbidden Exception", description=msg, color=0xFF0000))
+                    return
+                except discord.NotFound as e:
+                    msg = (f"Message not found")
+                    await ctx.send(embed = discord.Embed(title=f"Message not found for id number {msgID}", description=msg, color=0xFF0000))
+                    continue
+                    
+                if msg.attachments:
+                    files = []
+                    async with aiohttp.ClientSession() as session:
+                        for attachment_obj in msg.attachments:
+                            async with session.get(attachment_obj.url) as resp:
+                                buffer = io.BytesIO(await resp.read())
+                                files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+                    files = files or None
+                    await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
+                        f"**Content:**\n{msg.clean_content}", files=files)
+                else:
+                    await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
+                        f"**Content:**\n{msg.clean_content}")
+
+@discord_client.command()
+async def getmessage(ctx, msgID):
+    """ Get messages from leader-notes """
+    if msgID.isdigit() == False:
+        desc = (f"Invalid argument {msgID}")
+        await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
+        return
+
+    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+    leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+    try:
+        await ctx.send("Loading.. ")
+        msg = await leaderChannel.get_message(int(msgID))
+    except discord.Forbidden as e:
+        msg = (f"Permission denied to view {leaderChannel.name}\n{e}")
+        await ctx.send(embed = discord.Embed(title="Forbidden Exception", description=msg, color=0xFF0000))
+        return
+    except discord.NotFound as e:
+        msg = (f"Message not found")
+        await ctx.send(embed = discord.Embed(title="Message not found", description=msg, color=0xFF0000))
+        return
+        
+    if msg.attachments:
+        files = []
+        async with aiohttp.ClientSession() as session:
+            for attachment_obj in msg.attachments:
+                async with session.get(attachment_obj.url) as resp:
+                    buffer = io.BytesIO(await resp.read())
+                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+        files = files or None
+        await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
+            f"**Content:**\n{msg.clean_content}", files=files)
+    else:
+        await ctx.send(f"**Message by:**\n{msg.author.display_name} on {msg.created_at.strftime('%d %b %Y %H:%M').upper()} Zulu\n"
+            f"**Content:**\n{msg.clean_content}")
+#####################################################################################################################
+                                             # Loops & Kill Command
+#####################################################################################################################
 @discord_client.command()
 async def killbot(ctx):
     """ Send kill signal to bot to properly close down databse and config file """
@@ -910,9 +1073,6 @@ async def killbot(ctx):
 async def killbot_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-#####################################################################################################################
-                                             # Loops
-#####################################################################################################################
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
     await discord_client.wait_until_ready()
