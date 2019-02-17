@@ -109,65 +109,124 @@ async def on_ready():
                                              # Help Menu
 #####################################################################################################################
 @discord_client.command()
-async def help(ctx):
+async def help(ctx, *option):
     """
     Display help menu to user
     """
-    arg = ctx.message.content.split(" ")[1:]
-    if len(arg) == 0:
-        embed = Embed(color=0x8A2BE2)
-    elif arg[0] == '-v':
-        embed = Embed(color=0x8A2BE2)
-    elif arg[0] == '-vv':
-        desc = ("Welcome to Zulu's donation tracker!")
-        embed = Embed(title='NameComingSoon!', description= desc, color=0x8A2BE2)
+    listroles = ("List all the available roles along with their role ID. This command is mainly used for diagnosing errors.")
 
-    embed.add_field(name="Commands:", value="-----------", inline=True)
+    lcm = ("List the members that are currently in Reddit Zulu along with their Clash Tag. This command is useful for registering "
+        "new members.")
 
-    helpp = ("Provides this help menu. \nOptional: -v provide CoC Leaders commands "
-    "\nOptional: -vv provide a indepth description of the bot.")
-    embed.add_field(name="/help <opt: -v>", value=helpp, inline=False)
+    roster = ("This command identifies every user in the Reddit Zulu discord server that has the 'CoC Members' role and checks "
+        "if they exist in Zulu Base Planning discord server and in the Database. The command will query if the user is present "
+        "in Reddit Zulu (clan) only if the user exists in the database.")
 
-    newinvite = ("Provides caller with a temporary link to the planning server with a default "
-    "expiration of 10 minutes. You have the option of providing an integer which changes the "
-    "expiration in minutes.")
-    embed.add_field(name="/newinvite <opt: int>", value=newinvite, inline=False)
+    newinvite = ("Provides an invite link to Zulu Base Planning discord server. By default, the link will expire in 10 minutes. "
+        "The command takes an optional integer argument. The optional integer is used to set the expiration time in minutes for the link.")
 
-    lcm = ("Provides caller with a list of names and tags of all the users currently in Zulu.")
-    embed.add_field(name="/lcm", value=lcm, inline=False)
+    newinvite_ex = ("Provides an invite link to Zulu Base Planning discord server. By default, the link will expire in 10 minutes. "
+        "The command takes an optional integer argument. The optional integer is used to set the expiration time in minutes for the link.\n\n"
+        f"**[Examples]**\n{prefx}newinvite\n{prefx}newinvite 20")
 
-    donation = ("Provides the caller with their donation progress for the week. The caller has the "
-    "option of providing a clash tag to get the status of other users. A list of tags can be found in /lcm. "
-    "\nNOTE: A full week must pass for the progression counts to be accurate.")
-    embed.add_field(name="/donation <opt: clash tag>", value=donation, inline=False)
+    stats  = ("Show a graphical output of the user's current Clash of Clans profile. By default, the user who invoked the command will be "
+        "used to query Clash of Clans. The command takes an optional @mention argument to query that user instead.")
 
-    if arg and (arg[0] == "-v" or arg[0] == "-vv"):
-        embed.add_field(name="..", value="..", inline = False)
-        embed.add_field(name="Commands: CoC Leaders", value="-----------", inline=True)
+    donation = ("Display the user's current donation progress for the week. The donation cut off is every Monday at 0100 Zulu (Sunday at 2000 EST). "
+        "The command takes an optional @mention argument to query that user instead.")
 
-        useradd = ("Register the a new user into the SQL DataBase. This will also set default discord "
-        "roles such as TH# role and CoC Members role. Finally, the users nickname will be changed "
-        "to reflect their in game name.")
-        embed.add_field(name="/useradd <#coc_tag> <@discord_mention>", value=useradd, inline=False)
+    useradd = ("Register a new user to the database. It is mandatory to supply the user's clash tag and @mention arguments when invoking this command. "
+        "Registering the user will change the user's nickname on discord to their in-game name along with assigning 'CoC Members' and 'th#s' roles.")
 
-        userkick = ('Places a "is_Active = False" flag on the user to stop the bot from tracking the user. '
-        'The caller will be prompt with the option of adding an administrative note such as '
-        '"User was kicked for misconduct" or "User is on temporary leave". These notes can be retrived with the '
-        '"insert command here for it" command.')
-        embed.add_field(name="/userkick <#coc_tag>", value=userkick, inline=False)
+    useradd_ex = ("Register a new user to the database. It is mandatory to supply the users clash tag and @mention arguments when invoking this command. "
+        "Registering the user will change the user's nickname on discord to their in-game name along with assigning 'CoC Members' and 'th#s' roles.\n\n"
+        f"**[Examples]**\n{prefx}useradd #ABC1233 @mention")
 
-        activeUsers = ('Queries the database for all the users that are "active". This is helpful '
-        'to verify users that are kicked.')
-        embed.add_field(name="/active_users", value=activeUsers, inline=False)
+    disable_user = ("Command **does not** remove the user from discord. The command is used to set a users 'active' status to False. This terminates the "
+        "donation tracking process on the user. The action is recorded in the Notes section of the users SQL table. ")
 
-        listroles = ("Simple command used for debugging.")
-        embed.add_field(name="/listroles", value=listroles, inline=False)
+    addnote = ("Append an administrative note to the users SQL table. The bot will automatically append the date and the user who added the note. "
+        f"Please use {prefx}help --verbose to see more information on how to craft notes")
 
-        killit = ("Command to safely terminate the bot.")
-        embed.add_field(name="/killswitch", value=killit, inline=False)
+    notes = ("Panther Lily makes it easy to keep track of infractions and administrative notes on users. Every time a note is appended to the user's "
+        "table, a timestamp and a signature are automatically added. Panther Lily also supports extracting messages as long as you supply the keyword "
+        "'msgID:' followed by the id of the message (right click a message > copy id). You can add as many msgID's as you like. This will become useful "
+        f"when using {prefx}viewnote as it will offer the user the option to retrieve all the discord messages by parsing the msgID keyword in the note.\n\n"
+        "**[Example]**\nMissed another attack\nmsgID:123456789\nmsgID:987654321\n\nResults in:\n[16-FEB-2019 22:12]\nNote By SgtMajorDoobie\nMissed another attack\n"
+        "msgID:123456789\nmsgID:987654321")
+
+    search = ("Used to search for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
+        "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
+        "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.")
+
+    search_ex = ("Used to search for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
+        "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
+        "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.\n\n**[Example]**\n"
+        f"{prefx}search --tag #YC12LPJ\n{prefx}search -t #YC12LPJ\n{prefx}search --mention @mention\n{prefx}search --name SgtMajorDoobie #Case sensitive")
+
+    deletenote = (f"Used to delete a users note in the database. This is the only way to fix errors. It is best to first {prefx}viewnote to copy the content you "
+        f"still want to keep and then {prefx}addnote to add the correct content.")
+
+    viewnote = (f"View the text note in the user's profile with the option of retrieving any messages identified in the notes. These messages are identified by "
+        f"scanning for the 'msgID:' key. Use {prefx}help --verbose to see more on Notes and how to craft them properly.")
+
+    getmessage = (f"Used to manually retrieve a msgID. This command is mostly used to diagnose bugs.")
+
+    helpp = (f"Display this help menu. Use {prefx}help --verbose for examples.")
+
+    if len(option) == 0:
+        embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
+        embed.add_field(name=f"**{prefx}listroles**", value=listroles)
+        embed.add_field(name=f"**{prefx}lcm**", value=lcm)
+        embed.add_field(name=f"**{prefx}roster**", value=roster)
+        await ctx.send(embed=embed)
+
+        embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
+        embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
+        embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite)
+        embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
+        embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
+        await ctx.send(embed=embed)
+
+        embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
+        embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd)
+        embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
+        embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
+        embed.add_field(name=f"**{prefx}search** <--__name__ | --__tag__ | --__discordID__>", value=search)
+        embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
+        embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
+        embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
+        await ctx.send(embed=embed)
+
+    if option:
+        if option[0] in ['--verbose', '-v']:
+            embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
+            embed.add_field(name=f"**{prefx}listroles**", value=listroles)
+            embed.add_field(name=f"**{prefx}lcm**", value=lcm)
+            embed.add_field(name=f"**{prefx}roster**", value=roster)
+            await ctx.send(embed=embed)
+
+            embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
+            embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
+            embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite_ex)
+            embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
+            embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
+            await ctx.send(embed=embed)
+
+            embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
+            embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd_ex)
+            embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
+            embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
+            embed.add_field(name=f"**{prefx}search** <--__name__ | --__tag__ | --__discordID__>", value=search_ex)
+            embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
+            embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
+            embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
+            embed.add_field(name=f"**How to Craft Notes**", value=notes)
+            await ctx.send(embed=embed)
 
 
-    await ctx.send(embed = embed)
+
+
 
 @help.error
 async def help_erro(ctx, error):
@@ -292,7 +351,7 @@ async def roster(ctx):
         if zMember.id in ( pMember.id for pMember in zbpServer.members ):
             roster[zMember.display_name]['zbpServer'] = True
 
-        queryResult = dbconn.get_usersTag((zMember.id,))
+        queryResult = dbconn.get_user_byDiscID((zMember.id,))
         if len(queryResult) == 1:
             roster[zMember.display_name]['database'] = True
 
@@ -374,13 +433,13 @@ async def stats(ctx, *, user: discord.Member = None):
     if user == None:
         user = ctx.author
         userID = user.id
-        result = dbconn.get_usersTag((userID,))
+        result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
     else:
         userID = user.id
-        result = dbconn.get_usersTag((userID,))
+        result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {user.display_name}")
             return
@@ -427,13 +486,13 @@ async def donation(ctx, *, user: discord.Member = None):
     if user == None:
         user = ctx.author
         userID = user.id
-        result = dbconn.get_usersTag((userID,))
+        result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
     else:
         userID = user.id
-        result = dbconn.get_usersTag((userID,))
+        result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {user.display_name}")
             return
@@ -701,7 +760,7 @@ async def info_error(ctx, error):
 
 
 @discord_client.command()
-async def kickuser(ctx, *, member: discord.Member = None):
+async def disable_user(ctx, *, member: discord.Member = None):
 
     if botAPI.rightServer(ctx, config):
         pass
@@ -767,7 +826,7 @@ async def kickuser(ctx, *, member: discord.Member = None):
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
         return 
 
-@kickuser.error
+@disable_user.error
 async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -1153,7 +1212,7 @@ async def weeklyRefresh(discord_client, botMode):
             wait_time = wait_time - 45
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
-        await asyncio.sleep(wait_time * 60)
+        await asyncio.sleep(wait_time * 60) #60
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
