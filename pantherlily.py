@@ -1168,8 +1168,10 @@ async def getmsg_error(ctx, error):
 #####################################################################################################################
                                              # Displaying pandas data
 #####################################################################################################################
-
-
+@discord_client.command()
+async def dumpcurrent(ctx):
+# df = pd.read_sql_query(sql, conn)
+#sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
