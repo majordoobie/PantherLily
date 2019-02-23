@@ -155,14 +155,14 @@ async def help(ctx, *option):
         "**[Example]**\nMissed another attack\nmsgID:123456789\nmsgID:987654321\n\nResults in:\n[16-FEB-2019 22:12]\nNote By SgtMajorDoobie\nMissed another attack\n"
         "msgID:123456789\nmsgID:987654321")
 
-    search = ("Used to search for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
+    lookup = ("Used to lookup for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
         "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
         "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.")
 
-    search_ex = ("Used to search for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
+    lookup_ex = ("Used to lookup for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
         "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
         "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.\n\n**[Example]**\n"
-        f"{prefx}search --tag #YC12LPJ\n{prefx}search -t #YC12LPJ\n{prefx}search --mention @mention\n{prefx}search --name SgtMajorDoobie #Case sensitive")
+        f"{prefx}lookup --tag #YC12LPJ\n{prefx}lookup -t #YC12LPJ\n{prefx}lookup --mention @mention\n{prefx}lookup --name SgtMajorDoobie #Case sensitive")
 
     deletenote = (f"Used to delete a users note in the database. This is the only way to fix errors. It is best to first {prefx}viewnote to copy the content you "
         f"still want to keep and then {prefx}addnote to add the correct content.")
@@ -192,7 +192,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd)
         embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-        embed.add_field(name=f"**{prefx}search** <--__name__ | --__tag__ | --__discordID__>", value=search)
+        embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
         embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
         embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
@@ -217,7 +217,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd_ex)
             embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-            embed.add_field(name=f"**{prefx}search** <--__name__ | --__tag__ | --__discordID__>", value=search_ex)
+            embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__mention__>", value=lookup_ex)
             embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
@@ -604,16 +604,20 @@ async def useradd(ctx, clash_tag, disc_mention):
 
         # Evaluate if the user is part of reddit zulu
         res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
-        inClan = False
-        for user in res.json()['memberList']:
-            if user['tag'].lstrip("#").upper() == clash_tag.upper():
-                inClan = True
+        # Disabled since it takes time for people to join the clan at times because they're waiting to 
+        # finish other priorities
+        ###############################################################################################
+        # inClan = False
+        # for user in res.json()['memberList']:
+        #     if user['tag'].lstrip("#").upper() == clash_tag.upper():
+        #         inClan = True
 
-        if inClan == False:
-            msg = (f"{disc_userObj.display_name} must be part of Reddit Zulu before adding them.")
-            await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
-            return
-
+        # if inClan == False:
+        #     msg = (f"{disc_userObj.display_name} must be part of Reddit Zulu before adding them.")
+        #     await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+        #     return
+        ###############################################################################################
+        
         # Query CoC API to see if we have the right token and the right tag
         res = coc_client.get_member(clash_tag)
 
@@ -885,7 +889,7 @@ async def addnote(ctx, *, member: discord.Member = None):
         await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
 
 @discord_client.command()
-async def search(ctx, option, *query):
+async def lookup(ctx, option, *query):
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -1001,7 +1005,7 @@ async def search(ctx, option, *query):
             await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
             return
 
-@search.error
+@lookup.error
 async def search_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -1170,8 +1174,43 @@ async def getmsg_error(ctx, error):
 #####################################################################################################################
 @discord_client.command()
 async def dumpcurrent(ctx):
+    pass
+# conn = sqlite3.connect('Database/devdatabase.db')
+# sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
+# df = pd.read_sql_query(sql, conn)
+# clean_df = df
+# conn.close()
+# diff = df.groupby(['Name','Tag'])['Current_Donation'].agg(['min', 'max']).diff(axis=1)
+# diff.drop('min', axis=1, inplace = True)
+# diff.reset_index(inplace=True)
+# diff.rename(columns={'max':'Donation_Status'}, inplace=True)
+# diff.set_index('Tag', inplace=True)
+# diff
+# name_max = df.groupby(['Name','Tag'])['Current_Donation'].max()
+# name_max_df = name_max.to_frame()
+# name_max_df.reset_index(inplace=True)
+# name_max_df.set_index('Tag', inplace=True)
+# name_max_df
+# new_df = pd.merge(diff, name_max_df)
+# new_df.set_index('Name', inplace=True)
+# new_df.to_excel('TesterOne.xlsx')
+
+
+
 # df = pd.read_sql_query(sql, conn)
 #sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
+#df2 = df.set_index('increment_date')
+# df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
+# df.groupby('Name')['Current_Donation'].max()
+
+
+
+
+# sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
+# df = pd.read_sql_query(sql, conn)
+# df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
+# df.groupby('Name')['Current_Donation'].max()data.groupby(['col1', 'col2']).mean()
+
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
