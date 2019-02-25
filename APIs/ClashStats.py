@@ -37,14 +37,21 @@ class ClashStats():
         self.clan_badgeLarge = jjson['clan']['badgeUrls']['large']
 
         #League Level
-        self.league_id = jjson['league']['id']
-        self.league_name = jjson['league']['name']
-        self.league_badgeTiny = jjson['league']['iconUrls']['tiny']
-        self.league_badgeSmall = jjson['league']['iconUrls']['small']
-        self.league_badgeMed = jjson['league']['iconUrls']['medium']
+        if 'league' in jjson.keys():
+            self.league_id = jjson['league']['id']
+            self.league_name = jjson['league']['name']
+            self.league_badgeTiny = jjson['league']['iconUrls']['tiny']
+            self.league_badgeSmall = jjson['league']['iconUrls']['small']
+            self.league_badgeMed = jjson['league']['iconUrls']['medium']
+        else:
+            self.league_id = None
+            self.league_name = None
+            self.league_badgeTiny = None
+            self.league_badgeSmall= None
+            self.league_badgeMed = None
 
-        #Achievements Level
-        self.achieve = {
+        #Achievements Levl
+        self.achieve ={
             "Bigger Coffers" :{},
             "Get those Goblins!" :{},
             "Bigger & Better" :{},

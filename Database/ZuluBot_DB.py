@@ -284,9 +284,8 @@ class ZuluDB:
         """
         sql_query = ("SELECT * FROM DonationsTable WHERE Tag = ? AND increment_date BETWEEN ? AND ?")
         cur = self.conn.cursor()
-        tupee = (tupe[0], tupe[1], datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
+        tupee = ((tupe[0], tupe[1], tupe[2]))
         cur.execute(sql_query, tupee)
-        #cur.execute(sql_query, (coc_tag, sunday, datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
         rows = cur.fetchall()
         return rows
 
