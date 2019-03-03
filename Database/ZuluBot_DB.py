@@ -64,6 +64,9 @@ class ZuluDB:
             print(f"OperationalError: {e}")
             return e
 
+
+        
+
     def insert_userdata(self, tupe):
         """ 
         Populate the MembersTable table with user data, this is only done once.
@@ -340,4 +343,5 @@ class ZuluDB:
         rows = cur.fetchall()
         return rows
         
+
 

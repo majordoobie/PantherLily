@@ -16,7 +16,7 @@ import aiohttp
 import asyncio
 from collections import OrderedDict
 from configparser import ConfigParser
-from datetime import datetime, timedelta
+from datetime import *
 import io
 from os import path
 import pandas as pd
@@ -25,8 +25,12 @@ from requests import get
 from sys import argv
 from sys import exit as ex # Avoid exit built in
 
-# Delete after production
-import json # delete me
+# Data visualization
+import numpy as np
+import pandas as pd
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+
 
 #####################################################################################################################
                                              # Set up the environment
@@ -297,10 +301,11 @@ async def lcm(ctx):
             if len(user[0]) > max_length:
                 max_length = len(user[0])
         mem_list.sort(key = lambda tupe_item: tupe_item[0].lower())
-
-        output = ''
-        for index, user in enumerate(mem_list):
-            output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
+        with open("shit.txt", 'w', encoding='utf-8') as outfile:
+            output = ''
+            for index, user in enumerate(mem_list):
+                output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
+                outfile.write(f"{user[0]}:{user[1]}\n")
 
         await ctx.send("Current Members in Reddit Zulu\n```{}```".format(output))
 
@@ -466,12 +471,17 @@ async def stats(ctx, *, user: discord.Member = None):
 
     memStat = ClashStats.ClashStats(res.json())
     desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
-    embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00ff00)
-    embed.add_field(name = "Heroes", value=heroLevels, inline = False)
-    embed.add_field(name = "Troops", value=troopLevels, inline = False)
-    embed.add_field(name = "Spells", value=spellLevels, inline = False)
-    embed.set_thumbnail(url=memStat.league_badgeSmall)
-    await ctx.send(embed=embed)
+    embed = Embed(title = f"**__{memStat.name}__**", description=desc, color = 0x00ff00)
+    embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
+    embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
+    embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
+    if memStat.league_badgeSmall == None:
+        f = discord.File("Images/Unranked_League.png", filename='unrank.png')
+        embed.set_thumbnail(url="attachment://unrank.png")
+        await ctx.send(embed=embed, file=f)
+    else:
+        embed.set_thumbnail(url=memStat.league_badgeSmall)
+        await ctx.send(embed=embed)
 
 @stats.error
 async def stats_error(ctx, error):
@@ -531,36 +541,39 @@ async def donation(ctx, *, user: discord.Member = None):
         ))
 
     lastSun = botAPI.lastSunday()
-    donation = dbconn.get_Donations((result[0][0], botAPI.lastSunday()))
-    lastSun = datetime.strptime(lastSun, "%Y-%m-%d %H:%M:%S")
-    nextSun = datetime.strptime(botAPI.nextSunday(), "%Y-%m-%d %H:%M:%S")
-
+    nextSun = lastSun + timedelta(days=7)
+    donation = dbconn.get_Donations((result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
+    lastDon = datetime.strptime(donation[0][0], "%Y-%m-%d %H:%M:%S")
     if len(donation) > 1:
-        lastData = datetime.strptime(donation[0][0],"%Y-%m-%d %H:%M:%S" )
-        val = (lastData - lastSun)
+        val = (lastDon - lastSun)
         if val.days == 0:
             remain = nextSun - datetime.utcnow()
             day = remain.days
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes [Zulu Time]")
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
             await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+            return
 
         else:
-            active = 7 - int(val.days)
-            await ctx.send(f"**WARNING**\nOnly {active} days of data has been recorded. Please "
-                "wait a full week before using this metric.")
+            active = datetime.utcnow() - lastDon
+            await ctx.send(f"**WARNING**\nOnly {active.days} days of data have been recorded. Please "
+                f"wait a full week before using this metric. \nFirst donation on: [{lastDon.strftime('%Y-%m-%d %H:%M:%S')} Zulu]")
 
             remain = nextSun - datetime.utcnow()
             day = remain.days
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
-                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes [Zulu Time]")
+                f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
             await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+            return
 
-@donation.error
-async def mydonations_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    else:
+        await ctx.send("No data was returned, try running me again.")
+
+# @donation.error
+# async def mydonations_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 #####################################################################################################################
                                              # Admin Commands
@@ -617,7 +630,7 @@ async def useradd(ctx, clash_tag, disc_mention):
         #     await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
         #     return
         ###############################################################################################
-        
+
         # Query CoC API to see if we have the right token and the right tag
         res = coc_client.get_member(clash_tag)
 
@@ -705,9 +718,7 @@ async def useradd(ctx, clash_tag, disc_mention):
                 msg = (f"UNIQUE constraint failed: MembersTable.Tag: {memStat.tag}\n\nUser already exists. Attempting to re-activate {memStat.name}")
                 await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
                 result = dbconn.is_Active((memStat.tag))
-                print(result)
                 if isinstance(result, str):
-                    print(result)
                     await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                     return
 
@@ -719,7 +730,6 @@ async def useradd(ctx, clash_tag, disc_mention):
                     result = dbconn.set_Active(("True", memStat.tag))
 
                     if isinstance(result, str):
-                        print(result)
                         await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                         return
                     else:
@@ -872,10 +882,9 @@ async def addnote(ctx, *, member: discord.Member = None):
         note = oldNote[0][8]
         note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
         note += f"{response.content}"
-        result = dbconn.set_kickNote((note, "False", member.id,))
+        result = dbconn.set_kickNote((note, "True", member.id,))
         if result == 1:
-            desc = (f"Successfully set {member.display_name} active status to False with "
-                "the note provided above.")
+            desc = (f"Successfully added a note to {member.display_name}")
             await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
             return  
         
@@ -895,6 +904,7 @@ async def lookup(ctx, option, *query):
     else:
         print("User is using the wrong server")
         return
+
     if botAPI.authorized(ctx, config):
         pass
     else:
@@ -906,6 +916,12 @@ async def lookup(ctx, option, *query):
         await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
         return
     
+    # disable showing notes if user is not in coc_head chats
+    inLeaderChat = False
+    if ctx.guild.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256]: #513334681354240000
+        inLeaderChat = True
+
+    # -tag option
     if option in ['--tag', '-t']:
         if len(query) != 1:
             desc = (f"Invalid argument supplied: {''.join(query)}")
@@ -925,8 +941,15 @@ async def lookup(ctx, option, *query):
                 embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
                 embed.add_field(name="DiscordID:", value=result[4], inline=False)
                 embed.add_field(name="Database Join:", value=result[5], inline=False)
-                embed.add_field(name="Active Status:", value=result[7], inline=False)
-                embed.add_field(name="Profile Note:", value=note, inline=False)
+                if result[7] == "True":
+                    active = "Active"
+                else:
+                    active = "Inactive"
+                embed.add_field(name="Status:", value=active, inline=False)
+                if inLeaderChat:
+                    embed.add_field(name="Profile Note:", value=note, inline=False)
+                else:
+                    embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 await ctx.send(embed=embed)
             return
         else:
@@ -953,8 +976,15 @@ async def lookup(ctx, option, *query):
                 embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
                 embed.add_field(name="DiscordID:", value=result[4], inline=False)
                 embed.add_field(name="Database Join:", value=result[5], inline=False)
-                embed.add_field(name="Active Status:", value=result[7], inline=False)
-                embed.add_field(name="Profile Note:", value=note, inline=False)
+                if result[7] == "True":
+                    active = "Active"
+                else:
+                    active = "Inactive"
+                embed.add_field(name="Status:", value=active, inline=False)
+                if inLeaderChat:
+                    embed.add_field(name="Profile Note:", value=note, inline=False)
+                else:
+                    embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 await ctx.send(embed=embed)
             return
         else:
@@ -996,8 +1026,15 @@ async def lookup(ctx, option, *query):
                 embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
                 embed.add_field(name="DiscordID:", value=result[4], inline=False)
                 embed.add_field(name="Database Join:", value=result[5], inline=False)
-                embed.add_field(name="Active Status:", value=result[7], inline=False)
-                embed.add_field(name="Profile Note:", value=note, inline=False)
+                if result[7] == "True":
+                    active = "Active"
+                else:
+                    active = "Inactive"
+                embed.add_field(name="Status:", value=active, inline=False)
+                if inLeaderChat:
+                    embed.add_field(name="Profile Note:", value=note, inline=False)
+                else:
+                    embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 await ctx.send(embed=embed)
             return
         else:
@@ -1173,43 +1210,93 @@ async def getmsg_error(ctx, error):
                                              # Displaying pandas data
 #####################################################################################################################
 @discord_client.command()
-async def dumpcurrent(ctx):
-    pass
-# conn = sqlite3.connect('Database/devdatabase.db')
-# sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
-# df = pd.read_sql_query(sql, conn)
-# clean_df = df
-# conn.close()
-# diff = df.groupby(['Name','Tag'])['Current_Donation'].agg(['min', 'max']).diff(axis=1)
-# diff.drop('min', axis=1, inplace = True)
-# diff.reset_index(inplace=True)
-# diff.rename(columns={'max':'Donation_Status'}, inplace=True)
-# diff.set_index('Tag', inplace=True)
-# diff
-# name_max = df.groupby(['Name','Tag'])['Current_Donation'].max()
-# name_max_df = name_max.to_frame()
-# name_max_df.reset_index(inplace=True)
-# name_max_df.set_index('Tag', inplace=True)
-# name_max_df
-# new_df = pd.merge(diff, name_max_df)
-# new_df.set_index('Name', inplace=True)
-# new_df.to_excel('TesterOne.xlsx')
+async def export(ctx):
+    # get last sunday integer to calculate last sunday. Then pull from that day and beyond
+    today = datetime.utcnow()
+    # use 5 minutes as a grace peried for when the db takes too long to update
+    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=5, second=0, microsecond=0)
+    # Calculate the date range for the sql query
+    startDate = (lastSunday - timedelta(weeks=4)).strftime('%Y-%m-%d %H:%M:%S')
+    endDate = lastSunday.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # query
+    sql = ("SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation " 
+    "From MembersTable, DonationsTable "
+    "WHERE MembersTable.Tag = DonationsTable.Tag "
+    "AND "
+    f"increment_date BETWEEN '{startDate}' AND '{endDate}';")
+    # Create df out of sql data
+    df = pd.read_sql_query(sql, dbconn.conn)
+    df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
 
+    # Create the date ranges
+    mask1 = (df['increment_date'] > (lastSunday - timedelta(days=7))) & (df['increment_date'] < lastSunday)
+    mask2 = (df['increment_date'] > (lastSunday - timedelta(days=14))) & (df['increment_date'] < (lastSunday - timedelta(days=7)))
+    mask3 = (df['increment_date'] > (lastSunday - timedelta(days=21))) & (df['increment_date'] < (lastSunday - timedelta(days=14)))
+    mask4 = (df['increment_date'] > (lastSunday - timedelta(days=28))) & (df['increment_date'] < (lastSunday - timedelta(days=21)))
 
+    # Calculate the donatio difference
+    df_out = df.loc[mask1].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
 
-# df = pd.read_sql_query(sql, conn)
-#sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
-#df2 = df.set_index('increment_date')
-# df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
-# df.groupby('Name')['Current_Donation'].max()
+    # Fix up the new column name
+    df_out.drop('min', axis=1, inplace=True)
+    df_out.rename(columns={'max':'Diff'}, inplace=True)
+    df_out = df_out[['Diff']].astype(np.int64)
+    df_out.reset_index(inplace=True)
 
+    # Set index to tag
+    df_out.set_index('Tag', inplace=True)
 
+    # Add a column for day of week, only count peoples donations that have a 0
+    df_out['Collection'] = df.loc[mask1].groupby('Tag')['increment_date'].min().dt.dayofweek
 
+    # Add a column for FIN
+    lastSunday = (lastSunday - timedelta(days=1))
+    df_out[lastSunday.strftime("%d%b").upper()] = df.loc[mask1].groupby('Tag')['Current_Donation'].max()
+    df_out = df_out[['Name','Collection','Diff', lastSunday.strftime("%d%b").upper()]]
+    
+    # Create the other three columns in the excel sheet
+    df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df.loc[mask2].groupby('Tag')[['Current_Donation']].max()
+    df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
 
-# sql = "SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation From MembersTable, DonationsTable Where MembersTable.Tag = DonationsTable.Tag;"
-# df = pd.read_sql_query(sql, conn)
-# df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
-# df.groupby('Name')['Current_Donation'].max()data.groupby(['col1', 'col2']).mean()
+    df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df.loc[mask3].groupby('Tag')[['Current_Donation']].max()
+    df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+
+    df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df.loc[mask4].groupby('Tag')[['Current_Donation']].max()
+    df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+
+    df_out.loc[df_out.Collection > 0, 'Diff'] = 0
+    df_out.drop('Collection', axis=1, inplace=True)
+
+    # Create workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+   
+    redFill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='00FF0000'))
+    yelFill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='00FFFF00'))
+    greFill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='0000FF00'))
+
+    for r in dataframe_to_rows(df_out, index=False, header=True):
+        ws.append(r)
+
+    for cell in ws['A'] + ws[1]:
+        cell.style = 'Pandas'
+
+    for cell in ws['B']:
+        if cell.value == 'Diff':
+            continue
+        if int(cell.value) < 300:
+            if int(ws['D'+str(cell.row)].value) == 0:
+                cell.fill = yelFill
+            else:
+                cell.fill = redFill
+        else:
+            cell.fill = greFill
+    
+    wb.save("pandas_openpyxl.xlsx")
+    f = discord.File("pandas_openpyxl.xlsx", filename=f'{lastSunday.strftime("%d%b").upper()}.xlsx')
+    await ctx.send(file=f)
+
 
 #####################################################################################################################
                                              # Loops & Kill Command
@@ -1284,7 +1371,7 @@ async def weeklyRefresh(discord_client, botMode):
             memStat = ClashStats.ClashStats(res.json())
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
-                  return
+                  
 
             # Grab the users discord object and the object for the TH role
             exists, disc_UserObj = botAPI.is_DiscordUser(guild, config, user[4])
