@@ -1299,10 +1299,6 @@ async def caketime(ctx):
         embed.set_footer(text=f"{str(ranCake.name)}")
         embed.set_image(url=f"attachment://{str(ranCake.name)}")
         await ctx.send(embed=embed, file=f)
-    
-    # f = discord.File("Images/Unranked_League.png", filename='unrank.png')
-    # embed.set_thumbnail(url="attachment://unrank.png")
-    # await ctx.send(embed=embed, file=f)
      
 
 #####################################################################################################################
