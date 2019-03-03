@@ -18,8 +18,10 @@ from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import *
 import io
-from os import path
+from os import path, listdir
 import pandas as pd
+from pathlib import Path
+import random
 import re
 from requests import get
 from sys import argv
@@ -1282,6 +1284,27 @@ async def getmessage(ctx, msgID):
 @getmessage.error
 async def getmsg_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+
+
+@discord_client.command()
+async def caketime(ctx):
+    cakePath = "Images/cakes"
+    ranCake = Path(cakePath).joinpath(random.choice(listdir(cakePath)))
+    f = discord.File(str(ranCake), filename=str(ranCake.name))
+    if ranCake.suffix == ".mp4":
+        await ctx.send(file=f)
+    else:
+        embed = discord.Embed(title='Nubbz',color=0xFFD700)
+        embed.set_footer(text=f"{str(ranCake.name)}")
+        embed.set_image(url=f"attachment://{str(ranCake.name)}")
+        await ctx.send(embed=embed, file=f)
+    
+    # f = discord.File("Images/Unranked_League.png", filename='unrank.png')
+    # embed.set_thumbnail(url="attachment://unrank.png")
+    # await ctx.send(embed=embed, file=f)
+     
+
 #####################################################################################################################
                                              # Displaying pandas data
 #####################################################################################################################
