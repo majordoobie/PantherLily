@@ -149,6 +149,8 @@ async def help(ctx, *option):
     disable_user = ("Command **does not** remove the user from discord. The command is used to set a users 'active' status to False. This terminates the "
         "donation tracking process on the user. The action is recorded in the Notes section of the users SQL table. ")
 
+    enable_user = ("Command **does not** register a user. This command is used to re-enable tracking a users donations. ")
+
     addnote = ("Append an administrative note to the users SQL table. The bot will automatically append the date and the user who added the note. "
         f"Please use {prefx}help --verbose to see more information on how to craft notes")
 
@@ -178,6 +180,8 @@ async def help(ctx, *option):
 
     helpp = (f"Display this help menu. Use {prefx}help --verbose for examples.")
 
+    export = (f"Command is used to export the weekly report. New reports are only available on Mondays at 0100 GMT (Sundays 2000).")
+
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}listroles**", value=listroles)
@@ -190,11 +194,13 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite)
         embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
         embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
+        embed.add_field(name=f"**{prefx}export**",value=export)
         await ctx.send(embed=embed)
 
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd)
         embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
+        embed.add_field(name=f"**{prefx}enable_user** <__@mention__>", value=enable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
         embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
@@ -772,6 +778,76 @@ async def useradd(ctx, clash_tag, disc_mention):
 async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
+@discord_client.command()
+async def enable_user(ctx, *, member: discord.Member = None):
+
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        print("User is using the wrong server")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    if member == None:
+        desc = (f"Mention argument is required")
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        return
+
+    msg = (f"You are about to set {member.display_name} CoC Member status to True "
+        "are you sure you would like to continue?\n(Yes/No)")
+    await ctx.send(msg)
+
+    response = await discord_client.wait_for('message', check = botAPI.yesno_check)
+    if response.content.lower() == 'no':
+        await ctx.send("Terminating function")
+        return
+
+    example = (f"{member.display_name} Back from LOA\n\n"
+        "msgID:546408720872112128\nmsgID:546408729155993615")
+
+    await ctx.send("A message is required. You are able to enter any text you "
+        f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
+        "any message IDs you have included in this note. To include a message "
+        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
+        f"```{example}```")
+
+    await ctx.send("Please enter your message:")
+
+    def check(m):
+        return m.author.id == ctx.author.id
+
+    response = await discord_client.wait_for('message', check=check)
+    await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
+
+    response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
+    if response2.content.lower() == 'no':
+        await ctx.send("Terminating function")
+        return
+
+    oldNote = dbconn.get_user_byDiscID((member.id,))
+    note = oldNote[0][8]
+    note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+    note += f"{response.content}"
+    result = dbconn.set_kickNote((note, "True", member.id,))
+    if result == 1:
+        desc = (f"Successfully set {member.display_name} active status to True with "
+            "the note provided above.")
+        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
+        return  
+    
+    else:
+        desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+            "user.")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
+        return 
+
+@enable_user.error
+async def enable_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def disable_user(ctx, *, member: discord.Member = None):
