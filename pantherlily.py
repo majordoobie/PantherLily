@@ -54,8 +54,8 @@ config = ConfigParser(allow_no_value=True)
 emoticons = ConfigParser(allow_no_value=True)
 
 if botMode == "liveBot":
-    configLoc = '/root/bots/waritsukeruBot/donatorConfig.ini'
-    emoticonLoc = '/'
+    configLoc = 'Configurations/zuluConfig.ini'
+    emoticonLoc = 'Configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
