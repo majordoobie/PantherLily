@@ -1448,8 +1448,8 @@ async def report(ctx):
 
     f = discord.File("report.html", filename="report.html")
     await ctx.send(file=f)
-    await ctx.send(f"Keep in mind that my database only updates every 15 minutes. To get an accurate count, use {prefx}donation. "
-        "\n**{wait_time} Minutes until next database update.")
+    await ctx.send(f"Keep in mind that the database only updates every 15 minutes. To get an accurate count, use {prefx}donation. "
+        f"\n**{wait_time} Minutes until next database update**")
     return
 
 #####################################################################################################################
