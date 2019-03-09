@@ -184,6 +184,9 @@ async def help(ctx, *option):
 
     export = (f"Command is used to export the weekly report. New reports are only available on Mondays at 0100 GMT (Sundays 2000).")
 
+    report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
+        "The output is a HTML file.")
+
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}listroles**", value=listroles)
@@ -197,6 +200,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
         embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
         embed.add_field(name=f"**{prefx}export**",value=export)
+        embed.add_field(name=f"**{prefx}report**",value=report)
         await ctx.send(embed=embed)
 
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
@@ -208,6 +212,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
         embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
         embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
+        embed.set_footer(text="Panther Lily Version: 0.8 BETA")
         await ctx.send(embed=embed)
 
     if option:
@@ -225,7 +230,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
             await ctx.send(embed=embed)
 
-            embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
+            embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com",)
             embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd_ex)
             embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
@@ -234,6 +239,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
             embed.add_field(name=f"**How to Craft Notes**", value=notes)
+            embed.set_footer(text="Panther Lily Version: 0.8 BETA")
             await ctx.send(embed=embed)
 
 
@@ -565,7 +571,7 @@ async def donation(ctx, *, user: discord.Member = None):
 
         else:
             active = datetime.utcnow() - lastDon
-            await ctx.send(f"**WARNING**\nOnly {active.days} days of data have been recorded. Please "
+            await ctx.send(f"**WARNING**\nOnly {active.days} day(s) of data have been recorded. Please "
                 f"wait a full week before using this metric. \nFirst donation on: [{lastDon.strftime('%Y-%m-%d %H:%M:%S')} Zulu]")
 
             remain = nextSun - datetime.utcnow()
@@ -996,7 +1002,7 @@ async def lookup(ctx, option, *query):
     
     # disable showing notes if user is not in coc_head chats
     inLeaderChat = False
-    if ctx.guild.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256]: #513334681354240000
+    if ctx.channel.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256]: #513334681354240000  
         inLeaderChat = True
 
     # -tag option
@@ -1239,7 +1245,8 @@ async def viewnote(ctx, *, member : discord.Member = None):
                         f"**Content:**\n{msg.clean_content}")
             return
     
-    await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
+    else:
+        await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
 
 @viewnote.error
 async def viewnote_error(ctx, error):
@@ -1324,6 +1331,10 @@ async def export(ctx):
     df = pd.read_sql_query(sql, dbconn.conn)
     df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
 
+    if df.empty:
+        await ctx.send("Not enough data collected to generate a report")
+        return
+
     # Create the date ranges
     mask1 = (df['increment_date'] > (lastSunday - timedelta(days=7))) & (df['increment_date'] < lastSunday)
     mask2 = (df['increment_date'] > (lastSunday - timedelta(days=14))) & (df['increment_date'] < (lastSunday - timedelta(days=7)))
@@ -1392,6 +1403,52 @@ async def export(ctx):
     f = discord.File("pandas_openpyxl.xlsx", filename=f'{lastSunday.strftime("%d%b").upper()}.xlsx')
     await ctx.send(file=f)
 
+@export.error
+async def export_err(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+@discord_client.command()
+async def report(ctx):
+    # get last sunday integer to calculate last sunday. Then pull from that day and beyond
+    today = datetime.utcnow()
+    # use 5 minutes as a grace peried for when the db takes too long to update
+    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=5, second=0, microsecond=0)
+    # Calculate the date range for the sql query
+    startDate = (lastSunday - timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+    sql = ("SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation " 
+        "From MembersTable, DonationsTable "
+        "WHERE MembersTable.Tag = DonationsTable.Tag "
+        "AND "
+        f"increment_date BETWEEN '{startDate}' AND '{today}';")
+
+    # Query DB then set date colulmn to date 
+    df = pd.read_sql_query(sql, dbconn.conn)
+
+    df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
+
+    # Get mask for previous week and current week
+    mask1 = ((df['increment_date'] > (startDate)) & (df['increment_date'] < lastSunday))
+    mask2 = df['increment_date'] > lastSunday
+
+    dfweek1 = df.loc[mask2].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+    dfweek1.drop('min', axis=1, inplace=True)
+    dfweek1.rename(columns={'max':'Diff'}, inplace=True)
+    dfweek1 = dfweek1[['Diff']].astype(np.int64)
+    dfweek1.reset_index(inplace=True)
+    dfweek1.set_index('Tag', inplace=True)
+    dfweek1["Current FIN"] = df.loc[mask2].groupby('Tag')['Current_Donation'].max()
+    dfweek1 = dfweek1[['Name','Diff', "Current FIN"]]
+    dfweek1[f'{lastSunday.strftime("%d%b").upper()}'] = df.loc[mask1].groupby('Tag')[['Current_Donation']].max()
+
+
+    # Test for html export
+    with open("report.html", "w") as outfile:
+        outfile.write(dfweek1.to_html(index=False))
+
+    f = discord.File("report.html", filename="report.html")
+    await ctx.send(file=f)
+    return
 
 #####################################################################################################################
                                              # Loops & Kill Command
@@ -1441,6 +1498,17 @@ async def weeklyRefresh(discord_client, botMode):
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
+
+        # Update message every time we update db
+        messages = [
+            "panther.help",
+            "Overwatch",
+            "Clash of Clans",
+            "Cat Nip",
+            "I'm not a cat!",
+        ]
+        game = Game(random.choice(messages))
+        await discord_client.change_presence(status=discord.Status.online, activity=game)
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
