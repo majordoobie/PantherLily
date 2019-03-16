@@ -1488,6 +1488,7 @@ async def weeklyRefresh(discord_client, botMode):
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         # Calculate the wait time in minute for next "top of hour"
+        global wait_time
         wait_time = 60 - datetime.utcnow().minute
         if wait_time <= 15:
             pass
@@ -1508,6 +1509,7 @@ async def weeklyRefresh(discord_client, botMode):
             "Clash of Clans",
             "Cat Nip",
             "I'm not a cat!",
+            "Spotify"
         ]
         game = Game(random.choice(messages))
         await discord_client.change_presence(status=discord.Status.online, activity=game)
