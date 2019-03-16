@@ -571,8 +571,7 @@ async def donation(ctx, *, user: discord.Member = None):
 
         else:
             active = datetime.utcnow() - lastDon
-            await ctx.send(f"**WARNING**\nOnly {active.days} day(s) of data have been recorded. Please "
-                f"wait a full week before using this metric. \nFirst donation on: [{lastDon.strftime('%Y-%m-%d %H:%M:%S')} Zulu]")
+            await ctx.send(f"**WARNING**\nOnly {active.days} day(s) of data have been recorded. \nFirst donation on: [{lastDon.strftime('%Y-%m-%d %H:%M:%S')} Zulu]")
 
             remain = nextSun - datetime.utcnow()
             day = remain.days
@@ -585,9 +584,9 @@ async def donation(ctx, *, user: discord.Member = None):
     else:
         await ctx.send("No data was returned, try running me again.")
 
-# @donation.error
-# async def mydonations_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@donation.error
+async def mydonations_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 #####################################################################################################################
                                              # Admin Commands
@@ -1448,8 +1447,7 @@ async def report(ctx):
 
     f = discord.File("report.html", filename="report.html")
     await ctx.send(file=f)
-    await ctx.send(f"Keep in mind that the database only updates every 15 minutes. To get an accurate count, use {prefx}donation. "
-        f"\n**{wait_time} Minutes until next database update**")
+    await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
 
 #####################################################################################################################
@@ -1488,7 +1486,6 @@ async def weeklyRefresh(discord_client, botMode):
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         # Calculate the wait time in minute for next "top of hour"
-        global wait_time
         wait_time = 60 - datetime.utcnow().minute
         if wait_time <= 15:
             pass
@@ -1511,8 +1508,9 @@ async def weeklyRefresh(discord_client, botMode):
             "I'm not a cat!",
             "Spotify"
         ]
-        game = Game(random.choice(messages))
-        await discord_client.change_presence(status=discord.Status.online, activity=game)
+        #game = Game(random.choice(messages))
+        game = Game("Updating users")
+        await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
@@ -1580,6 +1578,8 @@ async def weeklyRefresh(discord_client, botMode):
 
             # update users table
             dbconn.update_users((memStat.tag, memStat.townHallLevel, memStat.league_name))
+            game = Game(random.choice(messages))
+            await discord_client.change_presence(status=discord.Status.online, activity=game)
 
 
 if __name__ == "__main__":
