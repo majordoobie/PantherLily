@@ -23,7 +23,11 @@ class ClashStats():
         self.versusTrophies = jjson['versusTrophies']
         self.bestVersusTrophies = jjson['bestVersusTrophies']
         self.versusBattleWins = jjson['versusBattleWins']
-        self.role = jjson['role']
+        try:
+            self.role = jjson['role']
+        except:
+            self.role = "None"
+            
         self.donations = jjson['donations']
         self.donationsReceived = jjson['donationsReceived']
         self.versusBattleWinCount = jjson['versusBattleWinCount']

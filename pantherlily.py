@@ -33,7 +33,7 @@ import pandas as pd
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-
+import json
 #####################################################################################################################
                                              # Set up the environment
 #####################################################################################################################
@@ -1450,6 +1450,11 @@ async def report(ctx):
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
 
+@discord_client.command()
+async def test(ctx):
+    res = coc_client.get_member("PLPQYJOQQ")
+    with open("BIG.txt") as outfile:
+        json.dump(res.json(), outfile)
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
@@ -1497,7 +1502,8 @@ async def weeklyRefresh(discord_client, botMode):
             wait_time = wait_time - 45
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
-        await asyncio.sleep(wait_time * 60) #60
+        #await asyncio.sleep(wait_time * 60) #60
+        await asyncio.sleep(60)
 
         # Update message every time we update db
         messages = [
@@ -1516,6 +1522,7 @@ async def weeklyRefresh(discord_client, botMode):
         # Get all users in the database
         get_all = dbconn.get_allUsers()
 
+        print(f"Printing get_all\n{get_all}\n")
         # See if the users are still part of the clan
         user = ''
         for user in get_all:
@@ -1533,6 +1540,8 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Grab the users CoC stats to see if there is any updates needed on their row
             res = coc_client.get_member(user[0])
+
+            print(f"Printing the res\n{res}\n")
             memStat = ClashStats.ClashStats(res.json())
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
