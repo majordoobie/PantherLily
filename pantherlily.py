@@ -1453,7 +1453,7 @@ async def report(ctx):
 @discord_client.command()
 async def test(ctx):
     res = coc_client.get_member("PLPQYJOQQ")
-    with open("BIG.txt") as outfile:
+    with open("BIG.txt", 'w') as outfile:
         json.dump(res.json(), outfile)
 #####################################################################################################################
                                              # Loops & Kill Command
