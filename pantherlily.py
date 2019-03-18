@@ -1506,16 +1506,7 @@ async def weeklyRefresh(discord_client, botMode):
         await asyncio.sleep(60)
 
         # Update message every time we update db
-        messages = [
-            "panther.help",
-            "Overwatch",
-            "Clash of Clans",
-            "Cat Nip",
-            "I'm not a cat!",
-            "Spotify"
-        ]
-        #game = Game(random.choice(messages))
-        game = Game("Updating users")
+        game = Game("Updating Donations")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
@@ -1551,7 +1542,7 @@ async def weeklyRefresh(discord_client, botMode):
             try:
                 memStat = ClashStats.ClashStats(res.json())
             except:
-                print("Could not instantiate ClashStat object")
+                print("Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 continue
 
             # Grab the users discord object and the object for the TH role
@@ -1596,8 +1587,23 @@ async def weeklyRefresh(discord_client, botMode):
 
             # update users table
             dbconn.update_users((memStat.tag, memStat.townHallLevel, memStat.league_name))
-            game = Game(random.choice(messages))
-            await discord_client.change_presence(status=discord.Status.online, activity=game)
+
+            # reset message
+            messages = [
+                ("listening" ,   "Spotify"),
+                ("playing"   ,   "Overwatch"),
+                ("playing"   ,   "Clash of Clans"),
+                ("playing"   ,   "with cat nip~"),
+                ("streaming" ,   "Fairy Tail"),
+                ("playing"   ,   "I'm not a cat!"),
+                ("watching"  ,   "panther.help")
+            ]
+           
+            # activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
+            # await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
+            activ = random.choice(messages)
+            activity = discord.Activity(type = f"discord.ActivityType.watching.{activ[0]}", name=f"{activ[1]}")
+            await discord_client.change_presence(status=discord.Status.online, activity=activity)
 
 
 if __name__ == "__main__":
