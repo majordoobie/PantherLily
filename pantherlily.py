@@ -1545,13 +1545,14 @@ async def weeklyRefresh(discord_client, botMode):
                 print(f"Could not retrive clash member {user[0]} data")
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
+                  continue
 
             # Instantiate the users clash data
             try:
                 memStat = ClashStats.ClashStats(res.json())
             except:
                 print("Could not instantiate ClashStat object")
-
+                continue
 
             # Grab the users discord object and the object for the TH role
             exists, disc_UserObj = botAPI.is_DiscordUser(guild, config, user[4])
