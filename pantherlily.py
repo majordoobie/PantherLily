@@ -1539,16 +1539,24 @@ async def weeklyRefresh(discord_client, botMode):
                     dbconn.set_inPlanning(("False", user[0]))
 
             # Grab the users CoC stats to see if there is any updates needed on their row
-            res = coc_client.get_member(user[0])
-
-            print(f"Printing the res\n{res}\n")
-            memStat = ClashStats.ClashStats(res.json())
+            try:
+                res = coc_client.get_member(user[0])
+            except:
+                print(f"Could not retrive clash member {user[0]} data")
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
-                  
+
+            # Instantiate the users clash data
+            try:
+                memStat = ClashStats.ClashStats(res.json())
+            except:
+                print("Could not instantiate ClashStat object")
+
 
             # Grab the users discord object and the object for the TH role
             exists, disc_UserObj = botAPI.is_DiscordUser(guild, config, user[4])
+
+            print(f"printing exists and user obj {exists} {disc_UserObj}")
             if exists == False:
                 print(f"User does not exist {user[1]} does not exist in this server")
                 continue

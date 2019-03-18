@@ -27,18 +27,27 @@ class ClashStats():
             self.role = jjson['role']
         except:
             self.role = "None"
-            
+
         self.donations = jjson['donations']
         self.donationsReceived = jjson['donationsReceived']
         self.versusBattleWinCount = jjson['versusBattleWinCount']
 
         #Clan Level
-        self.clan_tag = jjson['clan']['tag']
-        self.clan_name = jjson['clan']['name']
-        self.clan_Level = jjson['clan']['clanLevel']
-        self.clan_badgeSmall = jjson['clan']['badgeUrls']['small']
-        self.clan_badgeMed = jjson['clan']['badgeUrls']['medium']
-        self.clan_badgeLarge = jjson['clan']['badgeUrls']['large']
+        clan = False
+        try:
+            jjson['clan']
+            clan = True
+        except:
+            self.clan_name = "None"
+            self.clan_tag = "None"
+
+        if clan:
+            self.clan_tag = jjson['clan']['tag']
+            self.clan_name = jjson['clan']['name']
+            self.clan_Level = jjson['clan']['clanLevel']
+            self.clan_badgeSmall = jjson['clan']['badgeUrls']['small']
+            self.clan_badgeMed = jjson['clan']['badgeUrls']['medium']
+            self.clan_badgeLarge = jjson['clan']['badgeUrls']['large']
 
         #League Level
         if 'league' in jjson.keys():
