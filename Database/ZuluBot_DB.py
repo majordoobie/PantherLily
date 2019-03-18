@@ -272,6 +272,19 @@ class ZuluDB:
         rows = cur.fetchall()
         return rows
 
+    def get_allUsersWhereTrue(self):
+        """ 
+        Get all rows from MembersTable table
+      
+        Parementers:
+            None
+        """
+        sql_query = ("SELECT * FROM MembersTable WHERE is_Active = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query , ('True',))
+        rows = cur.fetchall()
+        return rows
+
     def get_Donations(self, tupe):
         """ 
         Get all rows from DonationsTable table between last sunday and todays date

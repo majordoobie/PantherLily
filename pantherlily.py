@@ -1594,7 +1594,7 @@ async def weeklyRefresh(discord_client, botMode):
             (discord.ActivityType.watching.playing   ,   "Overwatch"),
             (discord.ActivityType.watching.playing   ,   "Clash of Clans"),
             (discord.ActivityType.watching.playing   ,   "with cat nip~"),
-            (discord.ActivityType.watching.streaming ,   "Fairy Tail"),
+            (discord.ActivityType.watching.watching ,   "Fairy Tail"),
             (discord.ActivityType.watching.playing   ,   "I'm not a cat!"),
             (discord.ActivityType.watching.watching  ,   "panther.help")
         ]
