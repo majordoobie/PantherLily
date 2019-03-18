@@ -1590,19 +1590,19 @@ async def weeklyRefresh(discord_client, botMode):
 
             # reset message
             messages = [
-                ("listening" ,   "Spotify"),
-                ("playing"   ,   "Overwatch"),
-                ("playing"   ,   "Clash of Clans"),
-                ("playing"   ,   "with cat nip~"),
-                ("streaming" ,   "Fairy Tail"),
-                ("playing"   ,   "I'm not a cat!"),
-                ("watching"  ,   "panther.help")
+                (discord.ActivityType.watching.listening ,   "Spotify"),
+                (discord.ActivityType.watching.playing   ,   "Overwatch"),
+                (discord.ActivityType.watching.playing   ,   "Clash of Clans"),
+                (discord.ActivityType.watching.playing   ,   "with cat nip~"),
+                (discord.ActivityType.watching.streaming ,   "Fairy Tail"),
+                (discord.ActivityType.watching.playing   ,   "I'm not a cat!"),
+                (discord.ActivityType.watching.watching  ,   "panther.help")
             ]
            
             # activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
             # await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
             activ = random.choice(messages)
-            activity = discord.Activity(type = f"discord.ActivityType.watching.{activ[0]}", name=f"{activ[1]}")
+            activity = discord.Activity(type = activ[0], name=activ[1])
             await discord_client.change_presence(status=discord.Status.online, activity=activity)
 
 
