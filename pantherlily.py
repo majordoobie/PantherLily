@@ -1427,8 +1427,8 @@ async def report(ctx):
     df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
 
     # Get mask for previous week and current week
-    mask1 = ((df['increment_date'] > (startDate)) & (df['increment_date'] < lastSunday))
-    mask2 = df['increment_date'] > lastSunday
+    mask1 = ((df['increment_date'] >= (startDate)) & (df['increment_date'] <= lastSunday))
+    mask2 = df['increment_date'] >= lastSunday
 
     dfweek1 = df.loc[mask2].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
     dfweek1.drop('min', axis=1, inplace=True)
@@ -1513,7 +1513,6 @@ async def weeklyRefresh(discord_client, botMode):
         # Get all users in the database
         get_all = dbconn.get_allUsersWhereTrue()
 
-        print(f"Printing get_all\n{get_all}\n")
         # See if the users are still part of the clan
         user = ''
         for user in get_all:
@@ -1548,7 +1547,6 @@ async def weeklyRefresh(discord_client, botMode):
             # Grab the users discord object and the object for the TH role
             exists, disc_UserObj = botAPI.is_DiscordUser(guild, config, user[4])
 
-            print(f"printing exists and user obj {exists} {disc_UserObj}")
             if exists == False:
                 print(f"User does not exist {user[1]} does not exist in this server")
                 continue
@@ -1598,9 +1596,7 @@ async def weeklyRefresh(discord_client, botMode):
             (discord.ActivityType.watching.playing   ,   "I'm not a cat!"),
             (discord.ActivityType.watching.watching  ,   "panther.help")
         ]
-        
-        # activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
-        # await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
+
         activ = random.choice(messages)
         activity = discord.Activity(type = activ[0], name=activ[1])
         await discord_client.change_presence(status=discord.Status.online, activity=activity)
