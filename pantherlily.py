@@ -1511,7 +1511,7 @@ async def weeklyRefresh(discord_client, botMode):
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
-        get_all = dbconn.get_allUsers()
+        get_all = dbconn.get_allUsersWhereTrue()
 
         print(f"Printing get_all\n{get_all}\n")
         # See if the users are still part of the clan
