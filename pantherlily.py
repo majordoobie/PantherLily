@@ -17,6 +17,7 @@ import asyncio
 from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import *
+from requests import Response
 import io
 from os import path, listdir
 import pandas as pd
@@ -1452,9 +1453,16 @@ async def report(ctx):
 
 @discord_client.command()
 async def test(ctx):
-    res = coc_client.get_member("#9P9PRYQJ")
-    with open("Doobie.txt", 'w') as outfile:
-        json.dump(res.json(), outfile)
+    
+    val = discord_client.get_channel(int(config["Discord"]["thelawn"]))
+    await val.send("Test")
+    # guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
+    # print(dir(discord_client))
+    # print("\n\n")
+    # print(dir(guild))
+    # res = coc_client.get_member("#9P9PRYQJ")
+    # with open("Doobie.txt", 'w') as outfile:
+    #     json.dump(res.json(), outfile)
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
@@ -1533,15 +1541,25 @@ async def weeklyRefresh(discord_client, botMode):
                 res = coc_client.get_member(user[0])
             except:
                 print(f"Could not retrive clash member {user[0]} data")
+                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data")
+                continue
+
+            if isinstance(res, Response) == False:
+                print(f"Could not retrive clash member {user[0]} {user[1]} data. Returned a None object")
+                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data. Returned a None object")
+                continue
+
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
+                  await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not connect to CoC API with {user[0]}")
                   continue
 
             # Instantiate the users clash data
             try:
                 memStat = ClashStats.ClashStats(res.json())
             except:
-                print("Could not instantiate ClashStat object: {user[0]} {user[1]}")
+                print(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
+                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 continue
 
             # Grab the users discord object and the object for the TH role
@@ -1549,6 +1567,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             if exists == False:
                 print(f"User does not exist {user[1]} does not exist in this server")
+                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"User does not exist {user[1]} does not exist in this server")
                 continue
 
             # Grab users role object
