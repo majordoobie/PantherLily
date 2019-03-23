@@ -1322,11 +1322,23 @@ async def export(ctx):
     endDate = lastSunday.strftime('%Y-%m-%d %H:%M:%S')
     
     # query
-    sql = ("SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation " 
-    "From MembersTable, DonationsTable "
-    "WHERE MembersTable.Tag = DonationsTable.Tag "
-    "AND "
-    f"increment_date BETWEEN '{startDate}' AND '{endDate}';")
+    sql = (f"""
+    SELECT 
+        MembersTable.Name, 
+		Memberstable.Tag, 
+		MembersTable.is_Active, 
+		DonationsTable.Tag, 
+		DonationsTable.increment_date, 
+		DonationsTable.Current_Donation 
+    FROM 
+		MembersTable, DonationsTable 
+	WHERE
+		MembersTable.Tag = DonationsTable.Tag
+	AND
+		DonationsTable.increment_date BETWEEN '{startDate}' AND '{endDate}'
+	AND
+		MembersTable.is_Active = 'True';
+       """)
     # Create df out of sql data
     df = pd.read_sql_query(sql, dbconn.conn)
     df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
@@ -1334,45 +1346,76 @@ async def export(ctx):
     if df.empty:
         await ctx.send("Not enough data collected to generate a report")
         return
-
+    
+    # Remove duplicate Tag column
+    df = df.loc[:,~df.columns.duplicated()]
+    
     # Create the date ranges
     mask1 = (df['increment_date'] > (lastSunday - timedelta(days=7))) & (df['increment_date'] < lastSunday)
     mask2 = (df['increment_date'] > (lastSunday - timedelta(days=14))) & (df['increment_date'] < (lastSunday - timedelta(days=7)))
     mask3 = (df['increment_date'] > (lastSunday - timedelta(days=21))) & (df['increment_date'] < (lastSunday - timedelta(days=14)))
     mask4 = (df['increment_date'] > (lastSunday - timedelta(days=28))) & (df['increment_date'] < (lastSunday - timedelta(days=21)))
 
-    # Calculate the donatio difference
-    df_out = df.loc[mask1].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+    # Take the max FIN of each user as a series and convert to our new DF
+    df_out = df.loc[mask1].groupby(['Name', 'Tag'])['Current_Donation'].max().reset_index()
 
-    # Fix up the new column name
-    df_out.drop('min', axis=1, inplace=True)
-    df_out.rename(columns={'max':'Diff'}, inplace=True)
-    df_out = df_out[['Diff']].astype(np.int64)
-    df_out.reset_index(inplace=True)
-
-    # Set index to tag
+    # Set index to the tags instead of the built-int int index
     df_out.set_index('Tag', inplace=True)
 
-    # Add a column for day of week, only count peoples donations that have a 0
-    df_out['Collection'] = df.loc[mask1].groupby('Tag')['increment_date'].min().dt.dayofweek
+    # Change column name of "Current FIN" to the date
+    df_out.rename(columns={"Current_Donation":f"{(lastSunday - timedelta(days=1)).strftime('%d%b').upper()}"}, inplace=True)
 
-    # Add a column for FIN
-    lastSunday = (lastSunday - timedelta(days=1))
-    df_out[lastSunday.strftime("%d%b").upper()] = df.loc[mask1].groupby('Tag')['Current_Donation'].max()
-    df_out = df_out[['Name','Collection','Diff', lastSunday.strftime("%d%b").upper()]]
+    # Do the same for the second column
+    df_out[f'{(lastSunday - timedelta(days=8)).strftime("%d%b").upper()}'] = df.loc[mask2].groupby(['Name', 'Tag'])['Current_Donation'].max().reset_index().set_index('Tag')['Current_Donation']
+    df_out[f'{(lastSunday - timedelta(days=8)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=8)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+    # And the third and fourth
+    df_out[f'{(lastSunday - timedelta(days=15)).strftime("%d%b").upper()}'] = df.loc[mask3].groupby(['Name', 'Tag'])['Current_Donation'].max().reset_index().set_index('Tag')['Current_Donation']
+    df_out[f'{(lastSunday - timedelta(days=15)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=15)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+    df_out[f'{(lastSunday - timedelta(days=22)).strftime("%d%b").upper()}'] = df.loc[mask4].groupby(['Name', 'Tag'])['Current_Donation'].max().reset_index().set_index('Tag')['Current_Donation']
+    df_out[f'{(lastSunday - timedelta(days=22)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=22)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+
+    # Calculate the difference between the two weeks
+    df_out['Diff'] = df_out.iloc[:,1] - df_out.iloc[:,2]
+
+    # Re order the columns
+    cols = df_out.columns.tolist()
+    cols.pop(-1)
+    cols.insert(1, "Diff")
+    df_out = df_out[cols]
+
+
+    # # Calculate the donatio difference
+    # df_out = df.loc[mask1].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+
+    # # Fix up the new column name
+    # df_out.drop('min', axis=1, inplace=True)
+    # df_out.rename(columns={'max':'Diff'}, inplace=True)
+    # df_out = df_out[['Diff']].astype(np.int64)
+    # df_out.reset_index(inplace=True)
+
+    # # Set index to tag
+    # df_out.set_index('Tag', inplace=True)
+
+    # # Add a column for day of week, only count peoples donations that have a 0
+    # df_out['Collection'] = df.loc[mask1].groupby('Tag')['increment_date'].min().dt.dayofweek
+
+    # # Add a column for FIN
+    # lastSunday = (lastSunday - timedelta(days=1))
+    # df_out[lastSunday.strftime("%d%b").upper()] = df.loc[mask1].groupby('Tag')['Current_Donation'].max()
+    # df_out = df_out[['Name','Collection','Diff', lastSunday.strftime("%d%b").upper()]]
     
-    # Create the other three columns in the excel sheet
-    df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df.loc[mask2].groupby('Tag')[['Current_Donation']].max()
-    df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+    # # Create the other three columns in the excel sheet
+    # df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df.loc[mask2].groupby('Tag')[['Current_Donation']].max()
+    # df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
 
-    df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df.loc[mask3].groupby('Tag')[['Current_Donation']].max()
-    df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+    # df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df.loc[mask3].groupby('Tag')[['Current_Donation']].max()
+    # df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
 
-    df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df.loc[mask4].groupby('Tag')[['Current_Donation']].max()
-    df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
+    # df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df.loc[mask4].groupby('Tag')[['Current_Donation']].max()
+    # df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
 
-    df_out.loc[df_out.Collection > 0, 'Diff'] = 0
-    df_out.drop('Collection', axis=1, inplace=True)
+    # df_out.loc[df_out.Collection > 0, 'Diff'] = 0
+    # df_out.drop('Collection', axis=1, inplace=True)
 
     # Create workbook
     wb = openpyxl.Workbook()
