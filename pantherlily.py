@@ -1497,7 +1497,7 @@ async def report(ctx):
     df_out['Current_FIN'] = df.loc[after_sun].groupby(['Tag'])['Current_Donation'].max()
 
     # create last sunday column
-    df_out[f'{lastSunday.strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
+    df_out[f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
 
     # Clean up data change NaN and Float to int
     df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
