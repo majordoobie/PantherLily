@@ -1452,42 +1452,59 @@ async def export_err(ctx, error):
 
 @discord_client.command()
 async def report(ctx):
-    # get last sunday integer to calculate last sunday. Then pull from that day and beyond
     today = datetime.utcnow()
-    # use 5 minutes as a grace peried for when the db takes too long to update
-    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=5, second=0, microsecond=0)
-    # Calculate the date range for the sql query
+    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
+    today = today.strftime('%Y-%m-%d %H:%M:%S')
     startDate = (lastSunday - timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
 
-    sql = ("SELECT MembersTable.Name, Memberstable.Tag, increment_date, DonationsTable.Current_Donation " 
-        "From MembersTable, DonationsTable "
-        "WHERE MembersTable.Tag = DonationsTable.Tag "
-        "AND "
-        f"increment_date BETWEEN '{startDate}' AND '{today}';")
+    sql = (f"""
+        SELECT MembersTable.Name, 
+            Memberstable.Tag, 
+            MembersTable.is_Active, 
+            DonationsTable.Tag, 
+            DonationsTable.increment_date, 
+            DonationsTable.Current_Donation 
+        FROM 
+            MembersTable, DonationsTable 
+        WHERE
+            MembersTable.Tag = DonationsTable.Tag
+        AND
+            DonationsTable.increment_date BETWEEN '{startDate}' AND '{today}'
+        AND
+            MembersTable.is_Active = 'True';
+        """)
 
-    # Query DB then set date colulmn to date 
+    # read SQL then convert date to tdate
     df = pd.read_sql_query(sql, dbconn.conn)
-
     df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
 
-    # Get mask for previous week and current week
-    mask1 = ((df['increment_date'] >= (startDate)) & (df['increment_date'] <= lastSunday))
-    mask2 = df['increment_date'] >= lastSunday
+    # Remove duplicate Tag column
+    df = df.loc[:,~df.columns.duplicated()]
 
-    dfweek1 = df.loc[mask2].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
-    dfweek1.drop('min', axis=1, inplace=True)
-    dfweek1.rename(columns={'max':'Diff'}, inplace=True)
-    dfweek1 = dfweek1[['Diff']].astype(np.int64)
-    dfweek1.reset_index(inplace=True)
-    dfweek1.set_index('Tag', inplace=True)
-    dfweek1["Current FIN"] = df.loc[mask2].groupby('Tag')['Current_Donation'].max()
-    dfweek1 = dfweek1[['Name','Diff', "Current FIN"]]
-    dfweek1[f'{lastSunday.strftime("%d%b").upper()}'] = df.loc[mask1].groupby('Tag')[['Current_Donation']].max()
+    # First make the two masks
+    before_sun = df['increment_date'] <= lastSunday
+    after_sun = df['increment_date'] >= lastSunday   
 
+    # Calculate the diff for this week and save it to its own DF
+    # Rename column, reset index
+    df_out = df.loc[after_sun].groupby(['Tag', 'Name'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+    df_out.drop('min', axis=1, inplace=True)
+    df_out.rename(columns={'max':'Current'}, inplace=True)
+    df_out.reset_index(inplace=True)
+    df_out.set_index('Tag', inplace=True)
+
+    # Create current FIN column
+    df_out['Current_FIN'] = df.loc[after_sun].groupby(['Tag'])['Current_Donation'].max()
+
+    # create last sunday column
+    df_out[f'{lastSunday.strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
+
+    # Clean up data change NaN and Float to int
+    df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
 
     # Test for html export
     with open("report.html", "w") as outfile:
-        outfile.write(dfweek1.to_html(index=False))
+        outfile.write(df_out.to_html(index=False))
 
     f = discord.File("report.html", filename="report.html")
     await ctx.send(file=f)
