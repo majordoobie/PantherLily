@@ -895,8 +895,9 @@ async def disable_user(ctx, *, member: discord.Member = None):
     await ctx.send("A kick message is required. You are able to enter any text you "
         f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
         "any message IDs you have included in this kick message. To include a message "
-        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
-        "```\n"
+        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**")
+        
+    await ctx.send("```\n"
         f"{example}\n"
         "```")
 
