@@ -822,8 +822,9 @@ async def enable_user(ctx, *, member: discord.Member = None):
     await ctx.send("A message is required. You are able to enter any text you "
         f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
         "any message IDs you have included in this note. To include a message "
-        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
-        "```\n"
+        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**")
+    
+    await ctx.send("```\n"
         f"{example}\n"
         "```")
 
@@ -956,7 +957,11 @@ async def addnote(ctx, *, member: discord.Member = None):
     if len(result) == 1:
         example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
         await ctx.send(f"What would you like to add {ctx.author.display_name}? "
-            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\nExample\n```\n{example}\n```\nEnter message:")
+            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\n**Example**\n")
+                
+        await ctx.send("```\n"
+            f"{example}\n"
+            "```")
 
         def check(m):
             return m.author.id == ctx.author.id
@@ -1160,8 +1165,14 @@ async def deletenote(ctx, *, member : discord.Member = None):
     result = dbconn.get_user_byDiscID((member.id,))
     if len(result) == 1:
         note = result[0][8]
-        await ctx.send(f"The current note set for {member.display_name} is:\n\n```{note}```\n\n "
-            "Would you like to proceed with deleting this note? This action cannot be undone.\n(Yes/No)")
+        await ctx.send(f"The current note set for {member.display_name} is:\n\n```{note}```\n\n ")
+
+        await ctx.send("```\n"
+            f"{note}\n"
+            "```")
+
+        await ctx.send("Would you like to proceed with deleting this note? This action cannot be undone.\n(Yes/No)")
+
         response = await discord_client.wait_for('message', check = botAPI.yesno_check)
         if response.content.lower() == "no":
             await ctx.send("Terminating function")
