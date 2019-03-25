@@ -559,7 +559,9 @@ async def donation(ctx, *, user: discord.Member = None):
     nextSun = lastSun + timedelta(days=7)
     donation = dbconn.get_Donations((result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
     lastDon = datetime.strptime(donation[0][0], "%Y-%m-%d %H:%M:%S")
-    if len(donation) > 1:
+
+
+    if len(donation) > 2:
         val = (lastDon - lastSun)
         if val.days == 0:
             remain = nextSun - datetime.utcnow()
@@ -821,7 +823,9 @@ async def enable_user(ctx, *, member: discord.Member = None):
         f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
         "any message IDs you have included in this note. To include a message "
         "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
-        f"```{example}```")
+        "```\n"
+        f"{example}\n"
+        "```")
 
     await ctx.send("Please enter your message:")
 
@@ -892,7 +896,9 @@ async def disable_user(ctx, *, member: discord.Member = None):
         f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
         "any message IDs you have included in this kick message. To include a message "
         "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**"
-        f"```{example}```")
+        "```\n"
+        f"{example}\n"
+        "```")
 
     await ctx.send("Please enter your message:")
 
@@ -949,7 +955,7 @@ async def addnote(ctx, *, member: discord.Member = None):
     if len(result) == 1:
         example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
         await ctx.send(f"What would you like to add {ctx.author.display_name}? "
-            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\nExample\n```{example}```\nEnter message:")
+            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\nExample\n```\n{example}\n```\nEnter message:")
 
         def check(m):
             return m.author.id == ctx.author.id
@@ -1513,16 +1519,7 @@ async def report(ctx):
 
 @discord_client.command()
 async def test(ctx):
-    
-    val = discord_client.get_channel(int(config["Discord"]["thelawn"]))
-    await val.send("Test")
-    # guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
-    # print(dir(discord_client))
-    # print("\n\n")
-    # print(dir(guild))
-    # res = coc_client.get_member("#9P9PRYQJ")
-    # with open("Doobie.txt", 'w') as outfile:
-    #     json.dump(res.json(), outfile)
+    pass
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
@@ -1570,8 +1567,8 @@ async def weeklyRefresh(discord_client, botMode):
             wait_time = wait_time - 45
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
-        #await asyncio.sleep(wait_time * 60) #60
-        await asyncio.sleep(60)
+        await asyncio.sleep(wait_time * 60) #60
+        #await asyncio.sleep(60)
 
         # Update message every time we update db
         game = Game("Updating Donations")
