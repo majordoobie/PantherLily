@@ -1393,7 +1393,8 @@ async def export(ctx):
     df_out[f'{(lastSunday - timedelta(days=22)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=22)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
 
     # Calculate the difference between the two weeks
-    df_out['Diff'] = df_out.iloc[:,1] - df_out.iloc[:,2]
+    #df_out['Diff'] = df_out.iloc[:,1] - df_out.iloc[:,2]
+    df_out['Diff'] = df_out.apply(lambda x: x[1] - x[2] if x[2] > 0 else 0, axis=1)
 
     # Re order the columns
     cols = df_out.columns.tolist()
