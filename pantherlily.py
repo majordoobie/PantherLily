@@ -595,7 +595,7 @@ async def mydonations_error(ctx, error):
                                              # Admin Commands
 #####################################################################################################################
 @discord_client.command()
-async def useradd(ctx, clash_tag, disc_mention):
+async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
@@ -755,10 +755,16 @@ async def useradd(ctx, clash_tag, disc_mention):
                 await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
                 return
 
+        # Add the ability to override the current fin so that we can get the fin from the last "Sunday"
+        if fin_override:
+            fin_apply = fin_override
+        else:
+            fin_apply = memStat.achieve['Friend in Need']['value']
+
         error = dbconn.update_donations((
             datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
             memStat.tag,
-            memStat.achieve['Friend in Need']['value'],
+            fin_apply,
             "True",
             memStat.trophies
             ))
@@ -767,21 +773,26 @@ async def useradd(ctx, clash_tag, disc_mention):
             await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
             return
 
-        memStat = ClashStats.ClashStats(res.json())
-        desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
-        embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
-        embed.add_field(name = "Heroes", value=heroLevels, inline = False)
-        embed.add_field(name = "Troops", value=troopLevels, inline = False)
-        embed.add_field(name = "Spells", value=spellLevels, inline = False)
-        embed.set_thumbnail(url=memStat.league_badgeSmall)
-        await ctx.send(embed=embed)
 
-        channel = botAPI.invite(discord_client, targetServer, targetChannel)
-        await ctx.send(await channel.create_invite(max_age=600, max_uses=1))
-        msg = (f"Welcome to Reddit Zulu {disc_userObj.mention}! "
-        f"Please use the link above to join our planning server. The server is used to "
-        "plan attacks with your new clanmates!")
-        await ctx.send(msg)
+        # Disabled for now
+        # memStat = ClashStats.ClashStats(res.json())
+        # desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
+        # embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
+        # embed.add_field(name = "Heroes", value=heroLevels, inline = False)
+        # embed.add_field(name = "Troops", value=troopLevels, inline = False)
+        # embed.add_field(name = "Spells", value=spellLevels, inline = False)
+        # embed.set_thumbnail(url=memStat.league_badgeSmall)
+        # await ctx.send(embed=embed)
+
+
+        # Disabled for now
+        # channel = botAPI.invite(discord_client, targetServer, targetChannel)
+        # await ctx.send(await channel.create_invite(max_age=600, max_uses=1))
+        # msg = (f"Welcome to Reddit Zulu {disc_userObj.mention}! "
+        # f"Please use the link above to join our planning server. The server is used to "
+        # "plan attacks with your new clanmates!")
+        # await ctx.send(msg)
+
         return
 
 @useradd.error
