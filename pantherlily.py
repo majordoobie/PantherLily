@@ -778,6 +778,8 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
             await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
             return
 
+        await ctx.send("User added")
+
 
         # Disabled for now
         # memStat = ClashStats.ClashStats(res.json())
