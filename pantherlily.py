@@ -405,7 +405,8 @@ async def roster(ctx):
         if len(line) > 1700:
             await ctx.send(line)
             line = ''
-    await ctx.send(line)
+    if line != '':
+        await ctx.send(line)
     await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
         "to get an up to date list of clan members.")
 
