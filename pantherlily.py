@@ -610,11 +610,15 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
     # If user is authorized to use this command
     if botAPI.authorized(ctx, config):
         clash_tag = clash_tag.lstrip("#")
-        if disc_mention.startswith("<") == False:
+        if disc_mention.isdigit():
+            pass
+
+        elif disc_mention.startswith("<") == False:
             msg = (f"Could not interpret the {disc_mention} argument. Make sure "
             "that you are mentioning the user such as @user")
             await ctx.send(embed=Embed(title=msg, color=0xff0000))
             return
+            
         else:
             member_ID = ''.join(list(disc_mention)[2:-1])
             if member_ID.startswith("!"):
