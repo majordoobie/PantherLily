@@ -240,7 +240,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
             embed.add_field(name=f"**How to Craft Notes**", value=notes)
-            embed.set_footer(text="Panther Lily Version: 0.8 BETA")
+            embed.set_footer(text="Panther Lily Version: 0.13 BETA")
             await ctx.send(embed=embed)
 
 
