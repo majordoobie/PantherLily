@@ -188,6 +188,8 @@ async def help(ctx, *option):
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
 
+    versioning = ("Panther Lily Version: 1.0 Public Beta")
+
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}listroles**", value=listroles)
@@ -213,7 +215,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
         embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
         embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
-        embed.set_footer(text="Panther Lily Version: 0.8 BETA")
+        embed.set_footer(text=versioning)
         await ctx.send(embed=embed)
 
     if option:
@@ -240,7 +242,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
             embed.add_field(name=f"**How to Craft Notes**", value=notes)
-            embed.set_footer(text="Panther Lily Version: 1.0 Public Beta")
+            embed.set_footer(text=versioning)
             await ctx.send(embed=embed)
 
 
