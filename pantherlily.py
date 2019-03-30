@@ -205,7 +205,7 @@ async def help(ctx, *option):
         await ctx.send(embed=embed)
 
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
-        embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd)
+        embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
         embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
         embed.add_field(name=f"**{prefx}enable_user** <__@mention__>", value=enable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
@@ -232,7 +232,7 @@ async def help(ctx, *option):
             await ctx.send(embed=embed)
 
             embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com",)
-            embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__>", value=useradd_ex)
+            embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
             embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
             embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__mention__>", value=lookup_ex)
@@ -240,7 +240,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
             embed.add_field(name=f"**How to Craft Notes**", value=notes)
-            embed.set_footer(text="Panther Lily Version: 0.13 BETA")
+            embed.set_footer(text="Panther Lily Version: 1.0 Public Beta")
             await ctx.send(embed=embed)
 
 
