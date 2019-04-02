@@ -199,6 +199,14 @@ class BotAssist:
                 return self.get_RoleObj(guild, str_role)
         return None
 
+
+    async def userConverter(self, ctx, arg):
+        """ Used to find a user based on their mention / ID / or name """
+        try:
+            return await discord.ext.commands.MemberConverter().convert(ctx, arg) 
+        except:
+            return None
+
          
 
             
