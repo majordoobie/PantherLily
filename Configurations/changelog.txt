@@ -1,0 +1,8 @@
+[Version 1.1]
+2APR2019~
+[Fixed] How commands parse user arguments. Instead of manually parsing a @mention the discord.py
+Convert is used. It can now handle @mention, discord_IDs, usernames and display names. 
+
+[Added] Since username look ups are case sensitive I added a function that pulls all the user
+names from the DB and than manually search through it for match the string then return the
+the discord ID saved in the DB

@@ -188,7 +188,7 @@ async def help(ctx, *option):
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
 
-    versioning = ("Panther Lily Version: 1.0 Public Beta")
+    versioning = ("Panther Lily Version: 1.1")
 
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
