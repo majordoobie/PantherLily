@@ -16,7 +16,7 @@ import aiohttp
 import asyncio
 from collections import OrderedDict
 from configparser import ConfigParser
-from datetime import *
+from datetime import datetime, timedelta
 from requests import Response
 import io
 from os import path, listdir
@@ -602,207 +602,181 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
+    # test if the user ran the command from the right server 
     if botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
-
+        pass
     else:
         print("User is using the wrong server")
         return
 
     # If user is authorized to use this command
     if botAPI.authorized(ctx, config):
-        clash_tag = clash_tag.lstrip("#")
-        if disc_mention.isdigit():
-            pass
+        pass
+    else:
+        await ctx.send("You are not authorized to use this command")
+        return
 
-        elif disc_mention.startswith("<") == False:
-            msg = (f"Could not interpret the {disc_mention} argument. Make sure "
-            "that you are mentioning the user such as @user")
-            await ctx.send(embed=Embed(title=msg, color=0xff0000))
-            return
-            
-        else:
-            member_ID = ''.join(list(disc_mention)[2:-1])
-            if member_ID.startswith("!"):
-                disc_mention = member_ID[1:]
+    
+    clash_tag = clash_tag.lstrip("#")
+    disc_userObj = botAPI.userConverter(ctx, disc_mention)
+
+    if disc_userObj == None:
+        msg = (f"User id {disc_mention} does not exist on this server.")
+        await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+        return
+    else:
+        pass
+
+    # Query CoC API to see if we have the right token and the right tag
+    res = coc_client.get_member(clash_tag)
+
+    # Handle HTTP error 
+    if res.status_code != 200:
+        msg = (f"Clash tag {clash_tag} was not found in Reddit Zulu. "
+        "Or our exit node is not currently whitelisted. "
+        f"Use {config[botMode]['bot_Prefix']}lcm to see the available Clash tags "
+        "in Reddit Zulu and to verify if your IP is whitelisted.")
+        await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
+        return
+    else:
+        memStat = ClashStats.ClashStats(res.json())
+
+    # Retrieve the CoC Members Role Object
+    CoCMem_Role = botAPI.get_RoleObj(ctx.guild, "CoC Members")
+    if isinstance(CoCMem_Role, discord.Role) == False:
+        msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
+        await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+        return
+
+    # Retrieve the townHall Role Object
+    thLvl_Role = botAPI.get_townhallRole(ctx.guild, memStat.townHallLevel)
+    if isinstance(thLvl_Role, discord.Role) == False:
+        msg = (f"Town Hall Level {memStat.townHallLevel} is currently not supported")
+        await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+        return
+
+    # Change users default roles
+    msg = (f"Applying default roles to {memStat.name}")
+    await ctx.send(embed = Embed(title=msg, color=0x5c0189))
+    if botAPI.contains_Role(disc_userObj, "CoC Members"):
+        msg = (f"{memStat.name} already has CoC Members role.")
+        await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
+    else:
+        await disc_userObj.add_roles(CoCMem_Role)
+        msg = (f"CoC Members role applied.")
+        await ctx.send(embed = Embed(description=msg, color=0x00ff00))
+
+    if botAPI.contains_Role(disc_userObj, thLvl_Role.name):
+        msg = (f"{memStat.name} already has {thLvl_Role.name} role.")
+        await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
+    else:
+        contains, role = botAPI.contains_thRole(disc_userObj)
+        if contains:
+            await disc_userObj.remove_roles(botAPI.get_RoleObj(ctx, role))
+        await disc_userObj.add_roles(thLvl_Role)
+        msg = (f"{thLvl_Role.name} role applied.")
+        await ctx.send(embed = Embed(description=msg, color=0x00ff00))
+
+    msg = (f"Changing {memStat.name}'s nickname to reflect their in-game name.")
+    await ctx.send(embed = Embed(title=msg, color=0x5c0189))
+
+    # Change users nickname
+    if disc_userObj.display_name == memStat.name:
+        msg = (f"{memStat.name}'s discord nickname already reflects their in-game name.")
+        await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
+    else:
+        oldName = disc_userObj.display_name
+        try:
+            await disc_userObj.edit(nick=memStat.name)
+            msg = (f"Changed {memStat.name} discord nickname from {oldName} to {memStat.name}")
+            await ctx.send(embed = Embed(description=msg, color=0x00ff00))
+        except:
+            msg = (f"It is impossible for a mere bot to change the nickname of a boss like you. "
+            "Seriously though, bots are prohibited from doing this action to a discord leader.")
+            await ctx.send(embed = Embed(description=msg, color=0xff0000))
+
+
+    # Add user to database
+    msg = (f"Adding {memStat.name} to Reddit Zulu's database.")
+    await ctx.send(embed = Embed(title=msg, color=0x5c0189))
+    error = dbconn.insert_userdata((
+        memStat.tag,
+        memStat.name,
+        memStat.townHallLevel,
+        memStat.league_name,
+        disc_userObj.id,
+        disc_userObj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
+        "False",
+        "True",
+        "",
+    ))
+    if error != None:
+        if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
+            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {memStat.tag}\n\nUser already exists. Attempting to re-activate {memStat.name}")
+            await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
+            result = dbconn.is_Active((memStat.tag))
+            if isinstance(result, str):
+                await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
+                return
+
+            elif result[7] == "True": # If activ
+                msg = (f"{memStat.name} is already set to active in the database.")
+                await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000))
+                return
             else:
-                disc_mention = member_ID
-        # Evaluate if the discord user exists
-        exists, disc_userObj = botAPI.is_DiscordUser(ctx.guild, config, disc_mention)
+                result = dbconn.set_Active(("True", memStat.tag))
 
-        if exists == False:
-            msg = (f"User id {disc_mention} does not exist on this server.")
-            await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
-            return
-        else:
-            pass
-
-        # Evaluate if the user is part of reddit zulu
-        res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
-        # Disabled since it takes time for people to join the clan at times because they're waiting to 
-        # finish other priorities
-        ###############################################################################################
-        # inClan = False
-        # for user in res.json()['memberList']:
-        #     if user['tag'].lstrip("#").upper() == clash_tag.upper():
-        #         inClan = True
-
-        # if inClan == False:
-        #     msg = (f"{disc_userObj.display_name} must be part of Reddit Zulu before adding them.")
-        #     await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
-        #     return
-        ###############################################################################################
-
-        # Query CoC API to see if we have the right token and the right tag
-        res = coc_client.get_member(clash_tag)
-
-        if res.status_code != 200:
-            msg = (f"Clash tag {clash_tag} was not found in Reddit Zulu. "
-            "Or our exit node is not currently whitelisted. "
-            f"Use {config[botMode]['bot_Prefix']}lcm to see the available Clash tags "
-            "in Reddit Zulu and to verify if your IP is whitelisted.")
-            await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
-            return
-        else:
-            memStat = ClashStats.ClashStats(res.json())
-
-        # Retrieve the CoC Members Role Object
-        CoCMem_Role = botAPI.get_RoleObj(ctx.guild, "CoC Members")
-        if isinstance(CoCMem_Role, discord.Role) == False:
-            msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
-            await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
-            return
-
-        # Retrieve the townHall Role Object
-        thLvl_Role = botAPI.get_townhallRole(ctx.guild, memStat.townHallLevel)
-        if isinstance(thLvl_Role, discord.Role) == False:
-            msg = (f"Town Hall Level {memStat.townHallLevel} is currently not supported")
-            await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
-            return
-
-        # Change users default roles
-        msg = (f"Applying default roles to {memStat.name}")
-        await ctx.send(embed = Embed(title=msg, color=0x5c0189))
-        if botAPI.contains_Role(disc_userObj, "CoC Members"):
-            msg = (f"{memStat.name} already has CoC Members role.")
-            await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-        else:
-            await disc_userObj.add_roles(CoCMem_Role)
-            msg = (f"CoC Members role applied.")
-            await ctx.send(embed = Embed(description=msg, color=0x00ff00))
-
-        if botAPI.contains_Role(disc_userObj, thLvl_Role.name):
-            msg = (f"{memStat.name} already has {thLvl_Role.name} role.")
-            await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-        else:
-            contains, role = botAPI.contains_thRole(disc_userObj)
-            if contains:
-                await disc_userObj.remove_roles(botAPI.get_RoleObj(ctx, role))
-            await disc_userObj.add_roles(thLvl_Role)
-            msg = (f"{thLvl_Role.name} role applied.")
-            await ctx.send(embed = Embed(description=msg, color=0x00ff00))
-
-        msg = (f"Changing {memStat.name}'s nickname to reflect their in-game name.")
-        await ctx.send(embed = Embed(title=msg, color=0x5c0189))
-
-        # Change users nickname
-        if disc_userObj.display_name == memStat.name:
-            msg = (f"{memStat.name}'s discord nickname already reflects their in-game name.")
-            await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-        else:
-            oldName = disc_userObj.display_name
-            try:
-                await disc_userObj.edit(nick=memStat.name)
-                msg = (f"Changed {memStat.name} discord nickname from {oldName} to {disc_userObj.name}")
-                await ctx.send(embed = Embed(description=msg, color=0x00ff00))
-            except:
-                msg = (f"It is impossible for a mere bot to change the nickname of a boss like you. "
-                "Seriously though, bots are prohibited from doing this action to a discord leader.")
-                await ctx.send(embed = Embed(description=msg, color=0xff0000))
-
-
-        # Add user to database
-        msg = (f"Adding {memStat.name} to Reddit Zulu's database.")
-        await ctx.send(embed = Embed(title=msg, color=0x5c0189))
-        error = dbconn.insert_userdata((
-            memStat.tag,
-            memStat.name,
-            memStat.townHallLevel,
-            memStat.league_name,
-            disc_userObj.id,
-            disc_userObj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
-            "False",
-            "True",
-            "",
-        ))
-        if error != None:
-            if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
-                msg = (f"UNIQUE constraint failed: MembersTable.Tag: {memStat.tag}\n\nUser already exists. Attempting to re-activate {memStat.name}")
-                await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
-                result = dbconn.is_Active((memStat.tag))
                 if isinstance(result, str):
                     await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                     return
-
-                elif result[7] == "True": # If activ
-                    msg = (f"{memStat.name} is already set to active in the database.")
-                    await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000))
-                    return
                 else:
-                    result = dbconn.set_Active(("True", memStat.tag))
-
-                    if isinstance(result, str):
-                        await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
-                        return
-                    else:
-                        msg = (f"Successfully set {memStat.name} to active")
-                        await ctx.send(embed = Embed(description=msg, color=0x00FF00))
-            else:
-                await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
-                return
-
-        # Add the ability to override the current fin so that we can get the fin from the last "Sunday"
-        if fin_override:
-            fin_apply = fin_override
+                    msg = (f"Successfully set {memStat.name} to active")
+                    await ctx.send(embed = Embed(description=msg, color=0x00FF00))
         else:
-            fin_apply = memStat.achieve['Friend in Need']['value']
-
-        error = dbconn.update_donations((
-            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            memStat.tag,
-            fin_apply,
-            "True",
-            memStat.trophies
-            ))
-
-        if isinstance(error, str):
-            await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
+            await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
             return
 
-        await ctx.send("User added")
+    # Add the ability to override the current fin so that we can get the fin from the last "Sunday"
+    if fin_override:
+        fin_apply = fin_override
+    else:
+        fin_apply = memStat.achieve['Friend in Need']['value']
 
+    error = dbconn.update_donations((
+        datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        memStat.tag,
+        fin_apply,
+        "True",
+        memStat.trophies
+        ))
 
-        # Disabled for now
-        # memStat = ClashStats.ClashStats(res.json())
-        # desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
-        # embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
-        # embed.add_field(name = "Heroes", value=heroLevels, inline = False)
-        # embed.add_field(name = "Troops", value=troopLevels, inline = False)
-        # embed.add_field(name = "Spells", value=spellLevels, inline = False)
-        # embed.set_thumbnail(url=memStat.league_badgeSmall)
-        # await ctx.send(embed=embed)
-
-
-        # Disabled for now
-        # channel = botAPI.invite(discord_client, targetServer, targetChannel)
-        # await ctx.send(await channel.create_invite(max_age=600, max_uses=1))
-        # msg = (f"Welcome to Reddit Zulu {disc_userObj.mention}! "
-        # f"Please use the link above to join our planning server. The server is used to "
-        # "plan attacks with your new clanmates!")
-        # await ctx.send(msg)
-
+    if isinstance(error, str):
+        await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
         return
+
+    await ctx.send("User added")
+
+
+    # Disabled for now
+    # memStat = ClashStats.ClashStats(res.json())
+    # desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
+    # embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
+    # embed.add_field(name = "Heroes", value=heroLevels, inline = False)
+    # embed.add_field(name = "Troops", value=troopLevels, inline = False)
+    # embed.add_field(name = "Spells", value=spellLevels, inline = False)
+    # embed.set_thumbnail(url=memStat.league_badgeSmall)
+    # await ctx.send(embed=embed)
+
+
+    # Disabled for now
+    # channel = botAPI.invite(discord_client, targetServer, targetChannel)
+    # await ctx.send(await channel.create_invite(max_age=600, max_uses=1))
+    # msg = (f"Welcome to Reddit Zulu {disc_userObj.mention}! "
+    # f"Please use the link above to join our planning server. The server is used to "
+    # "plan attacks with your new clanmates!")
+    # await ctx.send(msg)
+
+    return
 
 @useradd.error
 async def info_error(ctx, error):
@@ -883,7 +857,16 @@ async def enable_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def disable_user(ctx, *, member: discord.Member = None):
+async def disable_user(ctx, mem):
+    # Get user object 
+    member = await botAPI.userConverter(ctx, mem)
+
+    # If user object can't re resolved then exit 
+    if member == None:
+        desc = (f"Was unable to resolve {mem}. This command supports mentions, "
+        "IDs, username and nicknames.")
+        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
+        return
 
     if botAPI.rightServer(ctx, config):
         pass
@@ -957,11 +940,17 @@ async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def addnote(ctx, *, member: discord.Member = None):
+async def addnote(ctx, mem):
+    # Get user object 
+    member = await botAPI.userConverter(ctx, mem)
+
+    # If user object can't re resolved then exit 
     if member == None:
-        desc = (f"Invalid argument used")
-        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        desc = (f"Was unable to resolve {mem}. This command supports mentions, "
+        "IDs, username and nicknames.")
+        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
+
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -973,6 +962,7 @@ async def addnote(ctx, *, member: discord.Member = None):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
+    # Query the users dad 
     result = dbconn.get_user_byDiscID((member.id,))
     if len(result) == 1:
         example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
@@ -1014,7 +1004,7 @@ async def addnote(ctx, *, member: discord.Member = None):
         await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
 
 @discord_client.command()
-async def lookup(ctx, option, *query):
+async def lookup(ctx, option, query):
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -1027,7 +1017,7 @@ async def lookup(ctx, option, *query):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    if option not in ['--tag', '-t', '--mention', '-m', '--name', '-n']:
+    if option not in ['--tag', '-t', '--mention', '-m', '--name', '-n', '--global', '-g']:
         desc = (f"Invalid argument supplied: {option}")
         await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
         return
@@ -1039,12 +1029,13 @@ async def lookup(ctx, option, *query):
 
     # -tag option
     if option in ['--tag', '-t']:
-        if len(query) != 1:
-            desc = (f"Invalid argument supplied: {''.join(query)}")
-            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
-            return
+        # Add a hash tag for the user if it's not there
+        if query.startswith("#"):
+            tag = query
+        else:
+            tag = f"#{query}"
 
-        tag = query[0]
+        # Query the tab looking for this tag
         results = dbconn.get_user_byTag((tag,))
         if len(results) > 0:
             for result in results:
@@ -1074,13 +1065,18 @@ async def lookup(ctx, option, *query):
             return
 
     if option in ['--name', '-n']:
-        if len(query) != 1:
-            desc = (f"Invalid argument supplied: {''.join(query)}")
-            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
-            return
+        # Attempt to resolve the user name
+        res = await botAPI.userConverter(ctx, query)
 
-        name = ''.join(query)
-        results = dbconn.get_user_byName((name,))
+        # If converter fails attemp to search through the DB for the username with no caps
+        if res == None:
+            results = dbconn.get_allUsers()
+            for i in results:
+                if i[1].lower() == query.lower():
+                    results = dbconn.get_user_byDiscID((i[4],))
+        else:
+            results = dbconn.get_user_byDiscID((res.id,))
+
         if len(results) > 0:
             for result in results:
                 if result[8] == '':
@@ -1110,27 +1106,13 @@ async def lookup(ctx, option, *query):
             return
 
     if option in ['--mention', '-m']:
-        if len(query) != 1:
-            desc = (f"Invalid argument supplied: {''.join(query)}")
-            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
+        res = await botAPI.userConverter(ctx, query)
+        if res == None:
+            desc = (f"No results found in the database using Discord ID {query}.")
+            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
             return
 
-        query = query[0]
-        if ''.join(query).isdigit():
-            discID = ''.join(query)
-
-        elif ''.join(query).startswith("<"):
-            temp_discID = ''.join(list(query)[2:-1])
-            if temp_discID.startswith("!"):
-                discID = temp_discID[1:]
-            else:
-                discID = temp_discID
-        else:
-            desc = (f"Invalid argument supplied: {''.join(query)}")
-            await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
-            return
-
-        results = dbconn.get_user_byDiscID((discID,))
+        results = dbconn.get_user_byDiscID((res.id,))
         if len(results) > 0:
             for result in results:
                 if result[8] == '':
@@ -1154,21 +1136,46 @@ async def lookup(ctx, option, *query):
                 await ctx.send(embed=embed)
             return
         else:
-            desc = (f"No results found in the database using Discord ID {discID}.")
+            desc = (f"No results found in the database using Discord ID {query}.")
             await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
             return
 
+    if option in ['--global', '-g']:
+        res = await botAPI.userConverter(ctx, query)
+        print("hello?")
+        if res == None:
+            await ctx.send("Could not find user in this server")
+        else: 
+            embed = discord.Embed(title="Global Lookup", color=0x00FF80)
+            embed.add_field(name="Username: ", value=res, inline=False)
+            embed.add_field(name="Display: ", value=res.display_name, inline=False)
+            embed.add_field(name="Discord ID: ", value=res.id, inline=False)
+            embed.add_field(name="Joined Server: ", value=res.joined_at.strftime("%d %b %Y %H:%M:%S").upper(), inline=False)
+            out = ''
+            for i in res.roles:
+                out += f"{i.name}\n"
+            embed.add_field(name="Current Roles: ", value=out, inline=False)
+            print("here")
+            await ctx.send(embed=embed)
+
 @lookup.error
 async def search_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000)
+    embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__> <__argument__>", value="See help menu")  
+    await ctx.send(embed=embed)
 
 
 @discord_client.command()
-async def deletenote(ctx, *, member : discord.Member = None):
+async def deletenote(ctx, mem):
     """ Function used to delete notes for the user supplieds database """
+    # Get user object 
+    member = await botAPI.userConverter(ctx, mem)
+
+    # If user object can't re resolved then exit 
     if member == None:
-        desc = (f"Invalid argument used")
-        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        desc = (f"Was unable to resolve {mem}. This command supports mentions, "
+        "IDs, username and nicknames.")
+        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
 
     if botAPI.rightServer(ctx, config):
@@ -1216,10 +1223,15 @@ async def deletenote_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def viewnote(ctx, *, member : discord.Member = None):
+async def viewnote(ctx, mem):
+    # Get user object 
+    member = await botAPI.userConverter(ctx, mem)
+
+    # If user object can't re resolved then exit 
     if member == None:
-        desc = (f"Invalid argument used")
-        await ctx.send(embed = discord.Embed(title="Argument Error", description=desc, color=0xFF0000))
+        desc = (f"Was unable to resolve {mem}. This command supports mentions, "
+        "IDs, username and nicknames.")
+        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
     if botAPI.rightServer(ctx, config):
         pass
@@ -1551,8 +1563,15 @@ async def report(ctx):
     return
 
 @discord_client.command()
-async def test(ctx):
-    pass
+async def test(ctx, mem):
+    print(mem)
+    #m = await userConverter(ctx, mem)
+    m = await botAPI.userConverter(ctx, mem)
+    if m == None:
+        await ctx.send(f"Sorry dude, couldn't find who ever {mem} was")
+        return
+    print(type(m))
+    await ctx.send(m)
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
@@ -1583,6 +1602,7 @@ async def killbot(ctx):
 @killbot.error
 async def killbot_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+   
 
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
