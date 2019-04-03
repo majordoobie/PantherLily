@@ -1,5 +1,8 @@
-[Version 1.1]
-2APR2019~
+[Version 1.2] 3APR2019~
+[Fixed] Witch levels on stats output to reflect new CoC update
+
+[Version 1.1] 2APR2019~
+
 [Fixed] How commands parse user arguments. Instead of manually parsing a @mention the discord.py
 Convert is used. It can now handle @mention, discord_IDs, usernames and display names. 
 
