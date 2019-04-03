@@ -251,7 +251,7 @@ def statStitcher(memStat, emotLoc):
     troopLevels += (f"{emoticons['troops']['hogrider']} {str(memStat.troops['Hog Rider']['level']):<2}|{str(8):<2}\n")
     troopLevels += (f"{emoticons['troops']['valkyrie']} {str(memStat.troops['Valkyrie']['level']):<2}|{str(7):<2}")
     troopLevels += (f"{emoticons['troops']['golem']} {str(memStat.troops['Golem']['level']):<2}|{str(8):<2}")
-    troopLevels += (f"{emoticons['troops']['witch']} {str(memStat.troops['Witch']['level']):<2}|{str(4):<2}\n")
+    troopLevels += (f"{emoticons['troops']['witch']} {str(memStat.troops['Witch']['level']):<2}|{str(5):<2}\n")
     troopLevels += (f"{emoticons['troops']['lavahound']} {str(memStat.troops['Lava Hound']['level']):<2}|{str(5):<2}")
     troopLevels += (f"{emoticons['troops']['bowler']} {str(memStat.troops['Bowler']['level']):<2}|{str(4):<2}")
     troopLevels += (f"{emoticons['troops']['miner']} {str(memStat.troops['Miner']['level']):<2}|{str(6):<2}\n")
