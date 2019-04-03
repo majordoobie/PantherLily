@@ -618,7 +618,7 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
 
     
     clash_tag = clash_tag.lstrip("#")
-    disc_userObj = botAPI.userConverter(ctx, disc_mention)
+    disc_userObj = await botAPI.userConverter(ctx, disc_mention)
 
     if disc_userObj == None:
         msg = (f"User id {disc_mention} does not exist on this server.")
