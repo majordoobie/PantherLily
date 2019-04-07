@@ -99,7 +99,7 @@ class ClashStats():
             "Games Champion" :{},
             "Dragon Slayer" :{},
             "War League Legend" :{},
-            "Keep your village safe" :{},
+            # "Keep your village safe" :{},
         }
         for i in jjson['achievements']:
             self.achieve[i['name']] = {

@@ -188,7 +188,7 @@ async def help(ctx, *option):
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
 
-    versioning = ("Panther Lily Version: 1.1")
+    versioning = ("Panther Lily Version: 1.2 \nhttps://github.com/majordoobie/PantherLily")
 
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
@@ -237,7 +237,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
             embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-            embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__mention__>", value=lookup_ex)
+            embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__mention__ | --__global__>", value=lookup_ex)
             embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
@@ -451,7 +451,12 @@ async def newinvite(ctx, *arg):
 async def newinvite_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-@discord_client.command()
+@discord_client.command(aliases=["man"])
+async def manual(ctx):
+    f = discord.File("Configurations/PantherLily_V1.pdf", filename="Manual.pdf")
+    await ctx.send(file=f)
+
+@discord_client.command(aliases=["s"])
 async def stats(ctx, *, user: discord.Member = None):
     if user == None:
         user = ctx.author
@@ -505,7 +510,7 @@ async def stats(ctx, *, user: discord.Member = None):
 async def stats_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-@discord_client.command()
+@discord_client.command(aliases=["d"])
 async def donation(ctx, *, user: discord.Member = None):
     """
     Find the donation status of your users account
@@ -758,8 +763,8 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
 
 
     # Disabled for now
-    # memStat = ClashStats.ClashStats(res.json())
-    # desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
+    # memStat = ''ClashStats.ClashStats(res.json())
+    # desc, troopLevels, spellLevels, heroLevels = statStitcher(memStat, emoticonLoc)
     # embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
     # embed.add_field(name = "Heroes", value=heroLevels, inline = False)
     # embed.add_field(name = "Troops", value=troopLevels, inline = False)
@@ -1100,7 +1105,7 @@ async def lookup(ctx, option, query):
                 await ctx.send(embed=embed)
             return
         else:
-            desc = (f"No results found in the database using ClashName: {name}\n\nRemember that "
+            desc = (f"No results found in the database using ClashName: {query}\n\nRemember that "
                 "searching by name is case sensitive. Consider using clash tag or discord id.")
             await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
             return
@@ -1249,9 +1254,9 @@ async def viewnote(ctx, mem):
         note = result[0][8]
         ids = []
         search = False
-        if re.findall("msgID:.\d+", note, re.IGNORECASE):
-            for i in re.findall("msgID:.\d+", note, re.IGNORECASE):
-                ids.append(re.search("\d+", i).group())
+        if re.findall(r"msgID:.\d+", note, re.IGNORECASE):
+            for i in re.findall(r"msgID:.\d+", note, re.IGNORECASE):
+                ids.append(re.search(r"\d+", i).group())
         if ids:
             search = True
         await ctx.send(f"Current Notes for {member.display_name}:\n```{note}```")
@@ -1494,7 +1499,7 @@ async def export(ctx):
             cell.fill = greFill
     
     wb.save("pandas_openpyxl.xlsx")
-    f = discord.File("pandas_openpyxl.xlsx", filename=f'{lastSunday.strftime("%d%b").upper()}.xlsx')
+    f = discord.File("pandas_openpyxl.xlsx", filename=f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}.xlsx')
     await ctx.send(file=f)
 
 @export.error
