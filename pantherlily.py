@@ -1555,7 +1555,7 @@ async def report(ctx):
     # create last sunday column
     df_out[f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
 
-    # Clean up data change NaN and Float to int
+    # Clean up data change NaN and Float to 
     df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
 
     # Test for html export
