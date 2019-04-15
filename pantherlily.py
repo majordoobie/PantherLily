@@ -1079,6 +1079,7 @@ async def lookup(ctx, option, query):
             for i in results:
                 if i[1].lower() == query.lower():
                     results = dbconn.get_user_byDiscID((i[4],))
+                    break
         else:
             results = dbconn.get_user_byDiscID((res.id,))
 
