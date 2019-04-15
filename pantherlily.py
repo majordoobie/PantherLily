@@ -1075,8 +1075,8 @@ async def lookup(ctx, option, query):
 
         # If converter fails attemp to search through the DB for the username with no caps
         if res == None:
-            results = dbconn.get_allUsers()
-            for i in results:
+            allMems = dbconn.get_allUsers()
+            for i in allMems:
                 if i[1].lower() == query.lower():
                     results = dbconn.get_user_byDiscID((i[4],))
                     break
