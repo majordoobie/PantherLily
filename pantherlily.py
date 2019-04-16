@@ -1577,11 +1577,28 @@ async def report(ctx):
     # Sort names column
     df_out.sort_values('Name', inplace=True)
 
-    # Push dataframe to html and add a script tag to manipulate it
+    # Dataframe to html
     html = df_out.to_html(index=False)
+    # load into a BS object
     soup = bs4.BeautifulSoup(html, "lxml")
-    new_link = soup.new_tag("script", src="pandamod.js")
-    soup.html.append(new_link)
+    # extract the table
+    table = soup.find("table")
+
+    base = """<!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8" />
+                    <title>Reddit Zulu</title>
+                </head>
+                <body>
+                {}
+                </body>
+                <script src="pandamod.js"></script>
+                </html>""".format(table)
+
+    soup = bs4.BeautifulSoup(base, "lxml")
+    #new_link = soup.new_tag("script", src="pandamod.js")
+    #soup.html.append(new_link)
 
     with open("Web/report.html", "w") as outfile:
         outfile.write(str(soup))
