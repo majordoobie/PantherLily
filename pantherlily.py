@@ -1031,7 +1031,7 @@ async def lookup(ctx, option, query):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    if option not in ['--tag', '-t', '--mention', '-m', '--name', '-n', '--global', '-g']:
+    if option not in ['--tag', '-t', '--name', '-n', '--global', '-g']:
         desc = (f"Invalid argument supplied: {option}")
         await ctx.send(embed = discord.Embed(title="ARG ERROR", description=desc, color=0xFF0000))
         return
@@ -1083,83 +1083,43 @@ async def lookup(ctx, option, query):
         res = await botAPI.userConverter(ctx, query)
 
         # If converter fails attemp to search through the DB for the username with no caps
-        results = None
+        result = None
 
+        # Test if we got nothing from the discord converter 
         if res == None:
             allMems = dbconn.get_allUsers()
             for i in allMems:
                 if i[1].lower() == query.lower():
-                    results = dbconn.get_user_byDiscID((i[4],))
-                    break
+                    result = dbconn.get_user_byDiscID((i[4],))                 
         else:
-            results = dbconn.get_user_byDiscID((res.id,))
+            result = dbconn.get_user_byDiscID((res.id,))
 
-        if results == None:
+        if result == None:
             await ctx.send("Could not find that user in the database.")
             return
 
-        if len(results) > 0:
-            for result in results:
-                if result[8] == '':
-                    note = "Empty"
-                else:
-                    note = result[8]
-                embed = discord.Embed(title=result[1], color=0x00FF80)
-                embed.add_field(name="ClashTag:", value=result[0], inline=False)
-                embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
-                embed.add_field(name="DiscordID:", value=result[4], inline=False)
-                embed.add_field(name="Database Join:", value=result[5], inline=False)
-                if result[7] == "True":
-                    active = "Active"
-                else:
-                    active = "Inactive"
-                embed.add_field(name="Status:", value=active, inline=False)
-                if inLeaderChat:
-                    embed.add_field(name="Profile Note:", value=note, inline=False)
-                else:
-                    embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
-                await ctx.send(embed=embed)
-            return
-        else:
-            desc = (f"No results found in the database using ClashName: {query}\n\nRemember that "
-                "searching by name is case sensitive. Consider using clash tag or discord id.")
-            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
-            return
-
-    if option in ['--mention', '-m']:
-        res = await botAPI.userConverter(ctx, query)
-        if res == None:
-            desc = (f"No results found in the database using Discord ID {query}.")
-            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
-            return
-
-        results = dbconn.get_user_byDiscID((res.id,))
-        if len(results) > 0:
-            for result in results:
-                if result[8] == '':
-                    note = "Empty"
-                else:
-                    note = result[8]
-                embed = discord.Embed(title=result[1], color=0x00FF80)
-                embed.add_field(name="ClashTag:", value=result[0], inline=False)
-                embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
-                embed.add_field(name="DiscordID:", value=result[4], inline=False)
-                embed.add_field(name="Database Join:", value=result[5], inline=False)
-                if result[7] == "True":
-                    active = "Active"
-                else:
-                    active = "Inactive"
-                embed.add_field(name="Status:", value=active, inline=False)
-                if inLeaderChat:
-                    embed.add_field(name="Profile Note:", value=note, inline=False)
-                else:
-                    embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
-                await ctx.send(embed=embed)
-            return
-        else:
-            desc = (f"No results found in the database using Discord ID {query}.")
-            await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
-            return
+        if len(result) > 0:
+            result = result[0]
+            if result[8] == '':
+                note = "Empty"
+            else:
+                note = result[8]
+            embed = discord.Embed(title=result[1], color=0x00FF80)
+            embed.add_field(name="ClashTag:", value=result[0], inline=False)
+            embed.add_field(name="TownHallLevel:", value=result[2], inline=False)
+            embed.add_field(name="DiscordID:", value=result[4], inline=False)
+            embed.add_field(name="Database Join:", value=result[5], inline=False)
+            if result[7] == "True":
+                active = "Active"
+            else:
+                active = "Inactive"
+            embed.add_field(name="Status:", value=active, inline=False)
+            if inLeaderChat:
+                embed.add_field(name="Profile Note:", value=note, inline=False)
+            else:
+                embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
+            await ctx.send(embed=embed)
+        return
 
     if option in ['--global', '-g']:
         res = await botAPI.userConverter(ctx, query)
