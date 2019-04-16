@@ -14,6 +14,7 @@ from Database.ZuluBot_DB import ZuluDB
 #New Functions
 import aiohttp
 import asyncio
+import bs4
 from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
@@ -868,10 +869,18 @@ async def disable_user(ctx, mem):
 
     # If user object can't re resolved then exit 
     if member == None:
-        desc = (f"Was unable to resolve {mem}. This command supports mentions, "
-        "IDs, username and nicknames.")
-        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
-        return
+        result = dbconn.get_user_byDiscID((mem,))
+        if result != 1:
+            desc = (f"Was unable to resolve {mem}. This command supports mentions, "
+            "IDs, username and nicknames.")
+            await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
+            return
+        else:
+            member_id = result[0][4]
+    else:
+        member_id = mem.id
+
+    # set either member or result to the ID val
 
     if botAPI.rightServer(ctx, config):
         pass
@@ -923,19 +932,19 @@ async def disable_user(ctx, mem):
         await ctx.send("Terminating function")
         return
 
-    oldNote = dbconn.get_user_byDiscID((member.id,))
+    oldNote = dbconn.get_user_byDiscID((member_id,))
     note = oldNote[0][8]
     note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
     note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "False", member.id,))
+    result = dbconn.set_kickNote((note, "False", member_id,))
     if result == 1:
-        desc = (f"Successfully set {member.display_name} active status to False with "
+        desc = (f"Successfully set {oldNote[1]} active status to False with "
             "the note provided above.")
         await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
         return  
     
     else:
-        desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+        desc = (f"Unable to find {oldNote[1]} in the database. Use {prefx}roster to verify "
             "user.")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
         return 
@@ -1074,6 +1083,8 @@ async def lookup(ctx, option, query):
         res = await botAPI.userConverter(ctx, query)
 
         # If converter fails attemp to search through the DB for the username with no caps
+        results = None
+
         if res == None:
             allMems = dbconn.get_allUsers()
             for i in allMems:
@@ -1082,6 +1093,10 @@ async def lookup(ctx, option, query):
                     break
         else:
             results = dbconn.get_user_byDiscID((res.id,))
+
+        if results == None:
+            await ctx.send("Could not find that user in the database.")
+            return
 
         if len(results) > 0:
             for result in results:
@@ -1559,11 +1574,19 @@ async def report(ctx):
     # Clean up data change NaN and Float to 
     df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
 
-    # Test for html export
-    with open("report.html", "w") as outfile:
-        outfile.write(df_out.to_html(index=False))
+    # Sort names column
+    df_out.sort_values('Name', inplace=True)
 
-    f = discord.File("report.html", filename="report.html")
+    # Push dataframe to html and add a script tag to manipulate it
+    html = df_out.to_html(index=False)
+    soup = bs4.BeautifulSoup(html, "lxml")
+    new_link = soup.new_tag("script", src="pandamod.js")
+    soup.html.append(new_link)
+
+    with open("Web/report.html", "w") as outfile:
+        outfile.write(str(soup))
+
+    f = discord.File("Web/report.html", filename="report.html")
     await ctx.send(file=f)
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
