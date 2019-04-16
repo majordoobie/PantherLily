@@ -1578,23 +1578,48 @@ async def report(ctx):
     df_out.sort_values('Name', inplace=True)
 
     # Dataframe to html
-    html = df_out.to_html(index=False)
+    html = df_out.to_html(index=False, justify="center")
     # load into a BS object
     soup = bs4.BeautifulSoup(html, "lxml")
     # extract the table
     table = soup.find("table")
 
-    base = """<!DOCTYPE html>
+    scriptTag = """// Query for the table tags and coloring to the table
+const tableElm = document.getElementsByTagName("table")[0]; 
+for (const row of tableElm.rows) {
+  const childToStyle = row.children[1];
+  console.log(childToStyle.textContent);
+  if (Number(childToStyle.textContent) < 300) { 
+    childToStyle.classList.add("redClass");
+  } else if (Number(childToStyle.textContent) > 299) {
+      childToStyle.classList.add("greenClass")
+  }
+}  """
+
+    cssTag = """.redClass {
+                    background-color: red;
+                    font-weight : bold;
+                    }
+                    .greenClass {
+                        background-color : green;
+                        font-weight : bold
+                    }"""
+
+    base = (f"""<!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="utf-8" />
                     <title>Reddit Zulu</title>
+                    <style>
+                    {cssTag}
+                    </style>
                 </head>
                 <body>
-                {}
+                {table}
                 </body>
-                <script src="pandamod.js"></script>
-                </html>""".format(table)
+                <script>
+                {scriptTag}
+              </script></html>""") #.format(cssTag, table, scriptTag)
 
     soup = bs4.BeautifulSoup(base, "lxml")
     #new_link = soup.new_tag("script", src="pandamod.js")
