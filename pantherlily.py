@@ -1076,7 +1076,19 @@ async def lookup(ctx, option, query):
                     embed.add_field(name="Profile Note:", value=note, inline=False)
                 else:
                     embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
-                await ctx.send(embed=embed)
+                view = await ctx.send(embed=embed)
+                await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+
+                def check(reaction, user):
+                    # Make sure that the reaction is for the correct message 
+                    if view.id == reaction.message.id:
+                        return user.bot == False
+                    else:
+                        return False
+
+                await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+                await ctx.send(result[4])
+                await ctx.send(result[0])
             return
         else:
             desc = (f"No results found in the database using ClashTag: {tag}")
@@ -1123,7 +1135,12 @@ async def lookup(ctx, option, query):
                 embed.add_field(name="Profile Note:", value=note, inline=False)
             else:
                 embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
-            await ctx.send(embed=embed)
+            view = await ctx.send(embed=embed)
+            await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+
+            await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+            await ctx.send(result[4])
+            await ctx.send(result[0])
         return
 
     if option in ['--global', '-g']:
@@ -1601,15 +1618,8 @@ for (const row of tableElm.rows) {
     return
 
 @discord_client.command()
-async def test(ctx, mem):
-    print(mem)
-    #m = await userConverter(ctx, mem)
-    m = await botAPI.userConverter(ctx, mem)
-    if m == None:
-        await ctx.send(f"Sorry dude, couldn't find who ever {mem} was")
-        return
-    print(type(m))
-    await ctx.send(m)
+async def test(ctx):
+    await ctx.send(emoticons["tracker bot"]["plus"])
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
