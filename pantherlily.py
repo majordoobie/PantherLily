@@ -1046,6 +1046,14 @@ async def lookup(ctx, option, query):
     if ctx.channel.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256]: #513334681354240000  
         inLeaderChat = True
 
+    # Check function -- uses view variable that is scoped later   
+    def check(reaction, user):
+        # Make sure that the reaction is for the correct message 
+        if view.id == reaction.message.id:
+            return user.bot == False
+        else:
+            return False
+
     # -tag option
     if option in ['--tag', '-t']:
         # Add a hash tag for the user if it's not there
@@ -1079,14 +1087,10 @@ async def lookup(ctx, option, query):
                 view = await ctx.send(embed=embed)
                 await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
 
-                def check(reaction, user):
-                    # Make sure that the reaction is for the correct message 
-                    if view.id == reaction.message.id:
-                        return user.bot == False
-                    else:
-                        return False
+
 
                 await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+                await view.clear_reactions()
                 await ctx.send(result[4])
                 await ctx.send(result[0])
             return
@@ -1139,6 +1143,7 @@ async def lookup(ctx, option, query):
             await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
 
             await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+            await view.clear_reactions()
             await ctx.send(result[4])
             await ctx.send(result[0])
         return
@@ -1161,11 +1166,11 @@ async def lookup(ctx, option, query):
             print("here")
             await ctx.send(embed=embed)
 
-@lookup.error
-async def search_error(ctx, error):
-    embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000)
-    embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__> <__argument__>", value="See help menu")  
-    await ctx.send(embed=embed)
+# @lookup.error
+# async def search_error(ctx, error):
+#     embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000)
+#     embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__> <__argument__>", value="See help menu")  
+#     await ctx.send(embed=embed)
 
 
 @discord_client.command()
