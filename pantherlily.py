@@ -863,24 +863,29 @@ async def enable_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def disable_user(ctx, mem):
-    # Get user object 
-    member = await botAPI.userConverter(ctx, mem)
+async def disable_user(ctx, query):
 
-    # If user object can't re resolved then exit 
-    if member == None:
-        result = dbconn.get_user_byDiscID((mem,))
-        if result != 1:
-            desc = (f"Was unable to resolve {mem}. This command supports mentions, "
-            "IDs, username and nicknames.")
-            await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
-            return
-        else:
-            member_id = result[0][4]
+    # Attempt to resolve the user name
+    res = await botAPI.userConverter(ctx, query)
+
+    # If converter fails attemp to search through the DB for the username with no caps
+    result = None
+
+    # Test if we got nothing from the discord converter 
+    if res == None:
+        allMems = dbconn.get_allUsers()
+        for i in allMems:
+            if i[1].lower() == query.lower():
+                result = dbconn.get_user_byDiscID((i[4],))                 
     else:
-        member_id = mem.id
+        result = dbconn.get_user_byDiscID((res.id,))
 
-    # set either member or result to the ID val
+    if result == None:
+        desc = (f"Was unable to resolve {query}. This command supports mentions, "
+            "IDs, username and nicknames.")
+        await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
+        return
+
 
     if botAPI.rightServer(ctx, config):
         pass
@@ -893,12 +898,12 @@ async def disable_user(ctx, mem):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    if member == None:
+    if query == None:
         desc = (f"Mention argument is required")
         await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
         return
 
-    msg = (f"You are about to set {member.display_name} CoC Member status to False "
+    msg = (f"You are about to set {query} CoC Member status to False "
         "are you sure you would like to continue?\n(Yes/No)")
     await ctx.send(msg)
 
@@ -907,7 +912,7 @@ async def disable_user(ctx, mem):
         await ctx.send("Terminating function")
         return
 
-    example = (f"{member.display_name} failed to meet weekly donation quota\n\n"
+    example = (f"SgtMajorDoobie failed to meet weekly donation quota\n\n"
         "msgID:546408720872112128\nmsgID:546408729155993615")
 
     await ctx.send("A kick message is required. You are able to enter any text you "
@@ -932,11 +937,11 @@ async def disable_user(ctx, mem):
         await ctx.send("Terminating function")
         return
 
-    oldNote = dbconn.get_user_byDiscID((member_id,))
+    oldNote = dbconn.get_user_byDiscID((result,))
     note = oldNote[0][8]
     note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
     note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "False", member_id,))
+    result = dbconn.set_kickNote((note, "False", result,))
     if result == 1:
         desc = (f"Successfully set {oldNote[1]} active status to False with "
             "the note provided above.")
