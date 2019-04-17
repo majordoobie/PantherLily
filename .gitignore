@@ -6,4 +6,12 @@ __py*
 */*__py*
 */*db
 Images/
+dumps/*.ipynb
+vscode/*
 dumps/
+.vscode/
+.idea/
+.ipynb_checkpoints
+*.docx
+*.ipynb
+report.html

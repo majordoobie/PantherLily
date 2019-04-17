@@ -1567,24 +1567,26 @@ for (const row of tableElm.rows) {
                     }
                     .greenClass {
                         background-color : green;
-                        font-weight : bold
+                        font-weight : bold;
                     }"""
 
     base = (f"""<!DOCTYPE html>
                 <html>
                 <head>
-                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"> 
                     <title>Reddit Zulu</title>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css"/>
                     <style>
                     {cssTag}
                     </style>
                 </head>
                 <body>
                 {table}
-                </body>
-                <script>
+                <script type="text/javascript">
                 {scriptTag}
-              </script></html>""") #.format(cssTag, table, scriptTag)
+                </script>
+                </body>
+                </html>""") #.format(cssTag, table, scriptTag)
 
     soup = bs4.BeautifulSoup(base, "lxml")
     #new_link = soup.new_tag("script", src="pandamod.js")
