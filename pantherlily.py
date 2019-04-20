@@ -289,7 +289,6 @@ async def listroles_error(ctx, error):
 @discord_client.command()
 async def lcm(ctx):
     """ List users in the current clan with their tag """
-
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -297,6 +296,8 @@ async def lcm(ctx):
         return
 
     res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
+    # get all mems from DB
+    db_result = dbconn.get_all_active()
 
     # Quick check to  make sure that the https request was good
     if int(res.status_code) != 200:
@@ -319,11 +320,9 @@ async def lcm(ctx):
             if len(user[0]) > max_length:
                 max_length = len(user[0])
         mem_list.sort(key = lambda tupe_item: tupe_item[0].lower())
-        with open("shit.txt", 'w', encoding='utf-8') as outfile:
-            output = ''
-            for index, user in enumerate(mem_list):
-                output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
-                outfile.write(f"{user[0]}:{user[1]}\n")
+        output = ''
+        for index, user in enumerate(mem_list):
+            output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
 
         await ctx.send("Current Members in Reddit Zulu\n```{}```".format(output))
 
@@ -604,7 +603,7 @@ async def mydonations_error(ctx, error):
                                              # Admin Commands
 #####################################################################################################################
 @discord_client.command()
-async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
+async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
@@ -761,126 +760,31 @@ async def useradd(ctx, clash_tag, disc_mention, fin_override=None):
         return
 
     await ctx.send("User added")
-
-
-    # Disabled for now
-    # memStat = ''ClashStats.ClashStats(res.json())
-    # desc, troopLevels, spellLevels, heroLevels = statStitcher(memStat, emoticonLoc)
-    # embed = Embed(title = f"{memStat.name}", description=desc, color = 0x00FF00)
-    # embed.add_field(name = "Heroes", value=heroLevels, inline = False)
-    # embed.add_field(name = "Troops", value=troopLevels, inline = False)
-    # embed.add_field(name = "Spells", value=spellLevels, inline = False)
-    # embed.set_thumbnail(url=memStat.league_badgeSmall)
-    # await ctx.send(embed=embed)
-
-
-    # Disabled for now
-    # channel = botAPI.invite(discord_client, targetServer, targetChannel)
-    # await ctx.send(await channel.create_invite(max_age=600, max_uses=1))
-    # msg = (f"Welcome to Reddit Zulu {disc_userObj.mention}! "
-    # f"Please use the link above to join our planning server. The server is used to "
-    # "plan attacks with your new clanmates!")
-    # await ctx.send(msg)
-
     return
 
-@useradd.error
+@user_add.error
 async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def enable_user(ctx, *, member: discord.Member = None):
-
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        print("User is using the wrong server")
-        return
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
-
-    if member == None:
-        desc = (f"Mention argument is required")
-        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
-        return
-
-    msg = (f"You are about to set {member.display_name} CoC Member status to True "
-        "are you sure you would like to continue?\n(Yes/No)")
-    await ctx.send(msg)
-
-    response = await discord_client.wait_for('message', check = botAPI.yesno_check)
-    if response.content.lower() == 'no':
-        await ctx.send("Terminating function")
-        return
-
-    example = (f"{member.display_name} Back from LOA\n\n"
-        "msgID:546408720872112128\nmsgID:546408729155993615")
-
-    await ctx.send("A message is required. You are able to enter any text you "
-        f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
-        "any message IDs you have included in this note. To include a message "
-        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**")
-    
-    await ctx.send("```\n"
-        f"{example}\n"
-        "```")
-
-    await ctx.send("Please enter your message:")
-
-    def check(m):
-        return m.author.id == ctx.author.id
-
-    response = await discord_client.wait_for('message', check=check)
-    await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
-
-    response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
-    if response2.content.lower() == 'no':
-        await ctx.send("Terminating function")
-        return
-
-    oldNote = dbconn.get_user_byDiscID((member.id,))
-    note = oldNote[0][8]
-    note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
-    note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "True", member.id,))
-    if result == 1:
-        desc = (f"Successfully set {member.display_name} active status to True with "
-            "the note provided above.")
-        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
-        return  
-    
-    else:
-        desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
-            "user.")
-        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
-        return 
-
-@enable_user.error
-async def enable_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
-
-@discord_client.command()
-async def disable_user(ctx, query):
+async def user_disable(ctx, query):
 
     # Attempt to resolve the user name
     res = await botAPI.userConverter(ctx, query)
 
     # If converter fails attemp to search through the DB for the username with no caps
-    result = None
+    discord_id = None
 
     # Test if we got nothing from the discord converter 
     if res == None:
         allMems = dbconn.get_allUsers()
         for i in allMems:
             if i[1].lower() == query.lower():
-                result = dbconn.get_user_byDiscID((i[4],))                 
+                discord_id = dbconn.get_user_byDiscID((i[4],))                 
     else:
-        result = dbconn.get_user_byDiscID((res.id,))
+        discord_id = dbconn.get_user_byDiscID((res.id,))[0][4]
 
-    if result == None:
+    if discord_id == None:
         desc = (f"Was unable to resolve {query}. This command supports mentions, "
             "IDs, username and nicknames.")
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
@@ -937,24 +841,43 @@ async def disable_user(ctx, query):
         await ctx.send("Terminating function")
         return
 
-    oldNote = dbconn.get_user_byDiscID((result,))
+    # Re query just incase we got the user from the Discord API
+    oldNote = dbconn.get_user_byDiscID((discord_id,))
+
     note = oldNote[0][8]
     note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
     note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "False", result,))
+    result = dbconn.set_kickNote((note, "False", discord_id,))
     if result == 1:
-        desc = (f"Successfully set {oldNote[1]} active status to False with "
+        desc = (f"Successfully set {oldNote[0][1]} active status to False with "
             "the note provided above.")
-        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
-        return  
+        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))  
     
     else:
         desc = (f"Unable to find {oldNote[1]} in the database. Use {prefx}roster to verify "
             "user.")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
-        return 
+        return
 
-@disable_user.error
+    await ctx.send("Attempting to remove roles...") 
+    try:
+        user = ctx.guild.get_member(discord_id)
+        remove_roles = [
+            303965219829448705,
+            455572149277687809,
+            303965664375472128,
+            303965505813872641,
+            540615053855162408,
+            540615255013851136,
+            294287799010590720
+        ]
+        role_objects = [ ctx.guild.get_role(role) for role in remove_roles ]
+        await user.remove_roles(*role_objects)
+        await ctx.send("Removed roles")
+    except: 
+        await ctx.send("Could not remove roles from the user")
+        
+@user_disable.error
 async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -1624,7 +1547,7 @@ for (const row of tableElm.rows) {
 
 @discord_client.command()
 async def test(ctx):
-    await ctx.send(emoticons["tracker bot"]["plus"])
+    pass
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################

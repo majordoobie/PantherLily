@@ -350,6 +350,16 @@ class ZuluDB:
         cur.execute(sql_query, tupe)
         rows = cur.fetchall()
         return rows
+
+    def get_all_active(self):
+        """
+        Returns all the users that are set to active in the clan
+        """
+        sql_query = ("SELECT * FROM MembersTable WHERE is_Active = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, ("True",))
+        rows = cur.fetchall()
+        return rows
         
 
 
