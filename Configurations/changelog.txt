@@ -1,11 +1,14 @@
 [Version 1.4] 15APR2019
 [Added] Sorted names when using the report command
+[Added] All lookups now give you a + emoji clicking the emoji will give you the discord ID and clash tag of ther user in a format that you can copy and paste on mobile devices
+[Added] Reaction to panther.lcm that lists the amount of members registered along with how many of each TH do we have
+[Added] HTML formatting 
+[Added] Removed roles for when the disable user command is used
 [Fixed] disable_user bug -- it was limited to only taking in discord mentions not IDs
 [Fixed] lookup -- Aggregated -n, -d and -m to just one command that handles are inputs
-[Added] HTML formatting 
 [Remove] Enable user
-[Added] Removed roles for when the disable user command is used
 [Changed] user_add and disable_user to add_user and remove_user 
+
 
 [Version 1.3] 6APR2019~
 [Added] panther.manual command to view more information on how to use the bot

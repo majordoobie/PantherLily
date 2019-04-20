@@ -153,7 +153,7 @@ async def help(ctx, *option):
     disable_user = ("Command **does not** remove the user from discord. The command is used to set a users 'active' status to False. This terminates the "
         "donation tracking process on the user. The action is recorded in the Notes section of the users SQL table. ")
 
-    enable_user = ("Command **does not** register a user. This command is used to re-enable tracking a users donations. ")
+    #enable_user = ("Command **does not** register a user. This command is used to re-enable tracking a users donations. ")
 
     addnote = ("Append an administrative note to the users SQL table. The bot will automatically append the date and the user who added the note. "
         f"Please use {prefx}help --verbose to see more information on how to craft notes")
@@ -208,9 +208,8 @@ async def help(ctx, *option):
         await ctx.send(embed=embed)
 
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
-        embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
-        embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
-        embed.add_field(name=f"**{prefx}enable_user** <__@mention__>", value=enable_user)
+        embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
+        embed.add_field(name=f"**{prefx}user_remove** <__@mention__>", value=disable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
         embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
@@ -235,8 +234,8 @@ async def help(ctx, *option):
             await ctx.send(embed=embed)
 
             embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com",)
-            embed.add_field(name=f"**{prefx}useradd** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
-            embed.add_field(name=f"**{prefx}disable_user** <__@mention__>", value=disable_user)
+            embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
+            embed.add_field(name=f"**{prefx}user_remove** <__@mention__>", value=disable_user)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
             embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup_ex)
             embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
@@ -299,6 +298,16 @@ async def lcm(ctx):
     # get all mems from DB
     db_result = dbconn.get_all_active()
 
+    strength = {
+        12 : 0,
+        11 : 0,
+        10 : 0,
+         9 : 0,
+         8 : 0
+    }
+    for row in db_result:
+        strength[int(row[2])] = strength[int(row[2])] + 1
+
     # Quick check to  make sure that the https request was good
     if int(res.status_code) != 200:
         embed = Embed(color=0xff0000)
@@ -324,7 +333,28 @@ async def lcm(ctx):
         for index, user in enumerate(mem_list):
             output += "[{:>2}] {:<{}} {}\n".format(index+1, user[0], max_length, user[1])
 
-        await ctx.send("Current Members in Reddit Zulu\n```{}```".format(output))
+        view = await ctx.send("Current Members in Reddit Zulu\n```{}```".format(output))
+        await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+
+
+        # Reaction 
+        # Check function -- uses view variable that is scoped later   
+        def check(reaction, user):
+            # Make sure that the reaction is for the correct message 
+            if view.id == reaction.message.id:
+                return user.bot == False
+            else:
+                return False
+
+        await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+        await view.clear_reactions()
+        embed = discord.Embed(title="Reddit Zulu Strength", color=0x00FF80)
+        embed.add_field(name="Registered Members: ", value=len(db_result), inline=False)
+        embed.add_field(name="TH12s: ", value=strength[12], inline=False)
+        embed.add_field(name="TH11s: ", value=strength[11], inline=False)
+        embed.add_field(name="TH10s: ", value=strength[10], inline=False)
+        embed.add_field(name="TH9s: ", value=strength[9], inline=False)
+        await ctx.send(embed=embed)
 
 @lcm.error
 async def lcm_error(ctx, error):
@@ -767,7 +797,7 @@ async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def user_disable(ctx, query):
+async def user_remove(ctx, query):
 
     # Attempt to resolve the user name
     res = await botAPI.userConverter(ctx, query)
@@ -877,7 +907,7 @@ async def user_disable(ctx, query):
     except: 
         await ctx.send("Could not remove roles from the user")
         
-@user_disable.error
+@user_remove.error
 async def kickuser_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -1009,9 +1039,6 @@ async def lookup(ctx, option, query):
                     embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 view = await ctx.send(embed=embed)
                 await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-
-
-
                 await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
                 await view.clear_reactions()
                 await ctx.send(result[4])
@@ -1062,9 +1089,10 @@ async def lookup(ctx, option, query):
                 embed.add_field(name="Profile Note:", value=note, inline=False)
             else:
                 embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
+
+            # Reaction  
             view = await ctx.send(embed=embed)
             await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-
             await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
             await view.clear_reactions()
             await ctx.send(result[4])
@@ -1073,7 +1101,6 @@ async def lookup(ctx, option, query):
 
     if option in ['--global', '-g']:
         res = await botAPI.userConverter(ctx, query)
-        print("hello?")
         if res == None:
             await ctx.send("Could not find user in this server")
         else: 
@@ -1086,14 +1113,20 @@ async def lookup(ctx, option, query):
             for i in res.roles:
                 out += f"{i.name}\n"
             embed.add_field(name="Current Roles: ", value=out, inline=False)
-            print("here")
-            await ctx.send(embed=embed)
 
-# @lookup.error
-# async def search_error(ctx, error):
-#     embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000)
-#     embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__> <__argument__>", value="See help menu")  
-#     await ctx.send(embed=embed)
+            # Reactions
+            view = await ctx.send(embed=embed)
+            await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+            await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+            await view.clear_reactions()
+            await ctx.send(res.id)
+            return
+
+@lookup.error
+async def search_error(ctx, error):
+    embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000)
+    embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__discordID__> <__argument__>", value="See help menu")  
+    await ctx.send(embed=embed)
 
 
 @discord_client.command()
@@ -1329,6 +1362,7 @@ async def export(ctx):
         return
     
     # Remove duplicate Tag column
+    #@ts-ignore
     df = df.loc[:,~df.columns.duplicated()]
     
     # Create the date ranges
