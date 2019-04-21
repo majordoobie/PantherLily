@@ -5,7 +5,6 @@ __py*
 *.ini
 */*__py*
 */*db
-Images/
 dumps/*.ipynb
 vscode/*
 dumps/
@@ -15,3 +14,4 @@ dumps/
 *.docx
 *.ipynb
 report.html
+Images/*
