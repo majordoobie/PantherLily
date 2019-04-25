@@ -117,7 +117,12 @@ class ZuluDB:
         """
         
         sql_update = """INSERT INTO DonationsTable(
-                    
+                    increment_date,
+                    Tag,
+                    Current_Donation,
+                    in_Zulu,
+                    trophies)
+                    VALUES(?,?,?,?,?)
                         """ 
         try:
             self.conn.cursor().execute(sql_update, tupe)
