@@ -907,9 +907,9 @@ async def user_remove(ctx, query):
     except: 
         await ctx.send("Could not remove roles from the user")
         
-@user_remove.error
-async def kickuser_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @user_remove.error
+# async def kickuser_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def addnote(ctx, mem):
