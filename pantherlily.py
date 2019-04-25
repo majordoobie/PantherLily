@@ -810,7 +810,7 @@ async def user_remove(ctx, query):
         allMems = dbconn.get_allUsers()
         for i in allMems:
             if i[1].lower() == query.lower():
-                discord_id = dbconn.get_user_byDiscID((i[4],))                 
+                discord_id = dbconn.get_user_byDiscID((i[4],))[0][4]                 
     else:
         discord_id = dbconn.get_user_byDiscID((res.id,))[0][4]
 
@@ -907,9 +907,9 @@ async def user_remove(ctx, query):
     except: 
         await ctx.send("Could not remove roles from the user")
         
-# @user_remove.error
-# async def kickuser_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@user_remove.error
+async def kickuser_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def addnote(ctx, mem):
