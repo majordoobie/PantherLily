@@ -665,8 +665,12 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     # Query CoC API to see if we have the right token and the right tag
     res = coc_client.get_member(clash_tag)
 
-    # Handle HTTP error 
-    if res.status_code != 200:
+    # Handle HTTP error
+    if res.status_code == 404:
+        msg = (f"Was not able to find {clash_tag} in CoC servers.") 
+        await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
+        return
+    elif res.status_code != 200:
         msg = (f"Clash tag {clash_tag} was not found in Reddit Zulu. "
         "Or our exit node is not currently whitelisted. "
         f"Use {config[botMode]['bot_Prefix']}lcm to see the available Clash tags "
