@@ -346,15 +346,21 @@ async def lcm(ctx):
             else:
                 return False
 
-        await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
-        await view.clear_reactions()
-        embed = discord.Embed(title="Reddit Zulu Strength", color=0x00FF80)
-        embed.add_field(name="Registered Members: ", value=len(db_result), inline=False)
-        embed.add_field(name="TH12s: ", value=strength[12], inline=False)
-        embed.add_field(name="TH11s: ", value=strength[11], inline=False)
-        embed.add_field(name="TH10s: ", value=strength[10], inline=False)
-        embed.add_field(name="TH9s: ", value=strength[9], inline=False)
-        await ctx.send(embed=embed)
+        try:
+            await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+            await view.clear_reactions()
+            embed = discord.Embed(title="Reddit Zulu Strength", color=0x00FF80)
+            embed.add_field(name="Registered Members: ", value=len(db_result), inline=False)
+            embed.add_field(name="TH12s: ", value=strength[12], inline=False)
+            embed.add_field(name="TH11s: ", value=strength[11], inline=False)
+            embed.add_field(name="TH10s: ", value=strength[10], inline=False)
+            embed.add_field(name="TH9s: ", value=strength[9], inline=False)
+            await ctx.send(embed=embed)
+            return
+        except asyncio.TimeoutError:
+            await view.clear_reactions()
+            return
+
 
 @lcm.error
 async def lcm_error(ctx, error):
@@ -1047,10 +1053,14 @@ async def lookup(ctx, option, query):
                     embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 view = await ctx.send(embed=embed)
                 await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-                await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
-                await view.clear_reactions()
-                await ctx.send(result[4])
-                await ctx.send(result[0])
+
+                try:
+                    await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+                    await view.clear_reactions()
+                    await ctx.send(result[4])
+                    await ctx.send(result[0])
+                except asyncio.TimeoutError:
+                    await view.clear_reactions()
             return
         else:
             desc = (f"No results found in the database using ClashTag: {tag}")
@@ -1101,10 +1111,13 @@ async def lookup(ctx, option, query):
             # Reaction  
             view = await ctx.send(embed=embed)
             await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-            await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
-            await view.clear_reactions()
-            await ctx.send(result[4])
-            await ctx.send(result[0])
+            try:
+                await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+                await view.clear_reactions()
+                await ctx.send(result[4])
+                await ctx.send(result[0])
+            except asyncio.TimeoutError:
+                await view.clear_reactions()
         return
 
     if option in ['--global', '-g']:
@@ -1125,10 +1138,14 @@ async def lookup(ctx, option, query):
             # Reactions
             view = await ctx.send(embed=embed)
             await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-            await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
-            await view.clear_reactions()
-            await ctx.send(res.id)
-            return
+            try:
+                await ctx.bot.wait_for('reaction_add', timeout = 60, check=check)
+                await view.clear_reactions()
+                await ctx.send(res.id)
+                return
+            except asyncio.TimeoutError:
+                await view.clear_reactions()
+                return
 
 @lookup.error
 async def search_error(ctx, error):
