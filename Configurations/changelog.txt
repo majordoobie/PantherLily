@@ -1,3 +1,6 @@
+[Patch 1.4.1] 28APR2019
+[Fixed] error cause by not having enough data in the dataframe
+
 [Version 1.4] 24APR2019
 [Added] Sorted names when using the report command
 [Added] All lookups now give you a + emoji clicking the emoji will give you the discord ID and clash tag of ther user in a format that you can copy and paste on mobile devices

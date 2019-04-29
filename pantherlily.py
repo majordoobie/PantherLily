@@ -189,7 +189,7 @@ async def help(ctx, *option):
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
 
-    versioning = ("Panther Lily Version: 1.4 \nhttps://github.com/majordoobie/PantherLily")
+    versioning = ("Panther Lily Version: 1.4.3 \nhttps://github.com/majordoobie/PantherLily")
 
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
@@ -596,7 +596,11 @@ async def donation(ctx, *, user: discord.Member = None):
     lastSun = botAPI.lastSunday()
     nextSun = lastSun + timedelta(days=7)
     donation = dbconn.get_Donations((result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
-    lastDon = datetime.strptime(donation[0][0], "%Y-%m-%d %H:%M:%S")
+    try:
+        lastDon = datetime.strptime(donation[0][0], "%Y-%m-%d %H:%M:%S")
+    except:
+        await ctx.send("Please wait an hour to accurately calculate your donations. Thank you for your patience.")
+        return
 
 
     if len(donation) > 2:
@@ -1403,40 +1407,6 @@ async def export(ctx):
     cols.insert(1, "Diff")
     df_out = df_out[cols]
 
-
-    # # Calculate the donatio difference
-    # df_out = df.loc[mask1].groupby(['Name', 'Tag'])['Current_Donation'].agg(['min','max']).diff(axis=1)
-
-    # # Fix up the new column name
-    # df_out.drop('min', axis=1, inplace=True)
-    # df_out.rename(columns={'max':'Diff'}, inplace=True)
-    # df_out = df_out[['Diff']].astype(np.int64)
-    # df_out.reset_index(inplace=True)
-
-    # # Set index to tag
-    # df_out.set_index('Tag', inplace=True)
-
-    # # Add a column for day of week, only count peoples donations that have a 0
-    # df_out['Collection'] = df.loc[mask1].groupby('Tag')['increment_date'].min().dt.dayofweek
-
-    # # Add a column for FIN
-    # lastSunday = (lastSunday - timedelta(days=1))
-    # df_out[lastSunday.strftime("%d%b").upper()] = df.loc[mask1].groupby('Tag')['Current_Donation'].max()
-    # df_out = df_out[['Name','Collection','Diff', lastSunday.strftime("%d%b").upper()]]
-    
-    # # Create the other three columns in the excel sheet
-    # df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df.loc[mask2].groupby('Tag')[['Current_Donation']].max()
-    # df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=7)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
-
-    # df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df.loc[mask3].groupby('Tag')[['Current_Donation']].max()
-    # df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=14)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
-
-    # df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df.loc[mask4].groupby('Tag')[['Current_Donation']].max()
-    # df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'] = df_out[f'{(lastSunday - timedelta(days=21)).strftime("%d%b").upper()}'].fillna(0).astype(np.int64)
-
-    # df_out.loc[df_out.Collection > 0, 'Diff'] = 0
-    # df_out.drop('Collection', axis=1, inplace=True)
-
     # Create workbook
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -1508,6 +1478,10 @@ async def report(ctx):
     # Calculate the diff for this week and save it to its own DF
     # Rename column, reset index
     df_out = df.loc[after_sun].groupby(['Tag', 'Name'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+    # Exit if there isn't enough data
+    if df_out.empty:
+        await ctx.send("Please wait an hour to accurately calculate your donations. Thank you for your patience.")
+        return
     df_out.drop('min', axis=1, inplace=True)
     df_out.rename(columns={'max':'Current'}, inplace=True)
     df_out.reset_index(inplace=True)
