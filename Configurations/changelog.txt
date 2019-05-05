@@ -1,3 +1,6 @@
+[Patch] 1.4.2] 5MAY2019
+[Added] Donors roles in user_remove
+
 [Patch 1.4.1] 28APR2019
 [Fixed] error cause by not having enough data in the dataframe
 

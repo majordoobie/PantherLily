@@ -913,7 +913,8 @@ async def user_remove(ctx, query):
             303965505813872641,
             540615053855162408,
             540615255013851136,
-            294287799010590720
+            294287799010590720,
+            297113442618179585
         ]
         role_objects = [ ctx.guild.get_role(role) for role in remove_roles ]
         await user.remove_roles(*role_objects)
