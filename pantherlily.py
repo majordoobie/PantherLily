@@ -1739,7 +1739,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # update users table  inPlanning
             #(TownHallLevel, League, inPlanningServer, Tag)
-            dbconn.update_users((memStat.townHallLevel, memStat.league_name, inPlanning, memStat.tag))
+            dbconn.update_members_table((memStat.townHallLevel, memStat.league_name, inPlanning, memStat.tag))
 
         # reset message
         messages = [
@@ -1758,5 +1758,5 @@ async def weeklyRefresh(discord_client, botMode):
 
 
 if __name__ == "__main__":
-    #discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
+    discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
     discord_client.run(config[botMode]['Bot_Token'])
