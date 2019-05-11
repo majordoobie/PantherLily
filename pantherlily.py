@@ -392,7 +392,7 @@ async def roster(ctx):
 
     roster = {}
     # for zMember in (mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles)):
-    mems = [ mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles) ]
+    mems = [ mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles) and mem.name != "ZuluTest" ]
     mems.sort(key=lambda x: x.display_name.lower())
     for zMember in mems:
         roster[zMember.display_name] = {
@@ -414,6 +414,7 @@ async def roster(ctx):
 
 
     line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}\u0080\n")
+    mem_count = 1
     for userName in roster.keys():
         if roster[userName]['zuluServer'] == True:
             line += f"{emoticons['tracker bot']['true']}"
@@ -435,7 +436,8 @@ async def roster(ctx):
         else:
             line += f"{emoticons['tracker bot']['false']}"
 
-        line += f"  {userName}\n"
+        line += f"  **{mem_count:>2}**  {userName}\n"
+        mem_count += 1
         if len(line) > 1700:
             await ctx.send(line)
             line = ''
