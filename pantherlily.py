@@ -1577,7 +1577,23 @@ for (const row of tableElm.rows) {
 
 @discord_client.command()
 async def test(ctx):
-    pass
+
+    thRoles =[ role for role in ctx.author.roles if role.name.startswith('th') ]
+
+    print(thRoles)
+
+    guild = ctx.guild
+    roleObj_TH = botAPI.get_townhallRole(guild, 11)
+
+    for i in thRoles:
+        if i in ctx.author.roles:
+            await ctx.send(f"{i} in there")
+
+    if roleObj_TH.id in (role.id for role in ctx.author.roles ):
+        await ctx.send("true")
+    else:
+        await ctx.send("false")
+    
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
@@ -1691,18 +1707,23 @@ async def weeklyRefresh(discord_client, botMode):
 
             # find if their TH role has changed
             thRoles =[ role for role in disc_UserObj.roles if role.name.startswith('th') ]
-            if len(thRoles) == 0:
-                await disc_UserObj.add_roles(roleObj_TH)
-            elif len(thRoles) > 1:
-                for role in thRoles:
-                    await disc_UserObj.remove_roles(role)
-                await disc_UserObj.add_roles(roleObj_TH)
-            else:
-                if thRoles[0].name.lower() == roleObj_TH.name.lower():
+
+            # Check if users th level object is already assigned to them
+            if roleObj_TH in thRoles:
+                # they have the role, make sure they don't have more than one
+                if len(thRoles) == 1:
                     pass
                 else:
-                    await disc_UserObj.remove_roles(thRoles[0])
-                    await disc_UserObj.add_roles(roleObj_TH)
+                    for role in thRoles:
+                        if role != roleObj_TH:
+                            await disc_UserObj.remove_roles(role)
+            # if they don't have the role check if they have any th roles
+            elif thRoles:
+                await disc_UserObj.remove_roles(thRoles)
+                await disc_UserObj.add_roles(roleObj_TH)
+            # finally, just add the role if they don't have any
+            else:
+                await disc_UserObj.add_roles(roleObj_TH)
 
             # Check to see if they are current in zulu or somewhere else
             in_zulu = "False"
@@ -1738,5 +1759,5 @@ async def weeklyRefresh(discord_client, botMode):
 
 
 if __name__ == "__main__":
-    discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
+    #discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
     discord_client.run(config[botMode]['Bot_Token'])
