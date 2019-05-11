@@ -259,6 +259,24 @@ class ZuluDB:
         row = cur.fetchall()
         return row
 
+    def update_members_table(self, tupe):
+        """
+        Method used to update a users. This is used when they level up or change clash league
+
+        Parameters:
+            tupe        (tuple):
+
+        Tuple:
+            (TownHallLevel, League, inPlanningServer, Tag)
+        """ 
+        sql_query = ("UPDATE MembersTable SET TownHallLevel = ?, League = ?, in_PlanningServer = ?  WHERE Tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, tupe)
+        #cur.execute(sql_query, (TownHallLevel, League, Tag,))
+        self.conn.commit()
+        row = cur.fetchall()
+        return row     
+
     def get_allUsers(self):
         """ 
         Get all rows from MembersTable table

@@ -1,5 +1,6 @@
 [Patch 1.4.3] 11MAY2019
 [Bug] Shit logic used to update users roles
+[Bug] Found a bug trying to write the wrong data to the tables
 
 [Patch 1.4.2] 5MAY2019
 [Added] Donors roles in user_remove

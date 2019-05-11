@@ -245,10 +245,6 @@ async def help(ctx, *option):
             embed.set_footer(text=versioning)
             await ctx.send(embed=embed)
 
-
-
-
-
 @help.error
 async def help_erro(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
@@ -661,7 +657,6 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         await ctx.send("You are not authorized to use this command")
         return
 
-    
     clash_tag = clash_tag.lstrip("#")
     disc_userObj = await botAPI.userConverter(ctx, disc_mention)
 
@@ -1657,16 +1652,19 @@ async def weeklyRefresh(discord_client, botMode):
         user = ''
         for user in get_all:
             # if mem in planning server
+            inPlanning = ""
             if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['Discord']['plandisc_id'])).members):
                 if user[6] == "True":
                     pass
                 else:
-                    dbconn.set_inPlanning(("True", user[0]))
+                    inPlanning = "True"
+                    #dbconn.set_inPlanning(("True", user[0]))
             else:
                 if user[6] == "False":
                     pass
                 else:
-                    dbconn.set_inPlanning(("False", user[0]))
+                    inPlanning = "False"
+                    #dbconn.set_inPlanning(("False", user[0]))
 
             # Grab the users CoC stats to see if there is any updates needed on their row
             try:
@@ -1739,8 +1737,9 @@ async def weeklyRefresh(discord_client, botMode):
                     memStat.trophies
                 ))
 
-            # update users table
-            dbconn.update_users((memStat.tag, memStat.townHallLevel, memStat.league_name))
+            # update users table  inPlanning
+            #(TownHallLevel, League, inPlanningServer, Tag)
+            dbconn.update_users((memStat.townHallLevel, memStat.league_name, inPlanning, memStat.tag))
 
         # reset message
         messages = [
