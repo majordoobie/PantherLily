@@ -81,14 +81,14 @@ elif botMode == "devBot":
 
 
 # Instanciate botAssit and DB
-botAPI = BotAssist(botMode, configLoc)
-
 dbLoc = config[botMode]['db']
 if dbLoc == "None":
     print(f"No dev file set in {botMode}")
     ex("Exiting")
 else:
     dbconn = ZuluDB(dbLoc)
+
+botAPI = BotAssist(botMode, configLoc, dbconn, emoticons)
 
 coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 prefx = config[botMode]['bot_Prefix'].split(' ')[0]
@@ -254,10 +254,10 @@ async def help_erro(ctx, error):
 @discord_client.command()
 async def listroles(ctx):
     """ List the roles and ID in the current channel """
-    if botAPI.rightServer(ctx, config):
+    # Check server and Member Role
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
-        print("User is using the wrong server")
         return
 
     tupe = []
@@ -284,10 +284,10 @@ async def listroles_error(ctx, error):
 @discord_client.command()
 async def lcm(ctx):
     """ List users in the current clan with their tag """
-    if botAPI.rightServer(ctx, config):
+
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
-        print("User is using the wrong server")
         return
 
     res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
@@ -365,10 +365,9 @@ async def lcm_error(ctx, error):
 @discord_client.command()
 async def roster(ctx):
     """ Function is used to check what members are in which server """
-    if botAPI.rightServer(ctx, config):
+    if await botAPI.rightServer(ctx, config):
         pass
     else:
-        print("User is using the wrong server")
         return
 
     # get all clan members
@@ -454,12 +453,11 @@ async def roster_error(ctx, error):
 async def newinvite(ctx, *arg):
     """ Get the channel object to use the invite method of that channel """
 
-    if botAPI.rightServer(ctx, config):
+    if await botAPI.rightServer(ctx, config):
         targetServer = int(config['Discord']['PlanDisc_ID'])
         targetChannel = int(config['Discord']['PlanDisc_Channel'])
 
     else:
-        print("User is using the wrong server")
         return
 
     # Try to create the invite object
@@ -643,18 +641,10 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
-    # test if the user ran the command from the right server 
-    if botAPI.rightServer(ctx, config):
+    # Check server and Member Role
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
-        print("User is using the wrong server")
-        return
-
-    # If user is authorized to use this command
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send("You are not authorized to use this command")
         return
 
     clash_tag = clash_tag.lstrip("#")
@@ -808,45 +798,31 @@ async def info_error(ctx, error):
 @discord_client.command()
 async def user_remove(ctx, query):
 
-    # Attempt to resolve the user name
-    res = await botAPI.userConverter(ctx, query)
-
-    # If converter fails attemp to search through the DB for the username with no caps
-    discord_id = None
-
-    # Test if we got nothing from the discord converter 
-    if res == None:
-        allMems = dbconn.get_allUsers()
-        for i in allMems:
-            if i[1].lower() == query.lower():
-                discord_id = dbconn.get_user_byDiscID((i[4],))[0][4]                 
+    # Check server and Member Role
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
     else:
-        discord_id = dbconn.get_user_byDiscID((res.id,))[0][4]
+        return
 
-    if discord_id == None:
+    # Attempt to resolve the user name
+    member_id = await botAPI.user_converter_db(ctx, query)
+
+    if member_id == None:
         desc = (f"Was unable to resolve {query}. This command supports mentions, "
             "IDs, username and nicknames.")
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
+    
+    # try to get the users member object 
+    user_obj = await ctx.guild.get_member(member_id)
 
-
-    if botAPI.rightServer(ctx, config):
-        pass
+    # See if you can get the member object
+    if isinstance(user_obj, discord.Member):
+        user_name = user_obj.display_name
     else:
-        print("User is using the wrong server")
-        return
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
+        user_name = query
 
-    if query == None:
-        desc = (f"Mention argument is required")
-        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
-        return
-
-    msg = (f"You are about to set {query} CoC Member status to False "
+    msg = (f"You are about to set {user_name} CoC Member status to False "
         "are you sure you would like to continue?\n(Yes/No)")
     await ctx.send(msg)
 
@@ -881,12 +857,12 @@ async def user_remove(ctx, query):
         return
 
     # Re query just incase we got the user from the Discord API
-    oldNote = dbconn.get_user_byDiscID((discord_id,))
+    oldNote = dbconn.get_user_byDiscID((member_id,))
 
     note = oldNote[0][8]
     note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
     note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "False", discord_id,))
+    result = dbconn.set_kickNote((note, "False", member_id,))
     if result == 1:
         desc = (f"Successfully set {oldNote[0][1]} active status to False with "
             "the note provided above.")
@@ -900,7 +876,7 @@ async def user_remove(ctx, query):
 
     await ctx.send("Attempting to remove roles...") 
     try:
-        user = ctx.guild.get_member(discord_id)
+        user = ctx.guild.get_member(member_id)
         remove_roles = [
             303965219829448705,
             455572149277687809,
@@ -923,29 +899,24 @@ async def kickuser_error(ctx, error):
 
 @discord_client.command()
 async def addnote(ctx, mem):
+    # User and Server check
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
+    else:
+        return
+
     # Get user object 
-    member = await botAPI.userConverter(ctx, mem)
+    member_id = await botAPI.user_converter_db(ctx, mem)
 
     # If user object can't re resolved then exit 
-    if member == None:
+    if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
         "IDs, username and nicknames.")
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
 
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        print("User is using the wrong server")
-        return
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
-
     # Query the users dad 
-    result = dbconn.get_user_byDiscID((member.id,))
+    result = dbconn.get_user_byDiscID((member_id,))
     if len(result) == 1:
         example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
         await ctx.send(f"What would you like to add {ctx.author.display_name}? "
@@ -966,18 +937,18 @@ async def addnote(ctx, mem):
             await ctx.send("Terminating function")
             return
 
-        oldNote = dbconn.get_user_byDiscID((member.id,))
+        oldNote = dbconn.get_user_byDiscID((member_id,))
         note = oldNote[0][8]
         note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
         note += f"{response.content}"
-        result = dbconn.set_kickNote((note, "True", member.id,))
+        result = dbconn.set_kickNote((note, "True", member_id,))
         if result == 1:
-            desc = (f"Successfully added a note to {member.display_name}")
+            desc = (f"Successfully added a note to {result[1]}")
             await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
             return  
         
         else:
-            desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+            desc = (f"Unable to find {result[1]} in the database. Use {prefx}roster to verify "
                 "user.")
             await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
             return 
@@ -987,16 +958,11 @@ async def addnote(ctx, mem):
 
 @discord_client.command()
 async def lookup(ctx, option, query):
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        print("User is using the wrong server")
-        return
 
-    if botAPI.authorized(ctx, config):
+    # Check server and Member Role
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
     if option not in ['--tag', '-t', '--name', '-n', '--global', '-g']:
@@ -1153,31 +1119,35 @@ async def search_error(ctx, error):
 @discord_client.command()
 async def deletenote(ctx, mem):
     """ Function used to delete notes for the user supplieds database """
+
+    # Check server and User
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
+    else:
+        return
+
     # Get user object 
-    member = await botAPI.userConverter(ctx, mem)
+    member_id = await botAPI.user_converter_db(ctx, mem)
 
     # If user object can't re resolved then exit 
-    if member == None:
+    if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
         "IDs, username and nicknames.")
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
 
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        print("User is using the wrong server")
-        return
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
-
-    result = dbconn.get_user_byDiscID((member.id,))
+    result = dbconn.get_user_byDiscID((member_id,))
     if len(result) == 1:
+        user_obj = await ctx.guild.get_member(member_id)
+
+        # See if you can get the member object
+        if isinstance(user_obj, discord.Member):
+            user_name = user_obj.display_name
+        else:
+            user_name = mem
+
         note = result[0][8]
-        await ctx.send(f"The current note set for {member.display_name} is:\n\n```{note}```\n\n ")
+        await ctx.send(f"The current note set for {user_name} is:\n\n```{note}```\n\n ")
 
         await ctx.send("```\n"
             f"{note}\n"
@@ -1191,14 +1161,14 @@ async def deletenote(ctx, mem):
             return
         else: 
             note = f"[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nDeleted by {ctx.author.display_name}"
-            res = dbconn.set_kickNote((note, result[0][7], member.id,))
+            res = dbconn.set_kickNote((note, result[0][7], member_id))
             if res == 1:
-                desc = (f"Successfully cleared {member.display_name} note in the database")
+                desc = (f"Successfully cleared {user_name} note in the database")
                 await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
                 return  
             
             else:
-                desc = (f"Unable to find {member.display_name} in the database. Use {prefx}roster to verify "
+                desc = (f"Unable to find {user_name} in the database. Use {prefx}roster to verify "
                     "user.")
                 await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
                 return 
@@ -1209,28 +1179,35 @@ async def deletenote_error(ctx, error):
 
 @discord_client.command()
 async def viewnote(ctx, mem):
+
+    # Check server and Member Role
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
+    else:
+        return
+
     # Get user object 
-    member = await botAPI.userConverter(ctx, mem)
+    member_id = await botAPI.user_converter_db(ctx, mem)
 
     # If user object can't re resolved then exit 
-    if member == None:
+    if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
         "IDs, username and nicknames.")
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
-    if botAPI.rightServer(ctx, config):
-        pass
-    else:
-        print("User is using the wrong server")
-        return
-    if botAPI.authorized(ctx, config):
-        pass
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
-        
-    result = dbconn.get_user_byDiscID((member.id,))
+
+    result = dbconn.get_user_byDiscID((member_id,))
     if len(result) == 1:
+
+        # Attempt to get the user member object
+        user_obj = await ctx.guild.get_member(member_id)
+
+        # See if you can get the member object
+        if isinstance(user_obj, discord.Member):
+            user_name = user_obj.display_name
+        else:
+            user_name = mem
+
         note = result[0][8]
         ids = []
         search = False
@@ -1239,7 +1216,7 @@ async def viewnote(ctx, mem):
                 ids.append(re.search(r"\d+", i).group())
         if ids:
             search = True
-        await ctx.send(f"Current Notes for {member.display_name}:\n```{note}```")
+        await ctx.send(f"Current Notes for {user_name}:\n```{note}```")
         if search:
             await ctx.send(f"Message IDs found, would you like those messages retrieved?\n(Yes/No)")
             try:
@@ -1290,6 +1267,13 @@ async def viewnote_error(ctx, error):
 @discord_client.command()
 async def getmessage(ctx, msgID):
     """ Get messages from leader-notes """
+
+    # Check user and user
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
+    else:
+        return
+
     if msgID.isdigit() == False:
         desc = (f"Invalid argument {msgID}")
         await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
@@ -1348,6 +1332,13 @@ async def caketime(ctx):
 #####################################################################################################################
 @discord_client.command()
 async def export(ctx):
+
+    # Check user and server
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
+    else:
+        return
+
     # get last sunday integer to calculate last sunday. Then pull from that day and beyond
     today = datetime.utcnow()
     # use 5 minutes as a grace peried for when the db takes too long to update
@@ -1571,50 +1562,43 @@ for (const row of tableElm.rows) {
     return
 
 @discord_client.command()
-async def test(ctx):
+async def test(ctx, mem):
 
-    thRoles =[ role for role in ctx.author.roles if role.name.startswith('th') ]
-
-    print(thRoles)
-
-    guild = ctx.guild
-    roleObj_TH = botAPI.get_townhallRole(guild, 11)
-
-    for i in thRoles:
-        if i in ctx.author.roles:
-            await ctx.send(f"{i} in there")
-
-    if roleObj_TH.id in (role.id for role in ctx.author.roles ):
-        await ctx.send("true")
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
+        pass
     else:
-        await ctx.send("false")
-    
+        return
+
+    member = await botAPI.user_converter_db(ctx, mem)
+    if member != None:
+        await ctx.send(member)
+    else:
+        await ctx.send("Could not find user")
+
+
+    # for member in ctx.guild.members:
+    #     if mem.lower() == member.name.lower():
+    #         await ctx.send(member)
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
 @discord_client.command()
 async def killbot(ctx):
     """ Send kill signal to bot to properly close down databse and config file """
-    if botAPI.rightServer(ctx, config):
+
+    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
-        desc = f"You are attempting to run a command destined for another server."
-        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
-        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
         return
 
-    if botAPI.authorized(ctx, config):
-        await ctx.send("Tearing down, please hold.")
-        await ctx.send("Closing database..")
-        dbconn.conn.close()
-        with open(configLoc, 'w') as f:
-                config.write(f)
-        await ctx.send("Terminating bot..")
-        await ctx.send("_Later._")
-        await discord_client.logout()
-    else:
-        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
-        return
+    await ctx.send("Tearing down, please hold.")
+    await ctx.send("Closing database..")
+    dbconn.conn.close()
+    with open(configLoc, 'w') as f:
+            config.write(f)
+    await ctx.send("Terminating bot..")
+    await ctx.send("_Later._")
+    await discord_client.logout()
 
 @killbot.error
 async def killbot_error(ctx, error):
@@ -1701,27 +1685,27 @@ async def weeklyRefresh(discord_client, botMode):
                 continue
 
             # Grab users role object
-            roleObj_TH = botAPI.get_townhallRole(guild, memStat.townHallLevel)
+            current_roleObj = botAPI.get_townhallRole(guild, memStat.townHallLevel)
 
             # find if their TH role has changed
-            thRoles =[ role for role in disc_UserObj.roles if role.name.startswith('th') ]
+            assigned_roleObjs =[ role for role in disc_UserObj.roles if role.name.startswith('th') ]
 
             # Check if users th level object is already assigned to them
-            if roleObj_TH in thRoles:
+            if current_roleObj in assigned_roleObjs:
                 # they have the role, make sure they don't have more than one
-                if len(thRoles) == 1:
+                if len(assigned_roleObjs) == 1:
                     pass
                 else:
-                    for role in thRoles:
-                        if role != roleObj_TH:
-                            await disc_UserObj.remove_roles(role)
+                    await disc_UserObj.remove_roles(*assigned_roleObjs)
+                    await disc_UserObj.add_roles(current_roleObj)
+
             # if they don't have the role check if they have any th roles
-            elif thRoles:
-                await disc_UserObj.remove_roles(thRoles)
-                await disc_UserObj.add_roles(roleObj_TH)
+            elif len(assigned_roleObjs) > 0:
+                await disc_UserObj.remove_roles(*assigned_roleObjs)
+                await disc_UserObj.add_roles(current_roleObj)
             # finally, just add the role if they don't have any
             else:
-                await disc_UserObj.add_roles(roleObj_TH)
+                await disc_UserObj.add_roles(current_roleObj)
 
             # Check to see if they are current in zulu or somewhere else
             in_zulu = "False"

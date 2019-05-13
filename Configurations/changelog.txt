@@ -1,3 +1,6 @@
+[Version 1.5] 11MAY2019
+[Updated] Roster command output
+
 [Patch 1.4.3] 11MAY2019
 [Bug] Shit logic used to update users roles
 [Bug] Found a bug trying to write the wrong data to the tables
