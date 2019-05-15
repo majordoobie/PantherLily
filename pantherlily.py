@@ -1031,24 +1031,15 @@ async def lookup(ctx, option, query):
 
     if option in ['--name', '-n']:
         # Attempt to resolve the user name
-        res = await botAPI.userConverter(ctx, query)
+        member_id = await botAPI.user_converter_db(ctx, query)
 
-        # If converter fails attemp to search through the DB for the username with no caps
-        result = None
-
-        # Test if we got nothing from the discord converter 
-        if res == None:
-            allMems = dbconn.get_allUsers()
-            for i in allMems:
-                if i[1].lower() == query.lower():
-                    result = dbconn.get_user_byDiscID((i[4],))                 
-        else:
-            result = dbconn.get_user_byDiscID((res.id,))
-
-        if result == None:
+        # If can't find the user
+        if member_id == None:
             await ctx.send("Could not find that user in the database.")
             return
 
+        # Query the users table
+        result = dbconn.get_user_byDiscID((member_id,))
         if len(result) > 0:
             result = result[0]
             if result[8] == '':
