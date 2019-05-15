@@ -12,7 +12,7 @@ class BotAssist:
         servObj     (obj):      Server object the bot is running in
         botCreation (str):      Date the bot object was created
     """
-    def __init__(self, botMode, configLoc):
+    def __init__(self, botMode, configLoc, dbconn, emoji, config):
         """
         Constructor for BotAssist class.
 
@@ -21,7 +21,10 @@ class BotAssist:
             configLoc   (str):      File path to the configuration file
         """ 
         self.botMode = botMode
-        self.configLoc = configLoc 
+        self.configLoc = configLoc
+        self.dbconn = dbconn 
+        self.emoji = emoji,
+        self.config = config
 
     def serverSettings(self, ctx, config, bot): 
         """
@@ -48,7 +51,7 @@ class BotAssist:
         )
         return data
 
-    def authorized(self, ctx, config):
+    async def authorized(self, ctx, config):
         """
         Method used to evaluate a user
 
@@ -59,9 +62,10 @@ class BotAssist:
         for role in ctx.author.roles:
             if role.name == "CoC Leadership":
                 return True
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. {self.emoji['happy bot']['nyancat_big']}")
         return False
 
-    def rightServer(self, ctx, config):
+    async def rightServer(self, ctx, config):
         """ 
         Method to make sure the bot is running on the proper channel based on botMode
 
@@ -72,7 +76,9 @@ class BotAssist:
         if str(ctx.guild.id) == str(config[self.botMode]['Guild_Lock']):
             return True
         else:
+            await ctx.channel.send("You are using this command from the wrong server.")
             return False
+
 
     def yesno_check(self, message):
         """
@@ -205,7 +211,46 @@ class BotAssist:
         try:
             return await discord.ext.commands.MemberConverter().convert(ctx, arg) 
         except:
-            return None
+            pass
+
+        # Manually search through the server for members without case
+        for member in ctx.guild.members:
+            if arg.lower() == member.name.lower() or arg.lower() == member.display_name.lower():
+                return member
+        return None
+
+    async def user_converter_db(self, ctx, arg):
+        """ Used to find a user in the databse """
+        member = None
+        try:
+            member = await discord.ext.commands.MemberConverter().convert(ctx, arg) 
+            return member.id
+        except:
+            pass
+
+        if member == None:
+            all_users = self.dbconn.get_allUsers()
+            for user in all_users:
+                if arg.lower() == user[1].lower() or arg.lower().lstrip("#") == user[0].lstrip("#").lower():
+                    return user[4]
+
+        elif member == None:
+            for member in ctx.guild.members:
+                if arg.lower() == member.name.lower() or arg.lower() == member.display_name.lower():
+                    return member.id
+        
+        return None
+
+    async def await_error(self, ctx, description, title="INPUT ERROR"):
+        """ Display an error message to the user """
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=0xFF0000,
+        )
+        embed.set_footer(text=self.config[self.botMode]["version"])
+        await ctx.send(embed=embed)
+        
 
          
 
