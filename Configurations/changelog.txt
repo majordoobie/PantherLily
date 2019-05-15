@@ -1,5 +1,9 @@
-[Version 1.5] 11MAY2019
+[Version 1.5.0] 11MAY2019
 [Updated] Roster command output
+[Updated] Revamped the user lookup functions it should now be able to handle case insensitive queries, IDs, and even clash tags
+[Added] devShell loop disable - sorry Goku xD
+[Added] New suppression feature in panther.user_remove you can now remove users with p.user_remove <user> -m "Message"
+[Updated] Tons of under the hood code. The script has become about 50 lines shorter
 
 [Patch 1.4.3] 11MAY2019
 [Bug] Shit logic used to update users roles

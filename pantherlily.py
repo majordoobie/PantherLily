@@ -88,7 +88,7 @@ if dbLoc == "None":
 else:
     dbconn = ZuluDB(dbLoc)
 
-botAPI = BotAssist(botMode, configLoc, dbconn, emoticons)
+botAPI = BotAssist(botMode, configLoc, dbconn, emoticons, config)
 
 coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 prefx = config[botMode]['bot_Prefix'].split(' ')[0]
@@ -189,8 +189,6 @@ async def help(ctx, *option):
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
 
-    versioning = ("Panther Lily Version: 1.4.3 \nhttps://github.com/majordoobie/PantherLily")
-
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}listroles**", value=listroles)
@@ -209,13 +207,13 @@ async def help(ctx, *option):
 
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
-        embed.add_field(name=f"**{prefx}user_remove** <__@mention__>", value=disable_user)
+        embed.add_field(name=f"**{prefx}user_remove** <__@mention__> [__opt: -m \"msg\"__]", value=disable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
         embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
         embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
         embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
-        embed.set_footer(text=versioning)
+        embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
         await ctx.send(embed=embed)
 
     if option:
@@ -242,7 +240,7 @@ async def help(ctx, *option):
             embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
             embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
             embed.add_field(name=f"**How to Craft Notes**", value=notes)
-            embed.set_footer(text=versioning)
+            embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
             await ctx.send(embed=embed)
 
 @help.error
@@ -796,7 +794,7 @@ async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def user_remove(ctx, query):
+async def user_remove(ctx, query, suppress=None, note_to_add=None):
 
     # Check server and Member Role
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
@@ -814,7 +812,7 @@ async def user_remove(ctx, query):
         return
     
     # try to get the users member object 
-    user_obj = await ctx.guild.get_member(member_id)
+    user_obj = ctx.guild.get_member(member_id)
 
     # See if you can get the member object
     if isinstance(user_obj, discord.Member):
@@ -822,58 +820,83 @@ async def user_remove(ctx, query):
     else:
         user_name = query
 
-    msg = (f"You are about to set {user_name} CoC Member status to False "
-        "are you sure you would like to continue?\n(Yes/No)")
-    await ctx.send(msg)
+    if suppress==None and note_to_add==None:
+        msg = (f"You are about to set {user_name} CoC Member status to False "
+            "are you sure you would like to continue?\n(Yes/No)")
+        await ctx.send(msg)
 
-    response = await discord_client.wait_for('message', check = botAPI.yesno_check)
-    if response.content.lower() == 'no':
-        await ctx.send("Terminating function")
-        return
+        response = await discord_client.wait_for('message', check = botAPI.yesno_check)
+        if response.content.lower() == 'no':
+            await ctx.send("Terminating function")
+            return
 
-    example = (f"SgtMajorDoobie failed to meet weekly donation quota\n\n"
-        "msgID:546408720872112128\nmsgID:546408729155993615")
+        example = (f"SgtMajorDoobie failed to meet weekly donation quota\n\n"
+            "msgID:546408720872112128\nmsgID:546408729155993615")
 
-    await ctx.send("A kick message is required. You are able to enter any text you "
-        f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
-        "any message IDs you have included in this kick message. To include a message "
-        "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**")
+        await ctx.send("A kick message is required. You are able to enter any text you "
+            f"like or message IDs. You can then use {prefx}retrieve_msg command to extract "
+            "any message IDs you have included in this kick message. To include a message "
+            "ID make sure to prefix the ID with msgID:<id> to make it easier to parse for you.\n\n**Example:**")
+            
+        await ctx.send("```\n"
+            f"{example}\n"
+            "```")
+
+        await ctx.send("Please enter your message:")
+
+        def check(m):
+            return m.author.id == ctx.author.id
+
+        response = await discord_client.wait_for('message', check=check)
+        await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
+
+        response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
+        if response2.content.lower() == 'no':
+            await ctx.send("Terminating function")
+            return
+
+        # Re query just incase we got the user from the Discord API
+        oldNote = dbconn.get_user_byDiscID((member_id,))
+
+        note = oldNote[0][8]
+        note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+        note += f"{response.content}"
+        result = dbconn.set_kickNote((note, "False", member_id,))
+        if result == 1:
+            desc = (f"Successfully set {oldNote[0][1]} active status to False with "
+                "the note provided above.")
+            await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))  
         
-    await ctx.send("```\n"
-        f"{example}\n"
-        "```")
+        else:
+            desc = (f"Unable to find {oldNote[1]} in the database. Use {prefx}roster to verify "
+                "user.")
+            await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
 
-    await ctx.send("Please enter your message:")
+    elif suppress and note_to_add:
+        if suppress not in ["-m", "--message"]:
+            msg = ("Using suppression mode requires -m then a message in quotes. "
+            "For example:\n\n**panther.user_remove** sgtmajordoobie __-m \"In LOA \\nMsgID:123456\"__"
+            "\n\nPlease notice the [\\n] character, this will create a new line for you.")
+            await botAPI.await_error(ctx, msg)
+        
+        # Re query just incase we got the user from the Discord API
+        oldNote = dbconn.get_user_byDiscID((member_id,))
 
-    def check(m):
-        return m.author.id == ctx.author.id
-
-    response = await discord_client.wait_for('message', check=check)
-    await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
-
-    response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
-    if response2.content.lower() == 'no':
-        await ctx.send("Terminating function")
-        return
-
-    # Re query just incase we got the user from the Discord API
-    oldNote = dbconn.get_user_byDiscID((member_id,))
-
-    note = oldNote[0][8]
-    note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
-    note += f"{response.content}"
-    result = dbconn.set_kickNote((note, "False", member_id,))
-    if result == 1:
-        desc = (f"Successfully set {oldNote[0][1]} active status to False with "
-            "the note provided above.")
-        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))  
+        note = oldNote[0][8]
+        note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+        note += f"{note_to_add}"
+        result = dbconn.set_kickNote((note, "False", member_id,))
+        if result == 1:
+            desc = (f"Successfully set {oldNote[0][1]} active status to False with "
+                "the note provided above.")
+            await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))  
+        
+        else:
+            desc = (f"Unable to find {oldNote[1]} in the database. Use {prefx}roster to verify "
+                "user.")
+            await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
     
-    else:
-        desc = (f"Unable to find {oldNote[1]} in the database. Use {prefx}roster to verify "
-            "user.")
-        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
-        return
-
+    # Remove user roles
     await ctx.send("Attempting to remove roles...") 
     try:
         user = ctx.guild.get_member(member_id)
@@ -891,11 +914,12 @@ async def user_remove(ctx, query):
         await user.remove_roles(*role_objects)
         await ctx.send("Removed roles")
     except: 
-        await ctx.send("Could not remove roles from the user")
-        
+        await ctx.send("Could not remove roles from the user")        
+    
+
 @user_remove.error
 async def kickuser_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    await botAPI.await_error(ctx, error.__str__(),"RUNTIME ERROR")
 
 @discord_client.command()
 async def addnote(ctx, mem):
@@ -1598,6 +1622,11 @@ async def killbot_error(ctx, error):
 
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
+
+    # Don't allow the bot to loop when in devMode
+    if botMode == "devBot":
+        return
+
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         # Calculate the wait time in minute for next "top of hour"

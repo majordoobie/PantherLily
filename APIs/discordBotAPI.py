@@ -12,7 +12,7 @@ class BotAssist:
         servObj     (obj):      Server object the bot is running in
         botCreation (str):      Date the bot object was created
     """
-    def __init__(self, botMode, configLoc, dbconn, emoji):
+    def __init__(self, botMode, configLoc, dbconn, emoji, config):
         """
         Constructor for BotAssist class.
 
@@ -23,7 +23,8 @@ class BotAssist:
         self.botMode = botMode
         self.configLoc = configLoc
         self.dbconn = dbconn 
-        self.emoji = emoji
+        self.emoji = emoji,
+        self.config = config
 
     def serverSettings(self, ctx, config, bot): 
         """
@@ -232,9 +233,23 @@ class BotAssist:
             for user in all_users:
                 if arg.lower() == user[1].lower() or arg.lower().lstrip("#") == user[0].lstrip("#").lower():
                     return user[4]
-        else:
-            return None
 
+        elif member == None:
+            for member in ctx.guild.members:
+                if arg.lower() == member.name.lower() or arg.lower() == member.display_name.lower():
+                    return member.id
+        
+        return None
+
+    async def await_error(self, ctx, description, title="INPUT ERROR"):
+        """ Display an error message to the user """
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=0xFF0000,
+        )
+        embed.set_footer(text=self.config[self.botMode]["version"])
+        await ctx.send(embed=embed)
         
 
          
