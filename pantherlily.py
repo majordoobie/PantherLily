@@ -1627,6 +1627,7 @@ async def weeklyRefresh(discord_client, botMode):
 
     # Don't allow the bot to loop when in devMode
     if botMode == "devBot":
+        print("Running in dev mode")
         return
 
     await discord_client.wait_until_ready()

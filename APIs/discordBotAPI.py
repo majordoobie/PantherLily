@@ -231,7 +231,12 @@ class BotAssist:
         if member == None:
             all_users = self.dbconn.get_allUsers()
             for user in all_users:
-                if arg.lower() == user[1].lower() or arg.lower().lstrip("#") == user[0].lstrip("#").lower():
+                print(type(user[4]), type(arg))
+                if arg.lower() == user[1].lower():
+                    return user[4]
+                elif arg.lower().lstrip("#") == user[0].lstrip("#").lower():
+                    return user[4]
+                elif int(arg) == int(user[4]):
                     return user[4]
 
         elif member == None:
