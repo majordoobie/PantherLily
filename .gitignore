@@ -15,5 +15,5 @@ dumps/
 *.ipynb
 report.html
 Images/*
-.xlsx
+*.xlsx
 panther_env/
