@@ -1,3 +1,9 @@
+[Version 1.5.1] 
+[Fixed] Lookup lookup method it was not parsing discord IDs because the discord ID from the DB returned as a int and I was comparing it to a string
+[Fixed] Lookup method for panther.donation. It can now accept @mentions, names, ids and clash tags
+[Fixed] panther.addnote; it was no properly finishing because of some logic error
+[Removed] panther.lookup -t; it is now combined with panther.lookup -n
+
 [Version 1.5.0] 11MAY2019
 [Updated] Roster command output
 [Updated] Revamped the user lookup functions it should now be able to handle case insensitive queries, IDs, and even clash tags

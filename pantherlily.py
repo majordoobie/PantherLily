@@ -209,7 +209,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
         embed.add_field(name=f"**{prefx}user_remove** <__@mention__> [__opt: -m \"msg\"__]", value=disable_user)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-        embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup)
+        embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__global__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
         embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
         embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
@@ -541,43 +541,63 @@ async def stats_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["d"])
-async def donation(ctx, *, user: discord.Member = None):
+async def donation(ctx, *, user=None):
     """
-    Find the donation status of your users account
+    Discord command is used to display a users donation status. It queries the database for their current donation and 
+    performs a comparison between the start of the week and current day and supplies the difference.
+    
+    Arguments:
+        ctx {Discord Context} -- Message context from a discord chat
+        user {str or discord obj} -- User to query against (Default: None)
+
+    Returns:
+        Discord message using ctx.message
     """
+
+    discord_member = await botAPI.user_converter_db(ctx, user)
+    if discord_member == None:
+        msg = f"User: {user} not found."
+        await botAPI.await_error(ctx, msg, "USER NOT FOUND")
+        return
 
     if user == None:
-        user = ctx.author
-        userID = user.id
-        result = dbconn.get_user_byDiscID((userID,))
-        if len(result) == 0:
+        query_result = dbconn.get_user_byDiscID((ctx.author.id,))
+        if len(query_result) == 0:
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
+ 
     else:
-        userID = user.id
-        result = dbconn.get_user_byDiscID((userID,))
-        if len(result) == 0:
-            await ctx.send(f"No data was found for {user.display_name}")
+        if discord_member != None:
+            query_result = dbconn.get_user_byDiscID((discord_member,))
+            if len(query_result) == 0:
+                await ctx.send(f"No data was found for {user}")
+                return
+            else:
+                pass
+        else:
+            msg = f"Was not able to find a user with the argument of: {user}"
+            await botAPI.await_error(ctx, msg, "USER NOT FOUND")
             return
 
-    if not result:
+
+    if not query_result:
         msg = (f"{ctx.author.display_name} was not found in our database. Have they been added?")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
-    elif len(result) > 1:
-        users =[ i[1] for i in result ]
+    elif len(query_result) > 1:
+        users =[ i[1] for i in query_result ]
         msg = (f"Oh oh, looks like we have duplicate entries with the same discord ID. Users list: {users}")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
-    elif result[0][7] == "False":
-        msg = (f"Sorry {result[0][1]}, I am no longer tracking your donations as your enrollment to Reddit Zulu is set to False. "
+    elif query_result[0][7] == "False":
+        msg = (f"Sorry {query_result[0][1]}, I am no longer tracking your donations as your enrollment to Reddit Zulu is set to False. "
         "Please ping @CoC Leadership if this is a mistake.")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
-    res = coc_client.get_member(result[0][0])
+    res = coc_client.get_member(query_result[0][0])
     memStat = ClashStats.ClashStats(res.json())
 
     in_zulu = "False"
@@ -595,7 +615,7 @@ async def donation(ctx, *, user: discord.Member = None):
 
     lastSun = botAPI.lastSunday()
     nextSun = lastSun + timedelta(days=7)
-    donation = dbconn.get_Donations((result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
+    donation = dbconn.get_Donations((query_result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
     try:
         lastDon = datetime.strptime(donation[0][0], "%Y-%m-%d %H:%M:%S")
     except:
@@ -611,7 +631,7 @@ async def donation(ctx, *, user: discord.Member = None):
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
                 f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+            await ctx.send(embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080))
             return
 
         else:
@@ -623,15 +643,15 @@ async def donation(ctx, *, user: discord.Member = None):
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
                 f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{user.display_name}**__", description=msg, color=0x000080))
+            await ctx.send(embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080))
             return
 
     else:
         await ctx.send("No data was returned, try running me again.")
 
-@donation.error
-async def mydonations_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @donation.error
+# async def mydonations_error(ctx, error):
+#     await botAPI.await_error(ctx, error.__str__(), "RUNTIME ERROR")
 
 #####################################################################################################################
                                              # Admin Commands
@@ -941,46 +961,47 @@ async def addnote(ctx, mem):
         await ctx.send(embed = discord.Embed(title="RESOLVE ERROR", description=desc, color=0xFF0000))
         return
 
-    # Query the users dad 
-    result = dbconn.get_user_byDiscID((member_id,))
-    if len(result) == 1:
-        example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
-        await ctx.send(f"What would you like to add {ctx.author.display_name}? "
-            f"Remember to use the 'msgID:' when you want to include message ids in your notes.\n**Example**\n")
-                
-        await ctx.send("```\n"
-            f"{example}\n"
-            "```")
-
-        def check(m):
-            return m.author.id == ctx.author.id
-
-        response = await discord_client.wait_for('message', check=check)
-        await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
-
-        response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
-        if response2.content.lower() == 'no':
-            await ctx.send("Terminating function")
-            return
-
-        oldNote = dbconn.get_user_byDiscID((member_id,))
-        note = oldNote[0][8]
-        note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
-        note += f"{response.content}"
-        result = dbconn.set_kickNote((note, "True", member_id,))
-        if result == 1:
-            desc = (f"Successfully added a note to {result[1]}")
-            await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
-            return  
-        
-        else:
-            desc = (f"Unable to find {result[1]} in the database. Use {prefx}roster to verify "
-                "user.")
-            await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
-            return 
-
+    # Query the users data 
+    discord_member = discord_client.get_user(member_id)
+    if discord_member != None:
+        display_name = discord_member.display_name
     else:
-        await ctx.send("No results were found, or duplicate results were found. Please checkout logs")
+        display_name = "user"
+
+    example = (f"Missed attack\nmsgID:123456789654\nmsgID: 4654876135")
+    await ctx.send(f"What would you like to add {ctx.author.display_name}? "
+        f"Remember to use the 'msgID:' when you want to include message ids in your notes.\n**Example**\n")
+            
+    await ctx.send("```\n"
+        f"{example}\n"
+        "```")
+
+    def check(m):
+        return m.author.id == ctx.author.id
+
+    response = await discord_client.wait_for('message', check=check)
+    await ctx.send(f"**You have entered:**\n{response.content}\n\nContinue? (Yes/No)")
+
+    response2 = await discord_client.wait_for('message', check = botAPI.yesno_check)
+    if response2.content.lower() == 'no':
+        await ctx.send("Terminating function")
+        return
+
+    oldNote = dbconn.get_user_byDiscID((member_id,))
+    note = oldNote[0][8]
+    note += f"\n\n[{datetime.utcnow().strftime('%d-%b-%Y %H:%M').upper()}]\nNote by {ctx.author.display_name}\n"
+    note += f"{response.content}"
+    result = dbconn.set_kickNote((note, "True", member_id,))
+    if result == 1:
+        desc = (f"Successfully added a note to {display_name}")
+        await ctx.send(embed = discord.Embed(title="COMMIT SUCCESS", description=desc, color=0x00FF00))
+        return  
+    
+    else:
+        desc = (f"Unable to find {display_name} in the database. Use {prefx}roster to verify "
+            "user.")
+        await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
+        return 
 
 @discord_client.command()
 async def lookup(ctx, option, query):
@@ -1750,13 +1771,13 @@ async def weeklyRefresh(discord_client, botMode):
 
         # reset message
         messages = [
-            (discord.ActivityType.watching.listening ,   "Spotify"),
-            (discord.ActivityType.watching.playing   ,   "Overwatch"),
-            (discord.ActivityType.watching.playing   ,   "Clash of Clans"),
-            (discord.ActivityType.watching.playing   ,   "with cat nip~"),
-            (discord.ActivityType.watching.watching ,   "Fairy Tail"),
-            (discord.ActivityType.watching.playing   ,   "I'm not a cat!"),
-            (discord.ActivityType.watching.watching  ,   "panther.help")
+            (discord.ActivityType.listening ,   "Spotify"),
+            (discord.ActivityType.playing   ,   "Overwatch"),
+            (discord.ActivityType.playing   ,   "Clash of Clans"),
+            (discord.ActivityType.playing   ,   "with cat nip~"),
+            (discord.ActivityType.watching ,   "Fairy Tail"),
+            (discord.ActivityType.playing   ,   "I'm not a cat!"),
+            (discord.ActivityType.watching  ,   "panther.help")
         ]
 
         activ = random.choice(messages)
