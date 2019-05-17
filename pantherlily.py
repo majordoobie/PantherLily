@@ -553,31 +553,31 @@ async def donation(ctx, *, user=None):
     Returns:
         Discord message using ctx.message
     """
-
-    discord_member = await botAPI.user_converter_db(ctx, user)
-    if discord_member == None:
-        msg = f"User: {user} not found."
-        await botAPI.await_error(ctx, msg, "USER NOT FOUND")
-        return
-
+    
     if user == None:
         query_result = dbconn.get_user_byDiscID((ctx.author.id,))
         if len(query_result) == 0:
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
- 
     else:
-        if discord_member != None:
-            query_result = dbconn.get_user_byDiscID((discord_member,))
-            if len(query_result) == 0:
-                await ctx.send(f"No data was found for {user}")
-                return
-            else:
-                pass
-        else:
-            msg = f"Was not able to find a user with the argument of: {user}"
+        discord_member = await botAPI.user_converter_db(ctx, user)
+        if discord_member == None:
+            msg = f"User: {user} not found."
             await botAPI.await_error(ctx, msg, "USER NOT FOUND")
             return
+    
+        else:
+            if discord_member != None:
+                query_result = dbconn.get_user_byDiscID((discord_member,))
+                if len(query_result) == 0:
+                    await ctx.send(f"No data was found for {user}")
+                    return
+                else:
+                    pass
+            else:
+                msg = f"Was not able to find a user with the argument of: {user}"
+                await botAPI.await_error(ctx, msg, "USER NOT FOUND")
+                return
 
 
     if not query_result:
