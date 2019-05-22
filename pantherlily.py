@@ -1666,7 +1666,6 @@ async def weeklyRefresh(discord_client, botMode):
         else:
             wait_time = wait_time - 45
 
-        wait_time = 1
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
         #await asyncio.sleep(60)
