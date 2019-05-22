@@ -1,3 +1,8 @@
+[Version 1.6.2] 21MAY2019
+[Fixed] Removed time adjustment on server. Server is already running in UTF time
+[Fixed] Sorting in panther.report
+[Fixed] panther.donation and panther.report which relied on the last_sunday module that was updated
+
 [Version 1.6.1] 17MAY2019
 [Fixed] Bug preventing the user context from being used to check donations
 

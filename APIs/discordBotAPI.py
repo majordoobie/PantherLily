@@ -140,18 +140,15 @@ class BotAssist:
             f"target server: {targetServer} ")
             return msg
 
-    def lastSunday(self):
+    def last_sunday(self):
         """
         Method used to return the last sunday; used for the sql update
         """
         today = datetime.utcnow()
-        delta = 1 - today.isoweekday()      # days till last "sunday"
-        monday = today + timedelta(delta)   # datetime of last "sunday" #monday 0100 == sunday 2000
-        monday = monday.replace(hour=1, minute=0, second=0, microsecond=0)
-        #return_date = monday.strftime('%Y-%m-%d')+" 01:00:00"
-        return monday
+        sunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=0, minute=0, second=0, microsecond=0)
+        return sunday
 
-    def nextSunday(self):
+    def next_sunday(self):
         """
         Method used to return the next sunday; used for the sql update
         """

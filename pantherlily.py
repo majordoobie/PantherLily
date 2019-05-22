@@ -613,7 +613,7 @@ async def donation(ctx, *, user=None):
             memStat.trophies
         ))
 
-    lastSun = botAPI.lastSunday()
+    lastSun = botAPI.last_sunday()
     nextSun = lastSun + timedelta(days=7)
     donation = dbconn.get_Donations((query_result[0][0], lastSun.strftime("%Y-%m-%d %H:%M:%S"), nextSun.strftime("%Y-%m-%d %H:%M:%S")))
     try:
@@ -649,9 +649,9 @@ async def donation(ctx, *, user=None):
     else:
         await ctx.send("No data was returned, try running me again.")
 
-# @donation.error
-# async def mydonations_error(ctx, error):
-#     await botAPI.await_error(ctx, error.__str__(), "RUNTIME ERROR")
+@donation.error
+async def mydonations_error(ctx, error):
+    await botAPI.await_error(ctx, error.__str__(), "RUNTIME ERROR")
 
 #####################################################################################################################
                                              # Admin Commands
@@ -1485,7 +1485,8 @@ async def export_err(ctx, error):
 @discord_client.command()
 async def report(ctx):
     today = datetime.utcnow()
-    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
+    #lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
+    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=0, minute=0, second=0, microsecond=0)
     today = today.strftime('%Y-%m-%d %H:%M:%S')
     startDate = (lastSunday - timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1539,7 +1540,8 @@ async def report(ctx):
     df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
 
     # Sort names column
-    df_out.sort_values('Name', inplace=True)
+    #df_out.sort_values(by='Name.Upper', inplace=True)
+    df_out = df_out.iloc[df_out.Name.str.lower().argsort()]
 
     # Dataframe to html
     html = df_out.to_html(index=False, justify="center")
@@ -1591,7 +1593,7 @@ for (const row of tableElm.rows) {
     #new_link = soup.new_tag("script", src="pandamod.js")
     #soup.html.append(new_link)
 
-    with open("Web/report.html", "w") as outfile:
+    with open("Web/report.html", "w", encoding="utf-8") as outfile:
         outfile.write(str(soup))
 
     f = discord.File("Web/report.html", filename="report.html")
@@ -1664,6 +1666,7 @@ async def weeklyRefresh(discord_client, botMode):
         else:
             wait_time = wait_time - 45
 
+        wait_time = 1
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
         #await asyncio.sleep(60)
