@@ -1,3 +1,9 @@
+[Version 1.6.3] 24MAY2019
+[Added] Alias to user_add and user_remove it will now take add_user and remove_user
+[Added] The add_user command will now output a copy friendly output for you to paste into #sidekick-channel to register the new user for war. --BDon idea 
+[Changed] Order of arguments for user_add command. Since we combined the enable command and user_add command it doesn't make sense to tell the bot the persons clash_tag again. So now to enable someone you just add them with panther.user_add <discord>
+
+
 [Version 1.6.2] 21MAY2019
 [Fixed] Removed time adjustment on server. Server is already running in UTF time
 [Fixed] Sorting in panther.report

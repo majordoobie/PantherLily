@@ -277,7 +277,7 @@ async def listroles(ctx):
 
 @listroles.error
 async def listroles_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    await ctx.send(embed=discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def lcm(ctx):
@@ -522,18 +522,18 @@ async def stats(ctx, *, user: discord.Member = None):
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    memStat = ClashStats.ClashStats(res.json())
-    desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(memStat, emoticonLoc)
-    embed = Embed(title = f"**__{memStat.name}__**", description=desc, color = 0x00ff00)
+    mem_stats = ClashStats.ClashStats(res.json())
+    desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(mem_stats, emoticonLoc)
+    embed = Embed(title = f"**__{mem_stats.name}__**", description=desc, color = 0x00ff00)
     embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
     embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
     embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
-    if memStat.league_badgeSmall == None:
+    if mem_stats.league_badgeSmall == None:
         f = discord.File("Images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
         await ctx.send(embed=embed, file=f)
     else:
-        embed.set_thumbnail(url=memStat.league_badgeSmall)
+        embed.set_thumbnail(url=mem_stats.league_badgeSmall)
         await ctx.send(embed=embed)
 
 @stats.error
@@ -598,19 +598,19 @@ async def donation(ctx, *, user=None):
         return
 
     res = coc_client.get_member(query_result[0][0])
-    memStat = ClashStats.ClashStats(res.json())
+    mem_stats = ClashStats.ClashStats(res.json())
 
     in_zulu = "False"
-    if memStat.clan_name == "Reddit Zulu":
+    if mem_stats.clan_name == "Reddit Zulu":
         in_zulu = "True"
     else:
         in_zulu = "False"
     dbconn.update_donations((
             datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            memStat.tag,
-            memStat.achieve["Friend in Need"]['value'],
+            mem_stats.tag,
+            mem_stats.achieve["Friend in Need"]['value'],
             in_zulu,
-            memStat.trophies
+            mem_stats.trophies
         ))
 
     lastSun = botAPI.last_sunday()
@@ -656,8 +656,8 @@ async def mydonations_error(ctx, error):
 #####################################################################################################################
                                              # Admin Commands
 #####################################################################################################################
-@discord_client.command()
-async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
+@discord_client.command(aliases=["add_user"])
+async def user_add(ctx, disc_mention, clash_tag=None, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
@@ -668,14 +668,13 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         return
 
     clash_tag = clash_tag.lstrip("#")
-    disc_userObj = await botAPI.userConverter(ctx, disc_mention)
+    disc_user_id = await botAPI.user_converter_db(ctx, disc_mention)
+    disc_user_obj = await botAPI.userConverter(ctx, disc_user_id)
 
-    if disc_userObj == None:
+    if disc_user_obj == None:
         msg = (f"User id {disc_mention} does not exist on this server.")
         await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
         return
-    else:
-        pass
 
     # Query CoC API to see if we have the right token and the right tag
     res = coc_client.get_member(clash_tag)
@@ -693,27 +692,27 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
         return
     else:
-        memStat = ClashStats.ClashStats(res.json())
+        mem_stats = ClashStats.ClashStats(res.json())
 
     # Retrieve the CoC Members Role Object
     CoCMem_Role = botAPI.get_RoleObj(ctx.guild, "CoC Members")
     if isinstance(CoCMem_Role, discord.Role) == False:
         msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
-        await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+        await botAPI.await_error(msg, "INSTANCE ERROR")
         return
 
     # Retrieve the townHall Role Object
-    thLvl_Role = botAPI.get_townhallRole(ctx.guild, memStat.townHallLevel)
+    thLvl_Role = botAPI.get_townhallRole(ctx.guild, mem_stats.townHallLevel)
     if isinstance(thLvl_Role, discord.Role) == False:
-        msg = (f"Town Hall Level {memStat.townHallLevel} is currently not supported")
+        msg = (f"Town Hall Level {mem_stats.townHallLevel} is currently not supported")
         await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
         return
 
     # Change users default roles
-    msg = (f"Applying default roles to {memStat.name}")
+    msg = (f"Applying default roles to {mem_stats.name}")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
     if botAPI.contains_Role(disc_userObj, "CoC Members"):
-        msg = (f"{memStat.name} already has CoC Members role.")
+        msg = (f"{mem_stats.name} already has CoC Members role.")
         await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
     else:
         await disc_userObj.add_roles(CoCMem_Role)
@@ -721,7 +720,7 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(description=msg, color=0x00ff00))
 
     if botAPI.contains_Role(disc_userObj, thLvl_Role.name):
-        msg = (f"{memStat.name} already has {thLvl_Role.name} role.")
+        msg = (f"{mem_stats.name} already has {thLvl_Role.name} role.")
         await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
     else:
         contains, role = botAPI.contains_thRole(disc_userObj)
@@ -731,18 +730,18 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         msg = (f"{thLvl_Role.name} role applied.")
         await ctx.send(embed = Embed(description=msg, color=0x00ff00))
 
-    msg = (f"Changing {memStat.name}'s nickname to reflect their in-game name.")
+    msg = (f"Changing {mem_stats.name}'s nickname to reflect their in-game name.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
 
     # Change users nickname
-    if disc_userObj.display_name == memStat.name:
-        msg = (f"{memStat.name}'s discord nickname already reflects their in-game name.")
+    if disc_userObj.display_name == mem_stats.name:
+        msg = (f"{mem_stats.name}'s discord nickname already reflects their in-game name.")
         await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
     else:
         oldName = disc_userObj.display_name
         try:
-            await disc_userObj.edit(nick=memStat.name)
-            msg = (f"Changed {memStat.name} discord nickname from {oldName} to {memStat.name}")
+            await disc_userObj.edit(nick=mem_stats.name)
+            msg = (f"Changed {mem_stats.name} discord nickname from {oldName} to {mem_stats.name}")
             await ctx.send(embed = Embed(description=msg, color=0x00ff00))
         except:
             msg = (f"It is impossible for a mere bot to change the nickname of a boss like you. "
@@ -751,13 +750,13 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
 
 
     # Add user to database
-    msg = (f"Adding {memStat.name} to Reddit Zulu's database.")
+    msg = (f"Adding {mem_stats.name} to Reddit Zulu's database.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
     error = dbconn.insert_userdata((
-        memStat.tag,
-        memStat.name,
-        memStat.townHallLevel,
-        memStat.league_name,
+        mem_stats.tag,
+        mem_stats.name,
+        mem_stats.townHallLevel,
+        mem_stats.league_name,
         disc_userObj.id,
         disc_userObj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
         "False",
@@ -766,25 +765,25 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     ))
     if error != None:
         if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
-            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {memStat.tag}\n\nUser already exists. Attempting to re-activate {memStat.name}")
+            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {mem_stats.tag}\n\nUser already exists. Attempting to re-activate {mem_stats.name}")
             await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
-            result = dbconn.is_Active((memStat.tag))
+            result = dbconn.is_Active((mem_stats.tag))
             if isinstance(result, str):
                 await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                 return
 
             elif result[7] == "True": # If activ
-                msg = (f"{memStat.name} is already set to active in the database.")
+                msg = (f"{mem_stats.name} is already set to active in the database.")
                 await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000))
                 return
             else:
-                result = dbconn.set_Active(("True", memStat.tag))
+                result = dbconn.set_Active(("True", mem_stats.tag))
 
                 if isinstance(result, str):
                     await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                     return
                 else:
-                    msg = (f"Successfully set {memStat.name} to active")
+                    msg = (f"Successfully set {mem_stats.name} to active")
                     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
         else:
             await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
@@ -794,28 +793,29 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     if fin_override:
         fin_apply = fin_override
     else:
-        fin_apply = memStat.achieve['Friend in Need']['value']
+        fin_apply = mem_stats.achieve['Friend in Need']['value']
 
     error = dbconn.update_donations((
         datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-        memStat.tag,
+        mem_stats.tag,
         fin_apply,
         "True",
-        memStat.trophies
+        mem_stats.trophies
         ))
 
     if isinstance(error, str):
         await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
         return
 
-    await ctx.send("User added")
+    await ctx.send("User added. Please copy and paste the following output into #sidekick-war-caller")
+    await ctx.send(f"/add #{clash_tag.upper()} {disc_userObj.id}")
     return
 
 @user_add.error
 async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-@discord_client.command()
+@discord_client.command(aliases=["remove_user"])
 async def user_remove(ctx, query, suppress=None, note_to_add=None):
 
     # Check server and Member Role
@@ -1716,7 +1716,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Instantiate the users clash data
             try:
-                memStat = ClashStats.ClashStats(res.json())
+                mem_stats = ClashStats.ClashStats(res.json())
             except:
                 print(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
@@ -1731,7 +1731,7 @@ async def weeklyRefresh(discord_client, botMode):
                 continue
 
             # Grab users role object
-            current_roleObj = botAPI.get_townhallRole(guild, memStat.townHallLevel)
+            current_roleObj = botAPI.get_townhallRole(guild, mem_stats.townHallLevel)
 
             # find if their TH role has changed
             assigned_roleObjs =[ role for role in disc_UserObj.roles if role.name.startswith('th') ]
@@ -1755,21 +1755,21 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Check to see if they are current in zulu or somewhere else
             in_zulu = "False"
-            if memStat.clan_name == "Reddit Zulu":
+            if mem_stats.clan_name == "Reddit Zulu":
                 in_zulu = "True"
             else:
                 in_zulu = "False"
             dbconn.update_donations((
                     datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-                    memStat.tag,
-                    memStat.achieve["Friend in Need"]['value'],
+                    mem_stats.tag,
+                    mem_stats.achieve["Friend in Need"]['value'],
                     in_zulu,
-                    memStat.trophies
+                    mem_stats.trophies
                 ))
 
             # update users table  inPlanning
             #(TownHallLevel, League, inPlanningServer, Tag)
-            dbconn.update_members_table((memStat.townHallLevel, memStat.league_name, inPlanning, memStat.tag))
+            dbconn.update_members_table((mem_stats.townHallLevel, mem_stats.league_name, inPlanning, mem_stats.tag))
 
         # reset message
         messages = [
