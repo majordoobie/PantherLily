@@ -211,6 +211,12 @@ class BotAssist:
             pass
 
         # Manually search through the server for members without case
+        if isinstance(arg, int):
+            for member in ctx.guild.members:
+                if member.id == arg:
+                    return member
+            return None
+
         for member in ctx.guild.members:
             if arg.lower() == member.name.lower() or arg.lower() == member.display_name.lower():
                 return member

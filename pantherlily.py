@@ -93,6 +93,8 @@ botAPI = BotAssist(botMode, configLoc, dbconn, emoticons, config)
 coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 prefx = config[botMode]['bot_Prefix'].split(' ')[0]
 
+# instanciate rolemgr
+role_mgr = Rolemgr(config)
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -112,8 +114,9 @@ async def on_ready():
 
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
-    guild = discord_client.get_guild(int(config["Discord"]["293943534028062721"]))
-    role_mgr = Rolemgr(config, guild)
+    guild = discord_client.get_guild(int(config["Discord"]["zuludisc_id"]))
+    # role_mgr = Rolemgr(config, guild)
+    role_mgr.initializer(guild)
 
 #####################################################################################################################
                                              # Help Menu
@@ -699,55 +702,43 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         mem_stats = ClashStats.ClashStats(res.json())
 
     # Retrieve the roles
-    # Retrieve the CoC Members Role Object
-    
-    CoCMem_Role = botAPI.get_RoleObj(ctx.guild, "CoC Members")
-    if isinstance(CoCMem_Role, discord.Role) == False:
+    role_cocmember = role_mgr.get_role("CoC Members")
+    if role_cocmember == None:
         msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
         await botAPI.await_error(msg, "INSTANCE ERROR")
         return
-
-    # Retrieve the townHall Role Object
-    thLvl_Role = botAPI.get_townhallRole(ctx.guild, mem_stats.townHallLevel)
-    if isinstance(thLvl_Role, discord.Role) == False:
-        msg = (f"Town Hall Level {mem_stats.townHallLevel} is currently not supported")
-        await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+    role_thlvl = role_mgr.get_th(mem_stats.townHallLevel)
+    if role_thlvl == None:
+        msg = (f"Clash role [th{mem_stats.townHallLevel}s] was not found in Reddit Zulu discord")
+        await botAPI.await_error(msg, "INSTANCE ERROR")
         return
+    # Add roles to a role list
+    role_list = [role_cocmember, role_thlvl]
 
     # Change users default roles
     msg = (f"Applying default roles to {mem_stats.name}")
-    await ctx.send(embed = Embed(title=msg, color=0x5c0189))
-    if botAPI.contains_Role(disc_userObj, "CoC Members"):
-        msg = (f"{mem_stats.name} already has CoC Members role.")
-        await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-    else:
-        await disc_userObj.add_roles(CoCMem_Role)
-        msg = (f"CoC Members role applied.")
-        await ctx.send(embed = Embed(description=msg, color=0x00ff00))
-
-    if botAPI.contains_Role(disc_userObj, thLvl_Role.name):
-        msg = (f"{mem_stats.name} already has {thLvl_Role.name} role.")
-        await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-    else:
-        contains, role = botAPI.contains_thRole(disc_userObj)
-        if contains:
-            await disc_userObj.remove_roles(botAPI.get_RoleObj(ctx, role))
-        await disc_userObj.add_roles(thLvl_Role)
-        msg = (f"{thLvl_Role.name} role applied.")
-        await ctx.send(embed = Embed(description=msg, color=0x00ff00))
+    await ctx.send(embed = Embed(description=msg, color=0x5c0189))
+    try:
+        await disc_user_obj.add_roles(*role_list)
+        await ctx.send(f"[+] {role_cocmember.name}")
+        await ctx.send(f"[+] {role_thlvl.name}")
+        await ctx.send(embed = Embed(description="Roles applied", color=0x00ff00))
+    except:
+        await botAPI.await_error(ctx, "Could not add roles")
+        
 
     msg = (f"Changing {mem_stats.name}'s nickname to reflect their in-game name.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
 
     # Change users nickname
-    if disc_userObj.display_name == mem_stats.name:
+    if disc_user_obj.display_name == mem_stats.name:
         msg = (f"{mem_stats.name}'s discord nickname already reflects their in-game name.")
         await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
     else:
-        oldName = disc_userObj.display_name
+        oldName = disc_user_obj.display_name
         try:
-            await disc_userObj.edit(nick=mem_stats.name)
-            msg = (f"Changed {mem_stats.name} discord nickname from {oldName} to {mem_stats.name}")
+            await disc_user_obj.edit(nick=mem_stats.name)
+            msg = (f"Changed {mem_stats.name} discord nickname from {oldName} to {disc_user_obj.display_name}")
             await ctx.send(embed = Embed(description=msg, color=0x00ff00))
         except:
             msg = (f"It is impossible for a mere bot to change the nickname of a boss like you. "
@@ -763,8 +754,8 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         mem_stats.name,
         mem_stats.townHallLevel,
         mem_stats.league_name,
-        disc_userObj.id,
-        disc_userObj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
+        disc_user_obj.id,
+        disc_user_obj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
         "False",
         "True",
         "",
@@ -772,7 +763,7 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     if error != None:
         if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
             msg = (f"UNIQUE constraint failed: MembersTable.Tag: {mem_stats.tag}\n\nUser already exists. Attempting to re-activate {mem_stats.name}")
-            await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFFFF00))
+            await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
             result = dbconn.is_Active((mem_stats.tag))
             if isinstance(result, str):
                 await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
@@ -813,13 +804,14 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
         return
 
-    await ctx.send("User added. Please copy and paste the following output into #sidekick-war-caller")
-    await ctx.send(f"/add #{clash_tag.upper()} {disc_userObj.id}")
+    msg = (f"{disc_user_obj.display_name} added. Please copy and paste the following output into #sidekick-war-caller")
+    await ctx.send(embed = Embed(description=msg, color=0x00FF00))
+    await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.id}")
     return
 
-@user_add.error
-async def info_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @user_add.error
+# async def info_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["remove_user"])
 async def user_remove(ctx, query, suppress=None, note_to_add=None):
@@ -1607,25 +1599,22 @@ for (const row of tableElm.rows) {
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
 
+@discord_client.event
+async def on_message(msg):
+    if msg.channel.id == 515281933349945405: # replace with leaders chat
+        if msg.content.startswith("Application"):
+            data = msg.content.split(":")[1]
+            user, tag = data.split("(")
+            user = user.strip()
+            tag = tag.rstrip(")")
+            
+
+
 @discord_client.command()
-async def test(ctx, mem):
+async def test(ctx):
+    coc_role = role_mgr.get_role("CoC Members")
+    print(coc_role)
 
-    role_mgr.get_role("CoC Members")
-    if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
-        pass
-    else:
-        return
-
-    member = await botAPI.user_converter_db(ctx, mem)
-    if member != None:
-        await ctx.send(member)
-    else:
-        await ctx.send("Could not find user")
-
-
-    # for member in ctx.guild.members:
-    #     if mem.lower() == member.name.lower():
-    #         await ctx.send(member)
 #####################################################################################################################
                                              # Loops & Kill Command
 #####################################################################################################################
