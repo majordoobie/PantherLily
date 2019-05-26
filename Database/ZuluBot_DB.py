@@ -59,7 +59,6 @@ class ZuluDB:
             self.conn.cursor().execute(sql_create_update_table)
             self.conn.commit()
             print("[+] Active")
-            return None
         except sqlite3.OperationalError as e:
             print(f"OperationalError: {e}")
             return e
@@ -67,8 +66,7 @@ class ZuluDB:
         sql_create_newmembers_table = """ CREATE TABLE IF NOT EXISTS NewMembers (
                                             clash_tag text NOT NULL,
                                             clash_name text NOT NULL,
-                                            dater date NOT NULL,
-                                            PRIMARY KEY (clash_tag)
+                                            dater date NOT NULL
                                             ); """
         try:  
             print("\n[-] Checking on NewMembers table")                                    
@@ -400,26 +398,34 @@ class ZuluDB:
         return rows
         
 
-    def new_app(self);
-    """ CREATE TABLE IF NOT EXISTS NewMembers (
-                                            clash_tag text NOT NULL,
-                                            clash_name text NOT NULL,
-                                            dater date NOT NULL,
-                                            PRIMARY KEY (clash_tag)
-                                            ); """
-    sql_update = """INSERT INTO DonationsTable(
-                    increment_date,
-                    Tag,
-                    Current_Donation,
-                    in_Zulu,
-                    trophies)
-                    VALUES(?,?,?,?,?)
-                        """ 
-    sql_query = ("""INSERT INTO NewMembers(
-        clash_tag,
-        clash_name,
-        dater)
-        VALUES(?,?,?)""")
+    def new_app(self, tupe):
+        """
+        Takes in the clash_tag, clash_name, and date of each app message to create
+        a list that can be queried 
+        """
+        sql_query = ("""INSERT INTO NewMembers(
+            clash_tag,
+            clash_name,
+            dater)
+            VALUES(?,?,?)""")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, tupe)
+        self.conn.commit()
+        return 
+
+    def get_apps(self):
+        """ 
+        Returns un expired apps
+        """
+        to_date = datetime.datetime.now()
+        from_date = (to_date - datetime.datetie.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+        to_date = to_date.strftime("%Y-%m-%d %H:%M:%S")
+        sql_query = ("""SELECT * FROM NewMembers WHERE dater BETWEEN ? AND ?""")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (from_date, to_date,))
+        rows = cur.fetchall()
+        return rows
+
     
 
 

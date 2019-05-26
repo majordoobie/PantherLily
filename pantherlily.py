@@ -1599,21 +1599,12 @@ for (const row of tableElm.rows) {
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
 
-@discord_client.event
-async def on_message(msg):
-    if msg.channel.id == 515281933349945405: # replace with leaders chat
-        if msg.content.startswith("Application"):
-            data = msg.content.split(":")[1]
-            user, tag = data.split("(")
-            user = user.strip()
-            tag = tag.rstrip(")")
-            
-
 
 @discord_client.command()
 async def test(ctx):
-    coc_role = role_mgr.get_role("CoC Members")
-    print(coc_role)
+    print("helllooo")
+    apps = dbconn.get_apps()
+    print(apps)
 
 #####################################################################################################################
                                              # Loops & Kill Command
@@ -1639,7 +1630,22 @@ async def killbot(ctx):
 @killbot.error
 async def killbot_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
-   
+
+@discord_client.event
+async def on_message(msg):
+    if msg.channel.id == 515281933349945405: # replace with leaders chat
+        if msg.content.startswith("Application"):
+            data = msg.content.split(":")[1]
+            user, tag = data.split("(")
+            user = user.strip()
+            tag = tag.rstrip(")")
+            dbconn.new_app((
+                tag,
+                user,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ))
+    else:
+        await discord_client.process_commands(msg)
 
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
