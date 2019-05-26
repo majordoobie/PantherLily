@@ -14,3 +14,5 @@ class Rolemgr:
             if role.name == role_str:
                 return role
         return None
+
+    

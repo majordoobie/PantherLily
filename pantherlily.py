@@ -6,6 +6,7 @@ from discord import Embed, Game, Guild
 #APIs
 from APIs.discordBotAPI import BotAssist
 from APIs.ClashConnect import ClashConnectAPI
+from APIs.rolemanager import Rolemgr
 from APIs import ClashStats
 
 # Database
@@ -89,7 +90,6 @@ else:
     dbconn = ZuluDB(dbLoc)
 
 botAPI = BotAssist(botMode, configLoc, dbconn, emoticons, config)
-
 coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 prefx = config[botMode]['bot_Prefix'].split(' ')[0]
 
@@ -112,6 +112,8 @@ async def on_ready():
 
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
+    guild = discord_client.get_guild(int(config["Discord"]["293943534028062721"]))
+    role_mgr = Rolemgr(config, guild)
 
 #####################################################################################################################
                                              # Help Menu
@@ -657,7 +659,7 @@ async def mydonations_error(ctx, error):
                                              # Admin Commands
 #####################################################################################################################
 @discord_client.command(aliases=["add_user"])
-async def user_add(ctx, disc_mention, clash_tag=None, fin_override=None):
+async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
@@ -667,10 +669,12 @@ async def user_add(ctx, disc_mention, clash_tag=None, fin_override=None):
     else:
         return
 
+    # try to get the user object 
     clash_tag = clash_tag.lstrip("#")
     disc_user_id = await botAPI.user_converter_db(ctx, disc_mention)
     disc_user_obj = await botAPI.userConverter(ctx, disc_user_id)
 
+    # Break if the user does not exist 
     if disc_user_obj == None:
         msg = (f"User id {disc_mention} does not exist on this server.")
         await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
@@ -694,7 +698,9 @@ async def user_add(ctx, disc_mention, clash_tag=None, fin_override=None):
     else:
         mem_stats = ClashStats.ClashStats(res.json())
 
+    # Retrieve the roles
     # Retrieve the CoC Members Role Object
+    
     CoCMem_Role = botAPI.get_RoleObj(ctx.guild, "CoC Members")
     if isinstance(CoCMem_Role, discord.Role) == False:
         msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
@@ -1604,6 +1610,7 @@ for (const row of tableElm.rows) {
 @discord_client.command()
 async def test(ctx, mem):
 
+    role_mgr.get_role("CoC Members")
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
     else:
@@ -1790,3 +1797,4 @@ async def weeklyRefresh(discord_client, botMode):
 if __name__ == "__main__":
     discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
     discord_client.run(config[botMode]['Bot_Token'])
+    
