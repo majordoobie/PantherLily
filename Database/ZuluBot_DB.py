@@ -418,7 +418,7 @@ class ZuluDB:
         Returns un expired apps
         """
         to_date = datetime.datetime.now()
-        from_date = (to_date - datetime.datetie.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+        from_date = (to_date - datetime.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
         to_date = to_date.strftime("%Y-%m-%d %H:%M:%S")
         sql_query = ("""SELECT * FROM NewMembers WHERE dater BETWEEN ? AND ?""")
         cur = self.conn.cursor()

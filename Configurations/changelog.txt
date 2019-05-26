@@ -2,6 +2,7 @@
 [Added] Alias to user_add and user_remove it will now take add_user and remove_user
 [Added] The add_user command will now output a copy friendly output for you to paste into #sidekick-channel to register the new user for war. --BDon idea 
 [Added] New util file used to prevent re-writing code
+[Added] Panther.queue commands used to show the latest applications that show up in the leaderchat. You can then use the Panther.lookup -g to find their discord ID
 
 [Version 1.6.2] 21MAY2019
 [Fixed] Removed time adjustment on server. Server is already running in UTF time

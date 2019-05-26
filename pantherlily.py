@@ -193,6 +193,7 @@ async def help(ctx, *option):
 
     report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
         "The output is a HTML file.")
+    que = (f"Used to display any pending apps. You can then used the lookup tool to get their discord ID")
 
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
@@ -213,6 +214,7 @@ async def help(ctx, *option):
         embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
         embed.add_field(name=f"**{prefx}user_remove** <__@mention__> [__opt: -m \"msg\"__]", value=disable_user)
+        embed.add_field(name=f"**{prefx}queue**",value=que)
         embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
         embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__global__>", value=lookup)
         embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
@@ -239,6 +241,7 @@ async def help(ctx, *option):
             embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com",)
             embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
             embed.add_field(name=f"**{prefx}user_remove** <__@mention__>", value=disable_user)
+            embed.add_field(name=f"**{prefx}queue**",value=que)
             embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
             embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup_ex)
             embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
@@ -1599,10 +1602,19 @@ for (const row of tableElm.rows) {
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
 
+@discord_client.command(aliases=["q"])
+async def queue(ctx):
+    apps = dbconn.get_apps()
+    app_u = []
+    app_m = ""
+    for app in apps:
+        if app[0] not in app_u:
+            app_u.append(app[0])
+            app_m += f"{app[0]:<15} {app[1]}\n"
+    await ctx.send(app_m)
 
 @discord_client.command()
 async def test(ctx):
-    print("helllooo")
     apps = dbconn.get_apps()
     print(apps)
 
@@ -1632,10 +1644,11 @@ async def killbot_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.event
-async def on_message(msg):
-    if msg.channel.id == 515281933349945405: # replace with leaders chat
-        if msg.content.startswith("Application"):
-            data = msg.content.split(":")[1]
+async def on_message(message):
+    
+    if message.channel.id == 293953660059385857: # replace with leaders chat
+        if message.content.startswith("Application"):
+            data = message.content.split(":")[1]
             user, tag = data.split("(")
             user = user.strip()
             tag = tag.rstrip(")")
@@ -1644,8 +1657,8 @@ async def on_message(msg):
                 user,
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             ))
-    else:
-        await discord_client.process_commands(msg)
+    await discord_client.process_commands(message)
+
 
 async def weeklyRefresh(discord_client, botMode):
     """ Function used to update the databsae with new data """
