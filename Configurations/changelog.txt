@@ -1,4 +1,12 @@
-[Version 1.6.3] 24MAY2019
+[Version 1.7.2] 29MAY2019
+[Added] user_disable and disable_user aliases for Goku 
+[Fixed] user add command not giving errors 
+[Fixed] side-kick output. It now has a mention instead of just a ID since sidekick doesn't support it
+
+[Version 1.7.1] 26MAY2019
+[Fixed] Time bug with panther.donation
+
+[Version 1.7.0] 25MAY2019
 [Added] Alias to user_add and user_remove it will now take add_user and remove_user
 [Added] The add_user command will now output a copy friendly output for you to paste into #sidekick-channel to register the new user for war. --BDon idea 
 [Added] New util file used to prevent re-writing code

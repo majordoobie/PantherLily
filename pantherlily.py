@@ -809,14 +809,14 @@ async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
 
     msg = (f"{disc_user_obj.display_name} added. Please copy and paste the following output into #sidekick-war-caller")
     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
-    await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.id}")
+    await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.mention}")
     return
 
-# @user_add.error
-# async def info_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@user_add.error
+async def info_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-@discord_client.command(aliases=["remove_user"])
+@discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
 async def user_remove(ctx, query, suppress=None, note_to_add=None):
 
     # Check server and Member Role
@@ -1381,7 +1381,7 @@ async def export(ctx):
     # get last sunday integer to calculate last sunday. Then pull from that day and beyond
     today = datetime.utcnow()
     # use 5 minutes as a grace peried for when the db takes too long to update
-    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=5, second=0, microsecond=0)
+    lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=0, minute=0, second=0, microsecond=0)
     # Calculate the date range for the sql query
     startDate = (lastSunday - timedelta(weeks=4)).strftime('%Y-%m-%d %H:%M:%S')
     endDate = lastSunday.strftime('%Y-%m-%d %H:%M:%S')
