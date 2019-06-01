@@ -448,9 +448,105 @@ async def roster(ctx):
             line = ''
     if line != '':
         await ctx.send(line)
-    await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
+    view = await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
         "to get an up to date list of clan members.")
 
+    # Add reaction button
+    await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+
+    # Check for click
+    def check(reaction, user):
+        # Make sure that the reaction is for the correct message 
+        if view.id == reaction.message.id:
+            return user.bot == False
+        else:
+            return False
+
+    try:
+        await ctx.bot.wait_for('reaction_add', timeout = 10, check=check)
+        await ctx.send("**[!] **Please hold while I get that for ya...")
+        await view.clear_reactions()
+        async with ctx.typing():
+            # Dictionary of clans
+            user_distribution = {
+                "#P0Q8VRC8" : [],
+                "#2Y28CGP8" : [],
+                "#8YGOCQRY" : [],
+                "Unknown" : []
+            }
+            # get all active users from database 
+            active_members = dbconn.get_all_active()
+            
+            # get each user to see where they are
+            for member in active_members:
+                member_res = coc_client.get_member(member[0])
+                try:
+                    user_distribution[member_res.json()["clan"]["tag"]].append((
+                        member_res.json()["name"],
+                        member_res.json()["townHallLevel"],         
+                    ))
+                except:
+                    user_distribution["Unknown"].append((
+                        member_res.json()["name"],
+                        member_res.json().get("clan", {}).get('name', "No clan")
+
+                    ))
+            
+            # Sort the list
+            for section in user_distribution.keys():
+                th12, th11, th10, th9 = [], [], [], []
+                user_distribution[section].sort(key = lambda x: x[0].lower())
+                for user in user_distribution[section]:
+                    if user[1] == 12:
+                        th12.append(user)
+                    elif user[1] == 11:
+                        th11.append(user)
+                    elif user[1] == 10:
+                        th10.append(user)
+                    else: 
+                        th9.append(user)
+                order = []
+                print(th12)
+                print(th11)
+                print(th10)
+                order.extend(th12)
+                order.extend(th11)
+                order.extend(th10)
+                order.extend(th9)
+                user_distribution[section] = order
+
+
+            # Create the outputs
+            if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+                misfits_out = "**Reddit Misfits:**\n"
+                for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+                    misfits_out += f"`{member[1]:<4}{member[0]}`\n"
+                misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
+                await ctx.send(misfits_out)
+
+            if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+                elephino_out = "**Reddit Elephino:**\n"
+                for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+                    elephino_out += f"`{member[1]:<4}{member[0]}`\n"
+                elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
+                await ctx.send(elephino_out)
+
+            if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+                zulu_out = "**Reddit Zulu:**\n"
+                for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+                    zulu_out += f"`{member[1]:<4}{member[0]}`\n"
+                zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
+                await ctx.send(zulu_out)
+
+            if user_distribution["Unknown"]:
+                unknown_out = "**Users not in our clans**:\n"
+                for member in user_distribution["Unknown"]:
+                    unknown_out += f"`{member[0]:<24}{member[1]}`\n"
+                unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
+                await ctx.send(unknown_out)
+
+    except asyncio.TimeoutError:
+        await view.clear_reactions()
 @roster.error
 async def roster_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
@@ -639,7 +735,9 @@ async def donation(ctx, *, user=None):
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
                 f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080))
+            embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080)
+            embed.set_footer(text=config[botMode]["version"])
+            await ctx.send(embed=embed)
             return
 
         else:
@@ -651,7 +749,9 @@ async def donation(ctx, *, user=None):
             time = str(timedelta(seconds=remain.seconds)).split(":")
             msg = (f"**Donation Stat:**\n{donation[-1][2] - donation[0][2]} | 300\n"
                 f"**Time Remaining:**\n{day} days {time[0]} hours {time[1]} minutes")
-            await ctx.send(embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080))
+            embed = discord.Embed(title=f"__**{query_result[0][1]}**__", description=msg, color=0x000080)
+            embed.set_footer(text=config[botMode]["version"])
+            await ctx.send(embed=embed)
             return
 
     else:
@@ -1612,6 +1712,66 @@ async def queue(ctx):
             app_u.append(app[0])
             app_m += f"{app[0]:<15} {app[1]}\n"
     await ctx.send(app_m)
+
+@discord_client.command(aliases=["cr"])
+async def cwl_roster(ctx):
+    await ctx.send("Please hold while I get that for ya.")
+    user_distribution = {
+        "#P0Q8VRC8" : [],
+        "#2Y28CGP8" : [],
+        "#8YGOCQRY" : [],
+        "Unknown" : []
+    }
+    # get all active users from database 
+    active_members = dbconn.get_all_active()
+    
+    # get each user to see where they are
+    for member in active_members:
+        member_res = coc_client.get_member(member[0])
+        try:
+            user_distribution[member_res.json()["clan"]["tag"]].append((
+                member_res.json()["name"],
+                member_res.json()["townHallLevel"],         
+            ))
+        except:
+            user_distribution["Unknown"].append((
+                member_res.json()["name"],
+                member_res.json()["clan"]["name"]
+            ))
+    
+    # Sort the list
+    for section in user_distribution.keys():
+        user_distribution[section].sort(key = lambda x: x[0].lower())
+
+    # Create the outputs
+    if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+        misfits_out = "**Reddit Misfits:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+            misfits_out += f"`{member[1]:<4}{member[0]}`\n"
+        misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
+        await ctx.send(misfits_out)
+
+    if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+        elephino_out = "**Reddit Elephino:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+            elephino_out += f"`{member[1]:<4}{member[0]}`\n"
+        elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
+        await ctx.send(elephino_out)
+
+    if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+        zulu_out = "**Reddit Zulu:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+            zulu_out += f"`{member[1]:<4}{member[0]}`\n"
+        zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
+        await ctx.send(zulu_out)
+
+    if user_distribution["Unknown"]:
+        unknown_out = "**Users not in our clans**:\n"
+        for member in user_distribution["Unknown"]:
+            unknown_out += f"`{member[0]:<24}{member[1]}`\n"
+        unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
+        await ctx.send(unknown_out)
+
 
 @discord_client.command()
 async def test(ctx):

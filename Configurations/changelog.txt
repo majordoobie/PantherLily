@@ -1,3 +1,7 @@
+[Version 1.8.0] 31MAY2019
+[Added] Feature to panther.roster where you can view where each member is located. This includes if they are in a FC clan or not in a clan at all. This is only querying on users who have the active flag. Keep in mind that it loads very slowly since I still haven't updated our CoC api to make asynchronous get requests 
+[Added] Versioning to donation panels
+
 [Version 1.7.2] 29MAY2019
 [Added] user_disable and disable_user aliases for Goku 
 [Fixed] user add command not giving errors 
