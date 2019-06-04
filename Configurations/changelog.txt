@@ -1,3 +1,7 @@
+[Version 1.9.1] 04JUN2019
+[Fixed] Bunch of bug fixes. I didn't implement the splat correctly. You still need quoates when using user_add when specifying an FIN override. 
+
+
 [Version 1.9.0] 02JUN2019
 [Added] panther.top command added; gives a overview of trophy gain and loses as a team
 [Fixed] Bugs in several commands requiring quotes around names that have spaces
