@@ -207,7 +207,7 @@ async def help(ctx, *option):
 
         embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-        embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite)
+        embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite)
         embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
         embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
         embed.add_field(name=f"**{prefx}top**",value=top)
@@ -237,7 +237,7 @@ async def help(ctx, *option):
 
             embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
             embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-            embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite_ex)
+            embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite_ex)
             embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
             embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
             await ctx.send(embed=embed)
@@ -560,7 +560,7 @@ async def roster_error(ctx, error):
                                              # Commands for all users
 #####################################################################################################################
 @discord_client.command()
-async def newinvite(ctx, *arg):
+async def invite(ctx, *arg):
     """ Get the channel object to use the invite method of that channel """
 
     if await botAPI.rightServer(ctx, config):
@@ -587,7 +587,7 @@ async def newinvite(ctx, *arg):
         await ctx.send("Wrong arguments used")
         return
 
-@newinvite.error
+@invite.error
 async def newinvite_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -597,8 +597,8 @@ async def manual(ctx):
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
-async def stats(ctx, *, user: discord.Member = None):
-    if user == None:
+async def stats(ctx, *, user):
+    if user == "":
         user = ctx.author
         userID = user.id
         result = dbconn.get_user_byDiscID((userID,))
@@ -606,7 +606,10 @@ async def stats(ctx, *, user: discord.Member = None):
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
     else:
-        userID = user.id
+        userID = await botAPI.user_converter_db(ctx, user)
+        if userID == None:
+            await ctx.send(f"No data was found for {user.display_name}")
+            return
         result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {user.display_name}")
@@ -662,8 +665,7 @@ async def donation(ctx, *, user=None):
 
     Returns:
         Discord message using ctx.message
-    """
-    
+    """    
     if user == None:
         query_result = dbconn.get_user_byDiscID((ctx.author.id,))
         if len(query_result) == 0:
@@ -931,9 +933,14 @@ async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
     else:
         return
 
+    if "-m" in query:
+        arguments = query.split(" -m ")
+        query = arguments[0]
+        suppress = True
+        note_to_add = arguments[-1]
+
     # Attempt to resolve the user name
     member_id = await botAPI.user_converter_db(ctx, query)
-
     if member_id == None:
         desc = (f"Was unable to resolve {query}. This command supports mentions, "
             "IDs, username and nicknames.")
@@ -1824,10 +1831,15 @@ async def top(ctx, arg=None):
         # Set up output
         output = "**Top Donations:**\n"
         output += (f"`{'th':<2} {'don':<4} {'diff':>5}`\n")
+        count = 1
         for user in top_stats:
+            if count == 10:
+                break
             output += (
                 f"`{user.townhall:<2} {user.e_donation:<4} {user.e_donation - user.s_donation:>5} {user.name}`\n"
             )
+            count +=1
+            
         await ctx.send(output)
 
 @discord_client.command()
