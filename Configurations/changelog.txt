@@ -1,3 +1,6 @@
+[Version 1.9.2] 05JUN2019
+[Fixed] Panther.Stats throwing an error when no arguments were used
+
 [Version 1.9.1] 04JUN2019
 [Fixed] Bunch of bug fixes. I didn't implement the splat correctly. You still need quoates when using user_add when specifying an FIN override. 
 

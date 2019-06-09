@@ -38,6 +38,8 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 import json
+import coc
+
 #####################################################################################################################
                                              # Set up the environment
 #####################################################################################################################
@@ -66,7 +68,7 @@ if botMode == "liveBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
@@ -78,7 +80,7 @@ elif botMode == "devBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 
@@ -96,6 +98,12 @@ prefx = config[botMode]['bot_Prefix'].split(' ')[0]
 
 # instanciate rolemgr
 role_mgr = Rolemgr(config)
+
+# New json settings
+with open("Configurations/settings.json") as jsonFile:
+    conf = json.load(jsonFile)
+# coc.py
+coc_client2 = coc.Client(conf["CoC_API"]["Username"], conf["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -113,6 +121,7 @@ async def on_ready():
         f"Current exit node:      {get('https://api.ipify.org').text}\n"
         "------------------------------------------")
 
+    print("No worky?>")
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
     guild = discord_client.get_guild(int(config["Discord"]["zuludisc_id"]))
@@ -510,9 +519,6 @@ async def roster(ctx):
                     else: 
                         th9.append(user)
                 order = []
-                print(th12)
-                print(th11)
-                print(th10)
                 order.extend(th12)
                 order.extend(th11)
                 order.extend(th10)
@@ -597,8 +603,9 @@ async def manual(ctx):
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
-async def stats(ctx, *, user):
-    if user == "":
+async def stats(ctx, *, user=None):
+
+    if user == None:
         user = ctx.author
         userID = user.id
         result = dbconn.get_user_byDiscID((userID,))
@@ -626,32 +633,33 @@ async def stats(ctx, *, user):
         await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
         return
 
-    res = coc_client.get_member(result[0][0])
+    player = await coc_client2.get_player(result[0][0], cache=False)
     #res = coc_client.get_member("#L2G9VLUC") # L2G9VLUC zag; YRR9Y9LO mike
 
-    if res.status_code != 200:
+    if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    mem_stats = ClashStats.ClashStats(res.json())
-    desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(mem_stats, emoticonLoc)
-    embed = Embed(title = f"**__{mem_stats.name}__**", description=desc, color = 0x00ff00)
+    #mem_stats = ClashStats.ClashStats(res.json())
+    desc, troopLevels, spellLevels, heroLevels, gains = ClashStats.stat_stitcher(player, emoticonLoc)
+    embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x00ff00)
+    embed.add_field(name="**Gains**", value=gains, inline = False)
     embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
     embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
     embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
-    if mem_stats.league_badgeSmall == None:
+    if player.league.badge.small == None:
         f = discord.File("Images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
         await ctx.send(embed=embed, file=f)
     else:
-        embed.set_thumbnail(url=mem_stats.league_badgeSmall)
+        embed.set_thumbnail(url=player.league.badge.small)
         await ctx.send(embed=embed)
 
-@stats.error
-async def stats_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @stats.error
+# async def stats_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["d"])
 async def donation(ctx, *, user=None):
@@ -1844,9 +1852,127 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    apps = dbconn.get_apps()
-    print(apps)
+    player = await coc_client2.get_player("#9P9PRYQJ")
+    string = ""
+    for spell in player.spells:
+        string +=(f"{spell.name} : {spell.max_level}\n")
+    await ctx.send(string)
+    #print(player.home_troops_dict["Barbarian"].max_level)
 
+
+
+
+    return
+    
+    user_distribution = {
+                "#P0Q8VRC8" : [],
+                "#2Y28CGP8" : [],
+                "#8YGOCQRY" : [],
+                "Unknown" : []
+            }
+    # get all active users from database 
+    active_members = dbconn.get_all_active()
+    active_members = [ member[0]for member in active_members ]
+    start_mathapi = datetime.utcnow()
+    #await ctx.send(f"Start time COC API: {start}")
+    async for player in coc_client2.get_players(active_members):
+        if player.clan:
+            try:
+                user_distribution[player.clan.tag].append((
+                    player.name,
+                    player.town_hall
+                ))
+            except:
+                user_distribution["Unknown"].append((
+                    player.name,
+                    player.clan.name
+                ))
+        else:
+            user_distribution["Unknown"].append((
+                    player.name,
+                    "No clan"
+                ))
+    end_mathapi = datetime.utcnow()
+    #await ctx.send(f"End time COC API: {end}\n{end - start}")
+    user_distribution = {
+                "#P0Q8VRC8" : [],
+                "#2Y28CGP8" : [],
+                "#8YGOCQRY" : [],
+                "Unknown" : []
+            }
+    start_myapi = datetime.utcnow()
+    #await ctx.send(f"Start time ClashConnect API: {start}")
+    # get each user to see where they are
+    for member in active_members:
+        member_res = coc_client.get_member(member)
+        try:
+            user_distribution[member_res.json()["clan"]["tag"]].append((
+                member_res.json()["name"],
+                member_res.json()["townHallLevel"],         
+            ))
+        except:
+            user_distribution["Unknown"].append((
+                member_res.json()["name"],
+                member_res.json().get("clan", {}).get('name', "No clan")
+
+            ))
+    end_myapi = datetime.utcnow()
+    #await ctx.send(f"End time ClashConnect API: {end}\n{end - start}")
+    
+    msg = (f"Maths api results: {end_mathapi - start_mathapi}\nMy api results: {end_myapi - start_myapi}")
+    await ctx.send(msg)
+    return
+    #Sort the list
+    for section in user_distribution.keys():
+        th12, th11, th10, th9 = [], [], [], []
+        user_distribution[section].sort(key = lambda x: x[0].lower())
+        for user in user_distribution[section]:
+            if user[1] == 12:
+                th12.append(user)
+            elif user[1] == 11:
+                th11.append(user)
+            elif user[1] == 10:
+                th10.append(user)
+            else: 
+                th9.append(user)
+        order = []
+        order.extend(th12)
+        order.extend(th11)
+        order.extend(th10)
+        order.extend(th9)
+        user_distribution[section] = order
+
+
+    # Create the outputs
+    if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+        misfits_out = "**Reddit Misfits:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+            misfits_out += f"`{member[1]:<4}{member[0]}`\n"
+        misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
+        await ctx.send(misfits_out)
+
+    if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+        elephino_out = "**Reddit Elephino:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+            elephino_out += f"`{member[1]:<4}{member[0]}`\n"
+        elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
+        await ctx.send(elephino_out)
+
+    if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+        zulu_out = "**Reddit Zulu:**\n"
+        for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+            zulu_out += f"`{member[1]:<4}{member[0]}`\n"
+        zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
+        await ctx.send(zulu_out)
+
+    if user_distribution["Unknown"]:
+        unknown_out = "**Users not in our clans**:\n"
+        for member in user_distribution["Unknown"]:
+            unknown_out += f"`{member[0]:<24}{member[1]}`\n"
+        unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
+        await ctx.send(unknown_out)
+
+    await ctx.send(f"Start time: {datetime.utcnow()}")
 
 
 #####################################################################################################################
@@ -1914,6 +2040,7 @@ async def weeklyRefresh(discord_client, botMode):
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
+        #await asyncio.sleep(5 * 60) # set to 5 minutes for now
         #await asyncio.sleep(60)
 
         # Update message every time we update db
@@ -2036,4 +2163,6 @@ async def weeklyRefresh(discord_client, botMode):
 if __name__ == "__main__":
     discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
     discord_client.run(config[botMode]['Bot_Token'])
-    
+
+    loop = asyncio.get_event_loop()
+    loop.run()    
