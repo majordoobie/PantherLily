@@ -1,3 +1,9 @@
+[Version 1.10.0] 9JUN2019
+[Fixed] Couple bugs with panther.stats
+[Fixed] Error bug with panther.stats
+[Added] Panther.Stats by TH levels
+[Added] coc.py to panther.stats
+
 [Version 1.9.2] 05JUN2019
 [Fixed] Panther.Stats throwing an error when no arguments were used
 

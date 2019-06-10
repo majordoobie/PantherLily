@@ -7,8 +7,10 @@ from discord import Embed, Game, Guild
 from APIs.discordBotAPI import BotAssist
 from APIs.ClashConnect import ClashConnectAPI
 from APIs.rolemanager import Rolemgr
-from APIs import ClashStats
+#from APIs import clash_stats
 from APIs import user_tops
+
+from ClashOfClans import clash_stats
 
 # Database
 from Database.ZuluBot_DB import ZuluDB
@@ -604,18 +606,28 @@ async def manual(ctx):
 
 @discord_client.command(aliases=["s"])
 async def stats(ctx, *, user=None):
+    _max = False
+    if user:
+        for opt in ["--max", "-m"]:
+            if user.split(" ")[-1].lower() == opt:
+                user = user.split(" "+opt)[0]
+                if user in opt:
+                    user = None
+                    break
+                _max = True
+                break
 
     if user == None:
         user = ctx.author
         userID = user.id
         result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
-            await ctx.send(f"No data was found for {ctx.author.display_name}")
+            await ctx.send(f"No data was found for: {ctx.author.display_name}")
             return
     else:
         userID = await botAPI.user_converter_db(ctx, user)
         if userID == None:
-            await ctx.send(f"No data was found for {user.display_name}")
+            await ctx.send(f"No data was found for **{user}**")
             return
         result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
@@ -642,8 +654,8 @@ async def stats(ctx, *, user=None):
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    #mem_stats = ClashStats.ClashStats(res.json())
-    desc, troopLevels, spellLevels, heroLevels, gains = ClashStats.stat_stitcher(player, emoticonLoc)
+    #mem_stats = clash_stats.clash_stats(res.json())
+    desc, troopLevels, spellLevels, heroLevels, gains = clash_stats.stat_stitcher(player, emoticonLoc, _max)
     embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x00ff00)
     embed.add_field(name="**Gains**", value=gains, inline = False)
     embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
@@ -718,7 +730,7 @@ async def donation(ctx, *, user=None):
         return
 
     res = coc_client.get_member(query_result[0][0])
-    mem_stats = ClashStats.ClashStats(res.json())
+    mem_stats = clash_stats.ClashStats(res.json())
 
     in_zulu = "False"
     if mem_stats.clan_name == "Reddit Zulu":
@@ -818,7 +830,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
         return
     else:
-        mem_stats = ClashStats.ClashStats(res.json())
+        mem_stats = clash_stats.ClashStats(res.json())
 
     # Retrieve the roles
     role_cocmember = role_mgr.get_role("CoC Members")
@@ -2089,7 +2101,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Instantiate the users clash data
             try:
-                mem_stats = ClashStats.ClashStats(res.json())
+                mem_stats = clash_stats.ClashStats(res.json())
             except:
                 print(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
