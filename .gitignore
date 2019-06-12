@@ -2,6 +2,7 @@ utils/configurations/*.ini
 utils/configurations/*.json
 utils/database/*.db
 utils/images/
+discord.log
 .DS*
 __py*
 *.txt
