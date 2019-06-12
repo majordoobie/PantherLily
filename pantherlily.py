@@ -11,7 +11,7 @@ from APIs import ClashStats
 from APIs import user_tops
 
 # Database
-from Database.ZuluBot_DB import ZuluDB
+from utils.database.panther_db import ZuluDB
 
 #New Functions
 import aiohttp
@@ -23,7 +23,6 @@ from datetime import datetime, timedelta
 from requests import Response
 import io
 from os import path, listdir
-import pandas as pd
 from pathlib import Path
 import random
 import re
@@ -38,6 +37,15 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 import json
+import coc
+import logging
+
+# Set up logging
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 #####################################################################################################################
                                              # Set up the environment
 #####################################################################################################################
@@ -54,31 +62,32 @@ else:
 
 
 # Instanciate Config
-config = ConfigParser(allow_no_value=True)
 emoticons = ConfigParser(allow_no_value=True)
 
 if botMode == "liveBot":
-    configLoc = 'Configurations/zuluConfig.ini'
-    emoticonLoc = 'Configurations/emoticons.ini'
+    configLoc = 'utils/configurations/panther_conf.json'
+    emoticonLoc = 'utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
         ex(f"Config file does not exist: {configLoc}")
-    config.read(configLoc)
+    with open(configLoc) as infile:
+        config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
-    configLoc = 'Configurations/zuluConfig.ini'
-    emoticonLoc = 'Configurations/emoticons.ini'
+    configLoc = 'utils/configurations/panther_conf.json'
+    emoticonLoc = 'utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
         ex(f"Config file does not exist: {configLoc}")
-    config.read(configLoc)
+    with open(configLoc) as infile:
+        config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
     discord_client.remove_command("help")
 
 
@@ -91,11 +100,14 @@ else:
     dbconn = ZuluDB(dbLoc)
 
 botAPI = BotAssist(botMode, configLoc, dbconn, emoticons, config)
-coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
-prefx = config[botMode]['bot_Prefix'].split(' ')[0]
+coc_client = ClashConnectAPI(config['clash']['zuluclash_token'])
+prefx = config[botMode]['bot_prefix'][0]
 
 # instanciate rolemgr
 role_mgr = Rolemgr(config)
+
+# coc.py
+coc_client2 = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -115,8 +127,7 @@ async def on_ready():
 
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
-    guild = discord_client.get_guild(int(config["Discord"]["zuludisc_id"]))
-    # role_mgr = Rolemgr(config, guild)
+    guild = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
     role_mgr.initializer(guild)
 
 #####################################################################################################################
@@ -392,8 +403,8 @@ async def roster(ctx):
         await ctx.send(embed=embed)
         return
 
-    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-    zbpServer = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+    zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+    zbpServer = discord_client.get_guild(int(config['discord']['plandisc_id']))
 
     if zuluServer == None or zbpServer == None:
         await ctx.send("Unable to instantiate the guild object")
@@ -452,7 +463,12 @@ async def roster(ctx):
             line = ''
     if line != '':
         await ctx.send(line)
-    view = await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
+    legend = (f"{emoticons['tracker bot']['zuluServer']} Member is in Reddit Zulu discord.\n"
+            f"{emoticons['tracker bot']['planningServer']} Member is in ZBP discord.\n"
+            f"{emoticons['tracker bot']['redditzulu']} Member is currently in Reddit Zulu in-game.\n"
+            f"{emoticons['tracker bot']['database']} Member is registered with PantherLily.\n"
+            f"{emoticons['tracker bot']['plus']} Locate all users in real-time, may take 15 seconds.")
+    view = await ctx.send(f"**LEGEND**\n{legend}\n**WARNING**\nClash query is not performed if user is missing from the database. Use `{prefx}lcm` "
         "to get an up to date list of clan members.")
 
     # Add reaction button
@@ -479,21 +495,21 @@ async def roster(ctx):
                 "Unknown" : []
             }
             # get all active users from database 
-            active_members = dbconn.get_all_active()
-            
-            # get each user to see where they are
-            for member in active_members:
-                member_res = coc_client.get_member(member[0])
+            active_members = [ tag[0] for tag in dbconn.get_all_active() ]
+            async for player in coc_client2.get_players(active_members):
                 try:
-                    user_distribution[member_res.json()["clan"]["tag"]].append((
-                        member_res.json()["name"],
-                        member_res.json()["townHallLevel"],         
+                    user_distribution[player.clan.tag].append((
+                        player.name,
+                        player.town_hall
                     ))
                 except:
+                    if player.clan:
+                        clan = player.clan.name
+                    else:
+                        clan = "No Clan"
                     user_distribution["Unknown"].append((
-                        member_res.json()["name"],
-                        member_res.json().get("clan", {}).get('name', "No clan")
-
+                        player.name,
+                        clan
                     ))
             
             # Sort the list
@@ -510,9 +526,6 @@ async def roster(ctx):
                     else: 
                         th9.append(user)
                 order = []
-                print(th12)
-                print(th11)
-                print(th10)
                 order.extend(th12)
                 order.extend(th11)
                 order.extend(th10)
@@ -564,8 +577,8 @@ async def invite(ctx, *arg):
     """ Get the channel object to use the invite method of that channel """
 
     if await botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
+        targetServer = int(config['discord']['plandisc_id'])
+        targetChannel = int(config['discord']['plandisc_channel'])
 
     else:
         return
@@ -593,7 +606,7 @@ async def newinvite_error(ctx, error):
 
 @discord_client.command(aliases=["man"])
 async def manual(ctx):
-    f = discord.File("Configurations/PantherLily_V1.pdf", filename="Manual.pdf")
+    f = discord.File("utils/configurations/PantherLily_V1.pdf", filename="Manual.pdf")
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
@@ -603,7 +616,7 @@ async def stats(ctx, *, user):
         userID = user.id
         result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
-            await ctx.send(f"No data was found for {ctx.author.display_name}")
+            await ctx.send(f"No data was found for: {ctx.author.display_name}")
             return
     else:
         userID = await botAPI.user_converter_db(ctx, user)
@@ -626,27 +639,30 @@ async def stats(ctx, *, user):
         await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
         return
 
-    res = coc_client.get_member(result[0][0])
-    #res = coc_client.get_member("#L2G9VLUC") # L2G9VLUC zag; YRR9Y9LO mike
+    player = await coc_client2.get_player(result[0][0], cache=False)
 
-    if res.status_code != 200:
+    if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    mem_stats = ClashStats.ClashStats(res.json())
-    desc, troopLevels, spellLevels, heroLevels = ClashStats.statStitcher(mem_stats, emoticonLoc)
-    embed = Embed(title = f"**__{mem_stats.name}__**", description=desc, color = 0x00ff00)
+    # Get display objects
+    desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
+    embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
+    embed.add_field(name="**Gains**", value=gains, inline = False)
     embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
     embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
     embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
-    if mem_stats.league_badgeSmall == None:
+    if sieges != None:
+        embed.add_field(name = "**Sieges**", value=sieges, inline = False)
+    embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
+    if player.league.badge.small == None:
         f = discord.File("Images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
         await ctx.send(embed=embed, file=f)
     else:
-        embed.set_thumbnail(url=mem_stats.league_badgeSmall)
+        embed.set_thumbnail(url=player.league.badge.small)
         await ctx.send(embed=embed)
 
 @stats.error
@@ -698,7 +714,7 @@ async def donation(ctx, *, user=None):
         return
 
     elif len(query_result) > 1:
-        users =[ i[1] for i in query_result ]
+        users = [ i[1] for i in query_result ]
         msg = (f"Oh oh, looks like we have duplicate entries with the same discord ID. Users list: {users}")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
@@ -709,21 +725,8 @@ async def donation(ctx, *, user=None):
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
-    res = coc_client.get_member(query_result[0][0])
-    mem_stats = ClashStats.ClashStats(res.json())
-
-    in_zulu = "False"
-    if mem_stats.clan_name == "Reddit Zulu":
-        in_zulu = "True"
-    else:
-        in_zulu = "False"
-    dbconn.update_donations((
-            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            mem_stats.tag,
-            mem_stats.achieve["Friend in Need"]['value'],
-            in_zulu,
-            mem_stats.trophies
-        ))
+    # Update users donation
+    await udt.update_user(dbconn, coc_client2, query_result[0][0])
 
     lastSun = botAPI.last_sunday()
     nextSun = lastSun + timedelta(days=7)
@@ -810,7 +813,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
         return
     else:
-        mem_stats = ClashStats.ClashStats(res.json())
+        mem_stats = clash_stats.ClashStats(res.json())
 
     # Retrieve the roles
     role_cocmember = role_mgr.get_role("CoC Members")
@@ -920,9 +923,9 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.mention}")
     return
 
-@user_add.error
-async def info_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @user_add.error
+# async def info_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
 async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
@@ -1379,8 +1382,8 @@ async def viewnote(ctx, *, mem):
                 return
             
             for msgID in ids:
-                zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-                leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+                zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+                leaderChannel = zuluServer.get_channel(int(config['discord']['leadernotes']))
                 try:
                     await ctx.send("Loading.. ")
                     msg = await leaderChannel.get_message(int(msgID))
@@ -1430,8 +1433,8 @@ async def getmessage(ctx, msgID):
         await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
         return
 
-    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-    leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+    zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+    leaderChannel = zuluServer.get_channel(int(config['discord']['leadernotes']))
     try:
         await ctx.send("Loading.. ")
         msg = await leaderChannel.get_message(int(msgID))
@@ -1466,7 +1469,7 @@ async def getmsg_error(ctx, error):
 
 @discord_client.command()
 async def caketime(ctx):
-    cakePath = "Images/cakes"
+    cakePath = "utils/images/cakes"
     ranCake = Path(cakePath).joinpath(random.choice(listdir(cakePath)))
     f = discord.File(str(ranCake), filename=str(ranCake.name))
     if ranCake.suffix == ".mp4":
@@ -1706,10 +1709,10 @@ for (const row of tableElm.rows) {
     #new_link = soup.new_tag("script", src="pandamod.js")
     #soup.html.append(new_link)
 
-    with open("Web/report.html", "w", encoding="utf-8") as outfile:
+    with open("utils/web/report.html", "w", encoding="utf-8") as outfile:
         outfile.write(str(soup))
 
-    f = discord.File("Web/report.html", filename="report.html")
+    f = discord.File("utils/web/report.html", filename="report.html")
     await ctx.send(file=f)
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
@@ -1725,65 +1728,62 @@ async def queue(ctx):
             app_m += f"{app[0]:<15} {app[1]}\n"
     await ctx.send(app_m)
 
-@discord_client.command(aliases=["cr"])
-async def cwl_roster(ctx):
-    await ctx.send("Please hold while I get that for ya.")
-    user_distribution = {
-        "#P0Q8VRC8" : [],
-        "#2Y28CGP8" : [],
-        "#8YGOCQRY" : [],
-        "Unknown" : []
-    }
-    # get all active users from database 
-    active_members = dbconn.get_all_active()
+@discord_client.command(aliases=["t", "T"])
+async def top(ctx, arg=None):
+    # Set dates
+    start_date = botAPI.last_sunday().strftime("%Y-%m-%d %H:%M:%S")
+    end_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Initialize list
+    top_stats = []
+
+    # gather data
+    users = dbconn.get_all_active()
+    for user in users:
+        users_week = dbconn.get_Donations((user[0], start_date, end_date))
+        #print(users_week[0], users_week[-1])
+        top_stats.append(user_tops.Tops(
+            user[1],
+            user[0],
+            user[2],
+            users_week[0][4],
+            users_week[-1][4],
+            users_week[0][2],
+            users_week[-1][2]
+        ))
     
-    # get each user to see where they are
-    for member in active_members:
-        member_res = coc_client.get_member(member[0])
-        try:
-            user_distribution[member_res.json()["clan"]["tag"]].append((
-                member_res.json()["name"],
-                member_res.json()["townHallLevel"],         
-            ))
-        except:
-            user_distribution["Unknown"].append((
-                member_res.json()["name"],
-                member_res.json()["clan"]["name"]
-            ))
-    
-    # Sort the list
-    for section in user_distribution.keys():
-        user_distribution[section].sort(key = lambda x: x[0].lower())
+    if arg == None or arg.lower() in ["-t", "--trophes"]:
+        # sort list by top trophies
+        top_stats.sort(key = lambda x: x.e_trophy, reverse=True)
 
-    # Create the outputs
-    if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-        misfits_out = "**Reddit Misfits:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-            misfits_out += f"`{member[1]:<4}{member[0]}`\n"
-        misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
-        await ctx.send(misfits_out)
+        # Set up output
+        output = "**Top Trophies:**\n"
+        output += (f"`{'rk':<2} {'th':<2} {'trop':<4} {'diff':>5}`\n")
+        count = 1
+        for user in top_stats:
+            output += (
+                f"`{count:<2} {user.townhall:<2} {user.e_trophy:<4} {user.e_trophy - user.s_trophy:>5} {user.name}`\n"
+            )
+            count +=1
+        await ctx.send(output)
 
-    if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-        elephino_out = "**Reddit Elephino:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-            elephino_out += f"`{member[1]:<4}{member[0]}`\n"
-        elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
-        await ctx.send(elephino_out)
+    elif arg.lower() in ["-d", "--donation"]:
+        # sort list by top donation
+        top_stats.sort(key = lambda x: x.e_donation, reverse=True)
 
-    if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-        zulu_out = "**Reddit Zulu:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-            zulu_out += f"`{member[1]:<4}{member[0]}`\n"
-        zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
-        await ctx.send(zulu_out)
-
-    if user_distribution["Unknown"]:
-        unknown_out = "**Users not in our clans**:\n"
-        for member in user_distribution["Unknown"]:
-            unknown_out += f"`{member[0]:<24}{member[1]}`\n"
-        unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
-        await ctx.send(unknown_out)
-
+        # Set up output
+        output = "**Top Donations:**\n"
+        output += (f"`{'th':<2} {'don':<4} {'diff':>5}`\n")
+        count = 1
+        for user in top_stats:
+            if count == 10:
+                break
+            output += (
+                f"`{user.townhall:<2} {user.e_donation:<4} {user.e_donation - user.s_donation:>5} {user.name}`\n"
+            )
+            count +=1
+            
+        await ctx.send(output)
 
 @discord_client.command(aliases=["t", "T"])
 async def top(ctx, arg=None):
@@ -1844,8 +1844,16 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    apps = dbconn.get_apps()
-    print(apps)
+    help_m = help_menu.Help_Menu(config, botMode)
+    embed = help_m.utility()
+    await ctx.send(embed=embed)
+    print("hi")
+    # player = await coc_client2.get_player("#L2G9VLUC")
+    # for i in player.troops:
+    #     print(i)
+    # await udt.update_donationstable(dbconn, coc_client2)
+    # print("After await")
+
 
 
 
@@ -1876,7 +1884,6 @@ async def killbot_error(ctx, error):
 
 @discord_client.event
 async def on_message(message):
-    
     if message.channel.id == 293953660059385857: # replace with leaders chat
         if message.content.startswith("Application"):
             data = message.content.split(":")[1]
@@ -1896,9 +1903,8 @@ async def weeklyRefresh(discord_client, botMode):
 
     # Don't allow the bot to loop when in devMode
     if botMode == "devBot":
-        print("Running in dev mode")
+        print("Running in dev mode, disabling database update.")
         return
-
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         # Calculate the wait time in minute for next "top of hour"
@@ -1914,6 +1920,7 @@ async def weeklyRefresh(discord_client, botMode):
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
+        #await asyncio.sleep(5 * 60) # set to 5 minutes for now
         #await asyncio.sleep(60)
 
         # Update message every time we update db
@@ -1922,25 +1929,26 @@ async def weeklyRefresh(discord_client, botMode):
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
-        get_all = dbconn.get_allUsersWhereTrue()
+        get_all = dbconn.get_all_active()
+
+        # Update all donations
+        await udt.update_donationstable(dbconn, coc_client2)
 
         # See if the users are still part of the clan
         user = ''
         for user in get_all:
             # if mem in planning server
-            inPlanning = ""
-            if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['Discord']['plandisc_id'])).members):
+            in_planning = ""
+            if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['discord']['plandisc_id'])).members):
                 if user[6] == "True":
                     pass
                 else:
-                    inPlanning = "True"
-                    #dbconn.set_inPlanning(("True", user[0]))
+                    in_planning = "True"
             else:
                 if user[6] == "False":
                     pass
                 else:
-                    inPlanning = "False"
-                    #dbconn.set_inPlanning(("False", user[0]))
+                    in_planning = "False"
 
             # Grab the users CoC stats to see if there is any updates needed on their row
             try:
@@ -1962,7 +1970,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             # Instantiate the users clash data
             try:
-                mem_stats = ClashStats.ClashStats(res.json())
+                mem_stats = clash_stats.ClashStats(res.json())
             except:
                 print(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
@@ -2013,9 +2021,9 @@ async def weeklyRefresh(discord_client, botMode):
                     mem_stats.trophies
                 ))
 
-            # update users table  inPlanning
+            # update users table  in_planning
             #(TownHallLevel, League, inPlanningServer, Tag)
-            dbconn.update_members_table((mem_stats.townHallLevel, mem_stats.league_name, inPlanning, mem_stats.tag))
+            dbconn.update_members_table((mem_stats.townHallLevel, mem_stats.league_name, in_planning, mem_stats.tag))
 
         # reset message
         messages = [
@@ -2035,5 +2043,4 @@ async def weeklyRefresh(discord_client, botMode):
 
 if __name__ == "__main__":
     discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
-    discord_client.run(config[botMode]['Bot_Token'])
-    
+    discord_client.run(config[botMode]['bot_token'])
