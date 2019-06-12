@@ -1727,6 +1727,7 @@ async def killbot_error(ctx, error):
 
 @discord_client.event
 async def on_message(message):
+    print(message)
     if message.channel.id == 293953660059385857: # replace with leaders chat
         if message.content.startswith("Application"):
             data = message.content.split(":")[1]
