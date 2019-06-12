@@ -231,21 +231,22 @@ class BotAssist:
         except:
             pass
 
-        if member == None:
-            all_users = self.dbconn.get_allUsers()
-            for user in all_users:
-                if arg.lower() == user[1].lower():
-                    return user[4]
-                elif arg.lower().lstrip("#") == user[0].lstrip("#").lower():
-                    return user[4]
-                elif arg == str(user[4]):
-                    return user[4]
+        # Check by database
+        all_users = self.dbconn.get_allUsers()
+        for user in all_users:
+            if arg.lower() == user[1].lower():
+                return user[4]
+            elif arg.lower().lstrip("#") == user[0].lstrip("#").lower():
+                return user[4]
+            elif arg == str(user[4]):
+                return user[4]
 
-        elif member == None:
-            for member in ctx.guild.members:
-                if arg.lower() == member.name.lower() or arg.lower() == member.display_name.lower():
-                    return member.id
-        
+        # Check by name
+        for member in ctx.guild.members:
+            if arg.lower() == member.name.lower():
+                return member.id
+            if arg.lower() == member.display_name.lower():
+                return member.id
         return None
 
     async def await_error(self, ctx, description, title="INPUT ERROR"):

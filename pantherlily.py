@@ -8,6 +8,7 @@ from APIs.discordBotAPI import BotAssist
 from APIs.ClashConnect import ClashConnectAPI
 from APIs.rolemanager import Rolemgr
 from APIs import ClashStats
+from APIs import user_tops
 
 # Database
 from Database.ZuluBot_DB import ZuluDB
@@ -195,6 +196,8 @@ async def help(ctx, *option):
         "The output is a HTML file.")
     que = (f"Used to display any pending apps. You can then used the lookup tool to get their discord ID")
 
+    top = (f"List the trophy status for the week of the whole clan.")
+
     if len(option) == 0:
         embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}listroles**", value=listroles)
@@ -204,9 +207,10 @@ async def help(ctx, *option):
 
         embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
         embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-        embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite)
+        embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite)
         embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
         embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
+        embed.add_field(name=f"**{prefx}top**",value=top)
         embed.add_field(name=f"**{prefx}export**",value=export)
         embed.add_field(name=f"**{prefx}report**",value=report)
         await ctx.send(embed=embed)
@@ -233,7 +237,7 @@ async def help(ctx, *option):
 
             embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
             embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-            embed.add_field(name=f"**{prefx}newinvite** [__opt: <int>__]", value=newinvite_ex)
+            embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite_ex)
             embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
             embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
             await ctx.send(embed=embed)
@@ -550,11 +554,13 @@ async def roster(ctx):
 @roster.error
 async def roster_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+
 #####################################################################################################################
                                              # Commands for all users
 #####################################################################################################################
 @discord_client.command()
-async def newinvite(ctx, *arg):
+async def invite(ctx, *arg):
     """ Get the channel object to use the invite method of that channel """
 
     if await botAPI.rightServer(ctx, config):
@@ -581,7 +587,7 @@ async def newinvite(ctx, *arg):
         await ctx.send("Wrong arguments used")
         return
 
-@newinvite.error
+@invite.error
 async def newinvite_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
@@ -591,8 +597,8 @@ async def manual(ctx):
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
-async def stats(ctx, *, user: discord.Member = None):
-    if user == None:
+async def stats(ctx, *, user):
+    if user == "":
         user = ctx.author
         userID = user.id
         result = dbconn.get_user_byDiscID((userID,))
@@ -600,7 +606,10 @@ async def stats(ctx, *, user: discord.Member = None):
             await ctx.send(f"No data was found for {ctx.author.display_name}")
             return
     else:
-        userID = user.id
+        userID = await botAPI.user_converter_db(ctx, user)
+        if userID == None:
+            await ctx.send(f"No data was found for {user.display_name}")
+            return
         result = dbconn.get_user_byDiscID((userID,))
         if len(result) == 0:
             await ctx.send(f"No data was found for {user.display_name}")
@@ -656,8 +665,7 @@ async def donation(ctx, *, user=None):
 
     Returns:
         Discord message using ctx.message
-    """
-    
+    """    
     if user == None:
         query_result = dbconn.get_user_byDiscID((ctx.author.id,))
         if len(query_result) == 0:
@@ -765,7 +773,7 @@ async def mydonations_error(ctx, error):
                                              # Admin Commands
 #####################################################################################################################
 @discord_client.command(aliases=["add_user"])
-async def user_add(ctx, clash_tag, disc_mention, fin_override=None):
+async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
     """
@@ -917,7 +925,7 @@ async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
-async def user_remove(ctx, query, suppress=None, note_to_add=None):
+async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
 
     # Check server and Member Role
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
@@ -925,9 +933,14 @@ async def user_remove(ctx, query, suppress=None, note_to_add=None):
     else:
         return
 
+    if "-m" in query:
+        arguments = query.split(" -m ")
+        query = arguments[0]
+        suppress = True
+        note_to_add = arguments[-1]
+
     # Attempt to resolve the user name
     member_id = await botAPI.user_converter_db(ctx, query)
-
     if member_id == None:
         desc = (f"Was unable to resolve {query}. This command supports mentions, "
             "IDs, username and nicknames.")
@@ -1045,7 +1058,7 @@ async def kickuser_error(ctx, error):
     await botAPI.await_error(ctx, error.__str__(),"RUNTIME ERROR")
 
 @discord_client.command()
-async def addnote(ctx, mem):
+async def addnote(ctx, *, mem):
     # User and Server check
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
@@ -1105,8 +1118,7 @@ async def addnote(ctx, mem):
         return 
 
 @discord_client.command()
-async def lookup(ctx, option, query):
-
+async def lookup(ctx, option, *, query):
     # Check server and Member Role
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
         pass
@@ -1256,7 +1268,7 @@ async def search_error(ctx, error):
 
 
 @discord_client.command()
-async def deletenote(ctx, mem):
+async def deletenote(ctx, *, mem):
     """ Function used to delete notes for the user supplieds database """
 
     # Check server and User
@@ -1317,7 +1329,7 @@ async def deletenote_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def viewnote(ctx, mem):
+async def viewnote(ctx, *, mem):
 
     # Check server and Member Role
     if await botAPI.rightServer(ctx, config) and await botAPI.authorized(ctx, config):
@@ -1773,10 +1785,69 @@ async def cwl_roster(ctx):
         await ctx.send(unknown_out)
 
 
+@discord_client.command(aliases=["t", "T"])
+async def top(ctx, arg=None):
+    # Set dates
+    start_date = botAPI.last_sunday().strftime("%Y-%m-%d %H:%M:%S")
+    end_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Initialize list
+    top_stats = []
+
+    # gather data
+    users = dbconn.get_all_active()
+    for user in users:
+        users_week = dbconn.get_Donations((user[0], start_date, end_date))
+        #print(users_week[0], users_week[-1])
+        top_stats.append(user_tops.Tops(
+            user[1],
+            user[0],
+            user[2],
+            users_week[0][4],
+            users_week[-1][4],
+            users_week[0][2],
+            users_week[-1][2]
+        ))
+    
+    if arg == None or arg.lower() in ["-t", "--trophes"]:
+        # sort list by top trophies
+        top_stats.sort(key = lambda x: x.e_trophy, reverse=True)
+
+        # Set up output
+        output = "**Top Trophies:**\n"
+        output += (f"`{'rk':<2} {'th':<2} {'trop':<4} {'diff':>5}`\n")
+        count = 1
+        for user in top_stats:
+            output += (
+                f"`{count:<2} {user.townhall:<2} {user.e_trophy:<4} {user.e_trophy - user.s_trophy:>5} {user.name}`\n"
+            )
+            count +=1
+        await ctx.send(output)
+
+    elif arg.lower() in ["-d", "--donation"]:
+        # sort list by top donation
+        top_stats.sort(key = lambda x: x.e_donation, reverse=True)
+
+        # Set up output
+        output = "**Top Donations:**\n"
+        output += (f"`{'th':<2} {'don':<4} {'diff':>5}`\n")
+        count = 1
+        for user in top_stats:
+            if count == 10:
+                break
+            output += (
+                f"`{user.townhall:<2} {user.e_donation:<4} {user.e_donation - user.s_donation:>5} {user.name}`\n"
+            )
+            count +=1
+            
+        await ctx.send(output)
+
 @discord_client.command()
 async def test(ctx):
     apps = dbconn.get_apps()
     print(apps)
+
+
 
 #####################################################################################################################
                                              # Loops & Kill Command

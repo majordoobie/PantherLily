@@ -1,3 +1,11 @@
+[Version 1.9.1] 04JUN2019
+[Fixed] Bunch of bug fixes. I didn't implement the splat correctly. You still need quoates when using user_add when specifying an FIN override. 
+
+
+[Version 1.9.0] 02JUN2019
+[Added] panther.top command added; gives a overview of trophy gain and loses as a team
+[Fixed] Bugs in several commands requiring quotes around names that have spaces
+
 [Version 1.8.0] 31MAY2019
 [Added] Feature to panther.roster where you can view where each member is located. This includes if they are in a FC clan or not in a clan at all. This is only querying on users who have the active flag. Keep in mind that it loads very slowly since I still haven't updated our CoC api to make asynchronous get requests 
 [Added] Versioning to donation panels
