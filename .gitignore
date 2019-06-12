@@ -1,3 +1,6 @@
+utils/configurations/*.ini
+utils/configurations/*.json
+utils/database/*.db
 .DS*
 __py*
 *.txt
