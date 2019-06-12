@@ -1,6 +1,7 @@
 utils/configurations/*.ini
 utils/configurations/*.json
 utils/database/*.db
+utils/images/*/*
 .DS*
 __py*
 *.txt
