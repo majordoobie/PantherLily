@@ -34,7 +34,10 @@
         "Bat Spell" : "5",
         "Barbarian King" : "60",
         "Archer Queen" : "60",
-        "Grand Warden" : "30"
+        "Grand Warden" : "30",
+        "Wall Wrecker" : "3",
+        "Battle Blimp" : "3",
+        "Stone Slammer" : "3"
     },
     "11": {
         "Barbarian": "8",

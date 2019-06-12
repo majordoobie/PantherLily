@@ -355,15 +355,21 @@ def stat_stitcher(player, emot_loc, _max):
     else:
         troop_levels += (f"{emoticons['troops']['babydragon']} {str(player.home_troops_dict['Baby Dragon'].level):<2}| {str(troop[plvl]['Baby Dragon']):<2}")
 
-    if player.home_troops_dict['Ice Golem'].level == int(troop[plvl]['Ice Golem']):
-        troop_levels += (f"{emoticons['troops']['icegolem']} **{str(player.home_troops_dict['Ice Golem'].level):<2}| {str(troop[plvl]['Ice Golem']):<2}**")
-    else:
-        troop_levels += (f"{emoticons['troops']['icegolem']} {str(player.home_troops_dict['Ice Golem'].level):<2}| {str(troop[plvl]['Ice Golem']):<2}")
+    try:
+        if player.home_troops_dict['Ice Golem'].level == int(troop[plvl]['Ice Golem']):
+            troop_levels += (f"{emoticons['troops']['icegolem']} **{str(player.home_troops_dict['Ice Golem'].level):<2}| {str(troop[plvl]['Ice Golem']):<2}**")
+        else:
+            troop_levels += (f"{emoticons['troops']['icegolem']} {str(player.home_troops_dict['Ice Golem'].level):<2}| {str(troop[plvl]['Ice Golem']):<2}")
+    except:
+        troop_levels += (f"{emoticons['troops']['icegolem']} 0 | 0")
 
-    if player.home_troops_dict['Electro Dragon'].level == int(troop[plvl]['Electro Dragon']):
-        troop_levels += (f"{emoticons['troops']['edrag']} **{str(player.home_troops_dict['Electro Dragon'].level):<2}| {str(troop[plvl]['Electro Dragon']):<2}\n**")
-    else:
-        troop_levels += (f"{emoticons['troops']['edrag']} {str(player.home_troops_dict['Electro Dragon'].level):<2}| {str(troop[plvl]['Electro Dragon']):<2}\n")
+    try:
+        if player.home_troops_dict['Electro Dragon'].level == int(troop[plvl]['Electro Dragon']):
+            troop_levels += (f"{emoticons['troops']['edrag']} **{str(player.home_troops_dict['Electro Dragon'].level):<2}| {str(troop[plvl]['Electro Dragon']):<2}\n**")
+        else:
+            troop_levels += (f"{emoticons['troops']['edrag']} {str(player.home_troops_dict['Electro Dragon'].level):<2}| {str(troop[plvl]['Electro Dragon']):<2}\n")
+    except:
+        troop_levels += (f"{emoticons['troops']['edrag']} 0 | 0\n")
 
     # Spell stitcher
     if player.spells_dict['Lightning Spell'].level == int(troop[plvl]['Lightning Spell']):
@@ -432,9 +438,40 @@ def stat_stitcher(player, emot_loc, _max):
     else:
         heroLevels += (f"{emoticons['heroes']['archerqueen']} {str(player.heroes_dict['Archer Queen'].level):<2} | {str(troop[plvl]['Archer Queen']):<2}")
 
-    if player.heroes_dict['Grand Warden'].level == int(troop[plvl]['Grand Warden']):
-        heroLevels += (f"{emoticons['heroes']['grandwarden']} **{str(player.heroes_dict['Grand Warden'].level):<2} | {str(troop[plvl]['Grand Warden']):<2}**")
-    else:
-        heroLevels += (f"{emoticons['heroes']['grandwarden']} {str(player.heroes_dict['Grand Warden'].level):<2} | {str(troop[plvl]['Grand Warden']):<2}")
+    try:
+        if player.heroes_dict['Grand Warden'].level == int(troop[plvl]['Grand Warden']):
+            heroLevels += (f"{emoticons['heroes']['grandwarden']} **{str(player.heroes_dict['Grand Warden'].level):<2} | {str(troop[plvl]['Grand Warden']):<2}**")
+        else:
+            heroLevels += (f"{emoticons['heroes']['grandwarden']} {str(player.heroes_dict['Grand Warden'].level):<2} | {str(troop[plvl]['Grand Warden']):<2}")
+    except:
+        heroLevels += (f"{emoticons['heroes']['grandwarden']} 0 | 0")
 
-    return desc, troop_levels, spell_levels, heroLevels, gains
+    siege_flag = False
+    try:
+        if player.home_troops_dict['Wall Wrecker'].level == int(troop[plvl]["Wall Wrecker"]):
+            siege_levels = (f"{emoticons['siege']['smground']} **{str(player.home_troops_dict['Wall Wrecker'].level):<2} | {str(troop[plvl]['Wall Wrecker']):<2}**")
+        else:
+            siege_levels = (f"{emoticons['siege']['smground']} {str(player.home_troops_dict['Wall Wrecker'].level):<2} | {str(troop[plvl]['Wall Wrecker']):<2}")
+        siege_flag = True
+    except:
+        siege_levels = None
+
+    if siege_flag:
+        try:
+            if player.home_troops_dict['Battle Blimp'].level == int(troop[plvl]["Battle Blimp"]):
+                siege_levels += (f"{emoticons['siege']['smair1']} **{str(player.home_troops_dict['Battle Blimp'].level):<2} | {str(troop[plvl]['Battle Blimp']):<2}**")
+            else:
+                siege_levels += (f"{emoticons['siege']['smair1']} {str(player.home_troops_dict['Battle Blimp'].level):<2} | {str(troop[plvl]['Battle Blimp']):<2}")
+        except:
+            siege_levels += (f"{emoticons['siege']['smair1']} 0 | 0")
+
+        try:
+            if player.home_troops_dict['Stone Slammer'].level == int(troop[plvl]["Stone Slammer"]):
+                siege_levels += (f"{emoticons['siege']['smair2']} **{str(player.home_troops_dict['Stone Slammer'].level):<2} | {str(troop[plvl]['Stone Slammer']):<2}**")
+            else:
+                siege_levels += (f"{emoticons['siege']['smair2']} {str(player.home_troops_dict['Stone Slammer'].level):<2} | {str(troop[plvl]['Stone Slammer']):<2}")
+        except:
+            siege_levels += (f"{emoticons['siege']['smair2']} 0 | 0")
+
+
+    return desc, troop_levels, spell_levels, heroLevels, gains, siege_levels

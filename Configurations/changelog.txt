@@ -3,6 +3,9 @@
 [Fixed] Error bug with panther.stats
 [Added] Panther.Stats by TH levels
 [Added] coc.py to panther.stats
+[Added] Legend to panther.roster
+[Updated] coc api used in panther.roster.search it reduced the time from 9 seconds average to 4 seconds using coc.py
+[Added] New python file used to update donations table this is used to update the code in panther.donation and the loop
 
 [Version 1.9.2] 05JUN2019
 [Fixed] Panther.Stats throwing an error when no arguments were used

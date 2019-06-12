@@ -11,6 +11,7 @@ from APIs.rolemanager import Rolemgr
 from APIs import user_tops
 
 from ClashOfClans import clash_stats
+from ClashOfClans import update_donationtable as udt
 
 # Database
 from Database.ZuluBot_DB import ZuluDB
@@ -463,7 +464,12 @@ async def roster(ctx):
             line = ''
     if line != '':
         await ctx.send(line)
-    view = await ctx.send(f"**WARNING**\nClash query is not performed if user is missing from the database. Use {prefx}lcm "
+    legend = (f"{emoticons['tracker bot']['zuluServer']} Member is in Reddit Zulu discord.\n"
+            f"{emoticons['tracker bot']['planningServer']} Member is in ZBP discord.\n"
+            f"{emoticons['tracker bot']['redditzulu']} Member is currently in Reddit Zulu in-game.\n"
+            f"{emoticons['tracker bot']['database']} Member is registered with PantherLily.\n"
+            f"{emoticons['tracker bot']['plus']} Locate all users in real-time, may take 15 seconds.")
+    view = await ctx.send(f"**LEGEND**\n{legend}\n**WARNING**\nClash query is not performed if user is missing from the database. Use `{prefx}lcm` "
         "to get an up to date list of clan members.")
 
     # Add reaction button
@@ -490,21 +496,21 @@ async def roster(ctx):
                 "Unknown" : []
             }
             # get all active users from database 
-            active_members = dbconn.get_all_active()
-            
-            # get each user to see where they are
-            for member in active_members:
-                member_res = coc_client.get_member(member[0])
+            active_members = [ tag[0] for tag in dbconn.get_all_active() ]
+            async for player in coc_client2.get_players(active_members):
                 try:
-                    user_distribution[member_res.json()["clan"]["tag"]].append((
-                        member_res.json()["name"],
-                        member_res.json()["townHallLevel"],         
+                    user_distribution[player.clan.tag].append((
+                        player.name,
+                        player.town_hall
                     ))
                 except:
+                    if player.clan:
+                        clan = player.clan.name
+                    else:
+                        clan = "No Clan"
                     user_distribution["Unknown"].append((
-                        member_res.json()["name"],
-                        member_res.json().get("clan", {}).get('name', "No clan")
-
+                        player.name,
+                        clan
                     ))
             
             # Sort the list
@@ -610,12 +616,14 @@ async def stats(ctx, *, user=None):
     if user:
         for opt in ["--max", "-m"]:
             if user.split(" ")[-1].lower() == opt:
-                user = user.split(" "+opt)[0]
-                if user in opt:
+                if len(user.split(" ")) == 1:
                     user = None
+                    _max = True
                     break
-                _max = True
-                break
+                else:
+                    user = user.split(" "+opt)[0]
+                    _max = True
+                    break
 
     if user == None:
         user = ctx.author
@@ -655,12 +663,15 @@ async def stats(ctx, *, user=None):
         return
 
     #mem_stats = clash_stats.clash_stats(res.json())
-    desc, troopLevels, spellLevels, heroLevels, gains = clash_stats.stat_stitcher(player, emoticonLoc, _max)
-    embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x00ff00)
+    desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
+    embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
     embed.add_field(name="**Gains**", value=gains, inline = False)
     embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
     embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
     embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
+    if sieges != None:
+        embed.add_field(name = "**Sieges**", value=sieges, inline = False)
+    embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
     if player.league.badge.small == None:
         f = discord.File("Images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
@@ -669,9 +680,9 @@ async def stats(ctx, *, user=None):
         embed.set_thumbnail(url=player.league.badge.small)
         await ctx.send(embed=embed)
 
-# @stats.error
-# async def stats_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@stats.error
+async def stats_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["d"])
 async def donation(ctx, *, user=None):
@@ -729,21 +740,8 @@ async def donation(ctx, *, user=None):
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
 
-    res = coc_client.get_member(query_result[0][0])
-    mem_stats = clash_stats.ClashStats(res.json())
-
-    in_zulu = "False"
-    if mem_stats.clan_name == "Reddit Zulu":
-        in_zulu = "True"
-    else:
-        in_zulu = "False"
-    dbconn.update_donations((
-            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            mem_stats.tag,
-            mem_stats.achieve["Friend in Need"]['value'],
-            in_zulu,
-            mem_stats.trophies
-        ))
+    # Update users donation
+    await udt.update_user(dbconn, coc_client2, query_result[0][0])
 
     lastSun = botAPI.last_sunday()
     nextSun = lastSun + timedelta(days=7)
@@ -1864,127 +1862,11 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    player = await coc_client2.get_player("#9P9PRYQJ")
-    string = ""
-    for spell in player.spells:
-        string +=(f"{spell.name} : {spell.max_level}\n")
-    await ctx.send(string)
-    #print(player.home_troops_dict["Barbarian"].max_level)
-
-
-
-
-    return
-    
-    user_distribution = {
-                "#P0Q8VRC8" : [],
-                "#2Y28CGP8" : [],
-                "#8YGOCQRY" : [],
-                "Unknown" : []
-            }
-    # get all active users from database 
-    active_members = dbconn.get_all_active()
-    active_members = [ member[0]for member in active_members ]
-    start_mathapi = datetime.utcnow()
-    #await ctx.send(f"Start time COC API: {start}")
-    async for player in coc_client2.get_players(active_members):
-        if player.clan:
-            try:
-                user_distribution[player.clan.tag].append((
-                    player.name,
-                    player.town_hall
-                ))
-            except:
-                user_distribution["Unknown"].append((
-                    player.name,
-                    player.clan.name
-                ))
-        else:
-            user_distribution["Unknown"].append((
-                    player.name,
-                    "No clan"
-                ))
-    end_mathapi = datetime.utcnow()
-    #await ctx.send(f"End time COC API: {end}\n{end - start}")
-    user_distribution = {
-                "#P0Q8VRC8" : [],
-                "#2Y28CGP8" : [],
-                "#8YGOCQRY" : [],
-                "Unknown" : []
-            }
-    start_myapi = datetime.utcnow()
-    #await ctx.send(f"Start time ClashConnect API: {start}")
-    # get each user to see where they are
-    for member in active_members:
-        member_res = coc_client.get_member(member)
-        try:
-            user_distribution[member_res.json()["clan"]["tag"]].append((
-                member_res.json()["name"],
-                member_res.json()["townHallLevel"],         
-            ))
-        except:
-            user_distribution["Unknown"].append((
-                member_res.json()["name"],
-                member_res.json().get("clan", {}).get('name', "No clan")
-
-            ))
-    end_myapi = datetime.utcnow()
-    #await ctx.send(f"End time ClashConnect API: {end}\n{end - start}")
-    
-    msg = (f"Maths api results: {end_mathapi - start_mathapi}\nMy api results: {end_myapi - start_myapi}")
-    await ctx.send(msg)
-    return
-    #Sort the list
-    for section in user_distribution.keys():
-        th12, th11, th10, th9 = [], [], [], []
-        user_distribution[section].sort(key = lambda x: x[0].lower())
-        for user in user_distribution[section]:
-            if user[1] == 12:
-                th12.append(user)
-            elif user[1] == 11:
-                th11.append(user)
-            elif user[1] == 10:
-                th10.append(user)
-            else: 
-                th9.append(user)
-        order = []
-        order.extend(th12)
-        order.extend(th11)
-        order.extend(th10)
-        order.extend(th9)
-        user_distribution[section] = order
-
-
-    # Create the outputs
-    if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-        misfits_out = "**Reddit Misfits:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-            misfits_out += f"`{member[1]:<4}{member[0]}`\n"
-        misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
-        await ctx.send(misfits_out)
-
-    if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-        elephino_out = "**Reddit Elephino:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-            elephino_out += f"`{member[1]:<4}{member[0]}`\n"
-        elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
-        await ctx.send(elephino_out)
-
-    if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-        zulu_out = "**Reddit Zulu:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-            zulu_out += f"`{member[1]:<4}{member[0]}`\n"
-        zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
-        await ctx.send(zulu_out)
-
-    if user_distribution["Unknown"]:
-        unknown_out = "**Users not in our clans**:\n"
-        for member in user_distribution["Unknown"]:
-            unknown_out += f"`{member[0]:<24}{member[1]}`\n"
-        unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
-        await ctx.send(unknown_out)
-
-    await ctx.send(f"Start time: {datetime.utcnow()}")
+    player = await coc_client2.get_player("#L2G9VLUC")
+    for i in player.troops:
+        print(i)
+    await udt.update_donationstable(dbconn, coc_client2)
+    print("After await")
 
 
 #####################################################################################################################
@@ -2061,25 +1943,26 @@ async def weeklyRefresh(discord_client, botMode):
 
         guild = discord_client.get_guild(int(config[botMode]['guild_lock']))
         # Get all users in the database
-        get_all = dbconn.get_allUsersWhereTrue()
+        get_all = dbconn.get_all_active()
+
+        # Update all donations
+        await udt.update_donationstable(dbconn, coc_client2)
 
         # See if the users are still part of the clan
         user = ''
         for user in get_all:
             # if mem in planning server
-            inPlanning = ""
+            in_planning = ""
             if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['Discord']['plandisc_id'])).members):
                 if user[6] == "True":
                     pass
                 else:
-                    inPlanning = "True"
-                    #dbconn.set_inPlanning(("True", user[0]))
+                    in_planning = "True"
             else:
                 if user[6] == "False":
                     pass
                 else:
-                    inPlanning = "False"
-                    #dbconn.set_inPlanning(("False", user[0]))
+                    in_planning = "False"
 
             # Grab the users CoC stats to see if there is any updates needed on their row
             try:
@@ -2152,9 +2035,9 @@ async def weeklyRefresh(discord_client, botMode):
                     mem_stats.trophies
                 ))
 
-            # update users table  inPlanning
+            # update users table  in_planning
             #(TownHallLevel, League, inPlanningServer, Tag)
-            dbconn.update_members_table((mem_stats.townHallLevel, mem_stats.league_name, inPlanning, mem_stats.tag))
+            dbconn.update_members_table((mem_stats.townHallLevel, mem_stats.league_name, in_planning, mem_stats.tag))
 
         # reset message
         messages = [
