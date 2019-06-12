@@ -239,7 +239,7 @@ def stat_stitcher(player, emot_loc, _max):
     """Sitcher is used for MAX troops"""
 
     # Load troop levels
-    with open("ClashOfClans/clash_troop_levels.json", "r") as trooplevels:
+    with open("utils/clash_of_clans/clash_troop_levels.json", "r") as trooplevels:
         troop = json.load(trooplevels)
 
     # Players townhall level

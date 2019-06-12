@@ -4,17 +4,16 @@ from discord.ext import commands
 from discord import Embed, Game, Guild
 
 #APIs
-from APIs.discordBotAPI import BotAssist
-from APIs.ClashConnect import ClashConnectAPI
-from APIs.rolemanager import Rolemgr
-#from APIs import clash_stats
-from APIs import user_tops
+from utils.apis.discordBotAPI import BotAssist
+from utils.apis.ClashConnect import ClashConnectAPI
+from utils.apis.rolemanager import Rolemgr
+from utils.apis import user_tops
 
-from ClashOfClans import clash_stats
-from ClashOfClans import update_donationtable as udt
-
+from utils.clash_of_clans import clash_stats
+from utils.clash_of_clans import update_donationtable as udt
+from utils.help import help_menu
 # Database
-from Database.ZuluBot_DB import ZuluDB
+from utils.database.panther_db import ZuluDB
 
 #New Functions
 import aiohttp
@@ -26,7 +25,6 @@ from datetime import datetime, timedelta
 from requests import Response
 import io
 from os import path, listdir
-import pandas as pd
 from pathlib import Path
 import random
 import re
@@ -42,7 +40,14 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 
 import json
 import coc
+import logging
 
+# Set up logging
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 #####################################################################################################################
                                              # Set up the environment
 #####################################################################################################################
@@ -59,31 +64,32 @@ else:
 
 
 # Instanciate Config
-config = ConfigParser(allow_no_value=True)
 emoticons = ConfigParser(allow_no_value=True)
 
 if botMode == "liveBot":
-    configLoc = 'Configurations/zuluConfig.ini'
-    emoticonLoc = 'Configurations/emoticons.ini'
+    configLoc = 'utils/configurations/panther_conf.json'
+    emoticonLoc = 'utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
         ex(f"Config file does not exist: {configLoc}")
-    config.read(configLoc)
+    with open(configLoc) as infile:
+        config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
-    configLoc = 'Configurations/zuluConfig.ini'
-    emoticonLoc = 'Configurations/emoticons.ini'
+    configLoc = 'utils/configurations/panther_conf.json'
+    emoticonLoc = 'utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
         ex(f"Config file does not exist: {configLoc}")
-    config.read(configLoc)
+    with open(configLoc) as infile:
+        config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}".split(' '))
+    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
     discord_client.remove_command("help")
 
 
@@ -96,17 +102,14 @@ else:
     dbconn = ZuluDB(dbLoc)
 
 botAPI = BotAssist(botMode, configLoc, dbconn, emoticons, config)
-coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
-prefx = config[botMode]['bot_Prefix'].split(' ')[0]
+coc_client = ClashConnectAPI(config['clash']['zuluclash_token'])
+prefx = config[botMode]['bot_prefix'][0]
 
 # instanciate rolemgr
 role_mgr = Rolemgr(config)
 
-# New json settings
-with open("Configurations/settings.json") as jsonFile:
-    conf = json.load(jsonFile)
 # coc.py
-coc_client2 = coc.Client(conf["CoC_API"]["Username"], conf["CoC_API"]["Password"])
+coc_client2 = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -124,148 +127,34 @@ async def on_ready():
         f"Current exit node:      {get('https://api.ipify.org').text}\n"
         "------------------------------------------")
 
-    print("No worky?>")
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
-    guild = discord_client.get_guild(int(config["Discord"]["zuludisc_id"]))
-    # role_mgr = Rolemgr(config, guild)
+    guild = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
     role_mgr.initializer(guild)
 
 #####################################################################################################################
                                              # Help Menu
 #####################################################################################################################
 @discord_client.command()
-async def help(ctx, *option):
-    """
-    Display help menu to user
-    """
-    listroles = ("List all the available roles along with their role ID. This command is mainly used for diagnosing errors.")
+async def help(ctx, option=None):
+    # Instanciate the help object
+    help_obj = help_menu.Help_Menu(config, botMode)
 
-    lcm = ("List the members that are currently in Reddit Zulu along with their Clash Tag. This command is useful for registering "
-        "new members.")
-
-    roster = ("This command identifies every user in the Reddit Zulu discord server that has the 'CoC Members' role and checks "
-        "if they exist in Zulu Base Planning discord server and in the Database. The command will query if the user is present "
-        "in Reddit Zulu (clan) only if the user exists in the database.")
-
-    newinvite = ("Provides an invite link to Zulu Base Planning discord server. By default, the link will expire in 10 minutes. "
-        "The command takes an optional integer argument. The optional integer is used to set the expiration time in minutes for the link.")
-
-    newinvite_ex = ("Provides an invite link to Zulu Base Planning discord server. By default, the link will expire in 10 minutes. "
-        "The command takes an optional integer argument. The optional integer is used to set the expiration time in minutes for the link.\n\n"
-        f"**[Examples]**\n{prefx}newinvite\n{prefx}newinvite 20")
-
-    stats  = ("Show a graphical output of the user's current Clash of Clans profile. By default, the user who invoked the command will be "
-        "used to query Clash of Clans. The command takes an optional @mention argument to query that user instead.")
-
-    donation = ("Display the user's current donation progress for the week. The donation cut off is every Monday at 0100 Zulu (Sunday at 2000 EST). "
-        "The command takes an optional @mention argument to query that user instead.")
-
-    useradd = ("Register a new user to the database. It is mandatory to supply the user's clash tag and @mention arguments when invoking this command. "
-        "Registering the user will change the user's nickname on discord to their in-game name along with assigning 'CoC Members' and 'th#s' roles.")
-
-    useradd_ex = ("Register a new user to the database. It is mandatory to supply the users clash tag and @mention arguments when invoking this command. "
-        "Registering the user will change the user's nickname on discord to their in-game name along with assigning 'CoC Members' and 'th#s' roles.\n\n"
-        f"**[Examples]**\n{prefx}useradd #ABC1233 @mention")
-
-    disable_user = ("Command **does not** remove the user from discord. The command is used to set a users 'active' status to False. This terminates the "
-        "donation tracking process on the user. The action is recorded in the Notes section of the users SQL table. ")
-
-    #enable_user = ("Command **does not** register a user. This command is used to re-enable tracking a users donations. ")
-
-    addnote = ("Append an administrative note to the users SQL table. The bot will automatically append the date and the user who added the note. "
-        f"Please use {prefx}help --verbose to see more information on how to craft notes")
-
-    notes = ("Panther Lily makes it easy to keep track of infractions and administrative notes on users. Every time a note is appended to the user's "
-        "table, a timestamp and a signature are automatically added. Panther Lily also supports extracting messages as long as you supply the keyword "
-        "'msgID:' followed by the id of the message (right click a message > copy id). You can add as many msgID's as you like. This will become useful "
-        f"when using {prefx}viewnote as it will offer the user the option to retrieve all the discord messages by parsing the msgID keyword in the note.\n\n"
-        "**[Example]**\nMissed another attack\nmsgID:123456789\nmsgID:987654321\n\nResults in:\n[16-FEB-2019 22:12]\nNote By SgtMajorDoobie\nMissed another attack\n"
-        "msgID:123456789\nmsgID:987654321")
-
-    lookup = ("Used to lookup for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
-        "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
-        "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.")
-
-    lookup_ex = ("Used to lookup for a user in the SQL database. The command will return the users name, clash tag, discord ID, clash level, active status, and "
-        "profile notes if they are found. This is useful to see the status of a member or to find members from years ago that are still in the database. This "
-        "is due to the users in the database staying forever. The only data that is recycled is the donation tracking table.\n\n**[Example]**\n"
-        f"{prefx}lookup --tag #YC12LPJ\n{prefx}lookup -t #YC12LPJ\n{prefx}lookup --mention @mention\n{prefx}lookup --name SgtMajorDoobie #Case sensitive")
-
-    deletenote = (f"Used to delete a users note in the database. This is the only way to fix errors. It is best to first {prefx}viewnote to copy the content you "
-        f"still want to keep and then {prefx}addnote to add the correct content.")
-
-    viewnote = (f"View the text note in the user's profile with the option of retrieving any messages identified in the notes. These messages are identified by "
-        f"scanning for the 'msgID:' key. Use {prefx}help --verbose to see more on Notes and how to craft them properly.")
-
-    getmessage = (f"Used to manually retrieve a msgID. This command is mostly used to diagnose bugs.")
-
-    helpp = (f"Display this help menu. Use {prefx}help --verbose for examples.")
-
-    export = (f"Command is used to export the weekly report. New reports are only available on Mondays at 0100 GMT (Sundays 2000).")
-
-    report = (f"Unlike export that only exports an XLSX of the last accepted donations for a week, report reports the current status of the clan. "
-        "The output is a HTML file.")
-    que = (f"Used to display any pending apps. You can then used the lookup tool to get their discord ID")
-
-    top = (f"List the trophy status for the week of the whole clan.")
-
-    if len(option) == 0:
-        embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
-        embed.add_field(name=f"**{prefx}listroles**", value=listroles)
-        embed.add_field(name=f"**{prefx}lcm**", value=lcm)
-        embed.add_field(name=f"**{prefx}roster**", value=roster)
-        await ctx.send(embed=embed)
-
-        embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
-        embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-        embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite)
-        embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
-        embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
-        embed.add_field(name=f"**{prefx}top**",value=top)
-        embed.add_field(name=f"**{prefx}export**",value=export)
-        embed.add_field(name=f"**{prefx}report**",value=report)
-        await ctx.send(embed=embed)
-
-        embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com")
-        embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd)
-        embed.add_field(name=f"**{prefx}user_remove** <__@mention__> [__opt: -m \"msg\"__]", value=disable_user)
-        embed.add_field(name=f"**{prefx}queue**",value=que)
-        embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-        embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__global__>", value=lookup)
-        embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
-        embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
-        embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
-        embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
-        await ctx.send(embed=embed)
-
-    if option:
-        if option[0] in ['--verbose', '-v']:
-            embed = discord.Embed(title="__Accountability Commands__", url= "https://discordapp.com")
-            embed.add_field(name=f"**{prefx}listroles**", value=listroles)
-            embed.add_field(name=f"**{prefx}lcm**", value=lcm)
-            embed.add_field(name=f"**{prefx}roster**", value=roster)
-            await ctx.send(embed=embed)
-
-            embed = discord.Embed(title="__Utility Commands__", url= "https://discordapp.com")
-            embed.add_field(name=f"**{prefx}help** [__opt: --verbose__]", value=helpp)
-            embed.add_field(name=f"**{prefx}invite** [__opt: <int>__]", value=newinvite_ex)
-            embed.add_field(name=f"**{prefx}stats** [__opt: <@mention>__]", value=stats)
-            embed.add_field(name=f"**{prefx}donation** [__opt: <@mention>__]", value=donation)
-            await ctx.send(embed=embed)
-
-            embed = discord.Embed(title="__Administrative Commands__", url= "https://discordapp.com",)
-            embed.add_field(name=f"**{prefx}user_add** <__#clashTag__> <__@mention__ | __DiscordID__> [__opt: FIN Value__]", value=useradd_ex)
-            embed.add_field(name=f"**{prefx}user_remove** <__@mention__>", value=disable_user)
-            embed.add_field(name=f"**{prefx}queue**",value=que)
-            embed.add_field(name=f"**{prefx}addnote** <__@mention__>", value=addnote)
-            embed.add_field(name=f"**{prefx}lookup** <--__name__ | --__tag__ | --__global__>", value=lookup_ex)
-            embed.add_field(name=f"**{prefx}deletenote** <__@mention__>", value=deletenote)
-            embed.add_field(name=f"**{prefx}viewnote** <__@mention__>", value=viewnote)
-            embed.add_field(name=f"**{prefx}getmessage** <__discordMsgID__>", value=getmessage)
-            embed.add_field(name=f"**How to Craft Notes**", value=notes)
-            embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
-            await ctx.send(embed=embed)
+    # Check conditions to print the help menu
+    if option == None:
+        await ctx.send(embed=help_obj.utility(True))
+    elif option.lower() in ["util", "utility", "u"]:
+        await ctx.send(embed=help_obj.utility(True))
+    elif option.lower() in ["admin", "administrator", "administration", "u"]:
+        await ctx.send(embed=help_obj.administrator(True))
+    elif option.lower() in ["accountability", "account", "roster", "acc", "r", "a"]:
+        await ctx.send(embed=help_obj.accountability(True))
+    elif option.lower() in ["all", "--all", "-all", "-a"]:
+        await ctx.send(embed=help_obj.utility(False))
+        await ctx.send(embed=help_obj.accountability(False))
+        await ctx.send(embed=help_obj.administrator(True))
+    else:
+        await ctx.send(embed=help_obj.utility(True))
 
 @help.error
 async def help_erro(ctx, error):
@@ -404,8 +293,8 @@ async def roster(ctx):
         await ctx.send(embed=embed)
         return
 
-    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-    zbpServer = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+    zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+    zbpServer = discord_client.get_guild(int(config['discord']['plandisc_id']))
 
     if zuluServer == None or zbpServer == None:
         await ctx.send("Unable to instantiate the guild object")
@@ -578,8 +467,8 @@ async def invite(ctx, *arg):
     """ Get the channel object to use the invite method of that channel """
 
     if await botAPI.rightServer(ctx, config):
-        targetServer = int(config['Discord']['PlanDisc_ID'])
-        targetChannel = int(config['Discord']['PlanDisc_Channel'])
+        targetServer = int(config['discord']['plandisc_id'])
+        targetChannel = int(config['discord']['plandisc_channel'])
 
     else:
         return
@@ -607,7 +496,7 @@ async def newinvite_error(ctx, error):
 
 @discord_client.command(aliases=["man"])
 async def manual(ctx):
-    f = discord.File("Configurations/PantherLily_V1.pdf", filename="Manual.pdf")
+    f = discord.File("utils/configurations/PantherLily_V1.pdf", filename="Manual.pdf")
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
@@ -624,7 +513,6 @@ async def stats(ctx, *, user=None):
                     user = user.split(" "+opt)[0]
                     _max = True
                     break
-
     if user == None:
         user = ctx.author
         userID = user.id
@@ -654,7 +542,6 @@ async def stats(ctx, *, user=None):
         return
 
     player = await coc_client2.get_player(result[0][0], cache=False)
-    #res = coc_client.get_member("#L2G9VLUC") # L2G9VLUC zag; YRR9Y9LO mike
 
     if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
@@ -662,7 +549,7 @@ async def stats(ctx, *, user=None):
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    #mem_stats = clash_stats.clash_stats(res.json())
+    # Get display objects
     desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
     embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
     embed.add_field(name="**Gains**", value=gains, inline = False)
@@ -696,7 +583,7 @@ async def donation(ctx, *, user=None):
 
     Returns:
         Discord message using ctx.message
-    """    
+    """  
     if user == None:
         query_result = dbconn.get_user_byDiscID((ctx.author.id,))
         if len(query_result) == 0:
@@ -729,7 +616,7 @@ async def donation(ctx, *, user=None):
         return
 
     elif len(query_result) > 1:
-        users =[ i[1] for i in query_result ]
+        users = [ i[1] for i in query_result ]
         msg = (f"Oh oh, looks like we have duplicate entries with the same discord ID. Users list: {users}")
         await ctx.send(embed = discord.Embed(title="SQL ERROR", description=msg, color=0xFF0000))
         return
@@ -938,9 +825,9 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.mention}")
     return
 
-@user_add.error
-async def info_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @user_add.error
+# async def info_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
 async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
@@ -1397,8 +1284,8 @@ async def viewnote(ctx, *, mem):
                 return
             
             for msgID in ids:
-                zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-                leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+                zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+                leaderChannel = zuluServer.get_channel(int(config['discord']['leadernotes']))
                 try:
                     await ctx.send("Loading.. ")
                     msg = await leaderChannel.get_message(int(msgID))
@@ -1448,8 +1335,8 @@ async def getmessage(ctx, msgID):
         await ctx.send(embed = discord.Embed(title="RECORD NOT FOUND", description=desc, color=0xFF0000))
         return
 
-    zuluServer = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-    leaderChannel = zuluServer.get_channel(int(config['Discord']['leadernotes']))
+    zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+    leaderChannel = zuluServer.get_channel(int(config['discord']['leadernotes']))
     try:
         await ctx.send("Loading.. ")
         msg = await leaderChannel.get_message(int(msgID))
@@ -1484,7 +1371,7 @@ async def getmsg_error(ctx, error):
 
 @discord_client.command()
 async def caketime(ctx):
-    cakePath = "Images/cakes"
+    cakePath = "utils/images/cakes"
     ranCake = Path(cakePath).joinpath(random.choice(listdir(cakePath)))
     f = discord.File(str(ranCake), filename=str(ranCake.name))
     if ranCake.suffix == ".mp4":
@@ -1724,10 +1611,10 @@ for (const row of tableElm.rows) {
     #new_link = soup.new_tag("script", src="pandamod.js")
     #soup.html.append(new_link)
 
-    with open("Web/report.html", "w", encoding="utf-8") as outfile:
+    with open("utils/web/report.html", "w", encoding="utf-8") as outfile:
         outfile.write(str(soup))
 
-    f = discord.File("Web/report.html", filename="report.html")
+    f = discord.File("utils/web/report.html", filename="report.html")
     await ctx.send(file=f)
     await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
     return
@@ -1742,66 +1629,6 @@ async def queue(ctx):
             app_u.append(app[0])
             app_m += f"{app[0]:<15} {app[1]}\n"
     await ctx.send(app_m)
-
-@discord_client.command(aliases=["cr"])
-async def cwl_roster(ctx):
-    await ctx.send("Please hold while I get that for ya.")
-    user_distribution = {
-        "#P0Q8VRC8" : [],
-        "#2Y28CGP8" : [],
-        "#8YGOCQRY" : [],
-        "Unknown" : []
-    }
-    # get all active users from database 
-    active_members = dbconn.get_all_active()
-    
-    # get each user to see where they are
-    for member in active_members:
-        member_res = coc_client.get_member(member[0])
-        try:
-            user_distribution[member_res.json()["clan"]["tag"]].append((
-                member_res.json()["name"],
-                member_res.json()["townHallLevel"],         
-            ))
-        except:
-            user_distribution["Unknown"].append((
-                member_res.json()["name"],
-                member_res.json()["clan"]["name"]
-            ))
-    
-    # Sort the list
-    for section in user_distribution.keys():
-        user_distribution[section].sort(key = lambda x: x[0].lower())
-
-    # Create the outputs
-    if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-        misfits_out = "**Reddit Misfits:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
-            misfits_out += f"`{member[1]:<4}{member[0]}`\n"
-        misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
-        await ctx.send(misfits_out)
-
-    if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-        elephino_out = "**Reddit Elephino:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
-            elephino_out += f"`{member[1]:<4}{member[0]}`\n"
-        elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
-        await ctx.send(elephino_out)
-
-    if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-        zulu_out = "**Reddit Zulu:**\n"
-        for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
-            zulu_out += f"`{member[1]:<4}{member[0]}`\n"
-        zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
-        await ctx.send(zulu_out)
-
-    if user_distribution["Unknown"]:
-        unknown_out = "**Users not in our clans**:\n"
-        for member in user_distribution["Unknown"]:
-            unknown_out += f"`{member[0]:<24}{member[1]}`\n"
-        unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
-        await ctx.send(unknown_out)
-
 
 @discord_client.command(aliases=["t", "T"])
 async def top(ctx, arg=None):
@@ -1862,11 +1689,15 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    player = await coc_client2.get_player("#L2G9VLUC")
-    for i in player.troops:
-        print(i)
-    await udt.update_donationstable(dbconn, coc_client2)
-    print("After await")
+    help_m = help_menu.Help_Menu(config, botMode)
+    embed = help_m.utility()
+    await ctx.send(embed=embed)
+    print("hi")
+    # player = await coc_client2.get_player("#L2G9VLUC")
+    # for i in player.troops:
+    #     print(i)
+    # await udt.update_donationstable(dbconn, coc_client2)
+    # print("After await")
 
 
 #####################################################################################################################
@@ -1896,7 +1727,6 @@ async def killbot_error(ctx, error):
 
 @discord_client.event
 async def on_message(message):
-    
     if message.channel.id == 293953660059385857: # replace with leaders chat
         if message.content.startswith("Application"):
             data = message.content.split(":")[1]
@@ -1916,9 +1746,8 @@ async def weeklyRefresh(discord_client, botMode):
 
     # Don't allow the bot to loop when in devMode
     if botMode == "devBot":
-        print("Running in dev mode")
+        print("Running in dev mode, disabling database update.")
         return
-
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         # Calculate the wait time in minute for next "top of hour"
@@ -1953,7 +1782,7 @@ async def weeklyRefresh(discord_client, botMode):
         for user in get_all:
             # if mem in planning server
             in_planning = ""
-            if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['Discord']['plandisc_id'])).members):
+            if int(user[4]) in (mem.id for mem in discord_client.get_guild(int(config['discord']['plandisc_id'])).members):
                 if user[6] == "True":
                     pass
                 else:
@@ -2057,7 +1886,4 @@ async def weeklyRefresh(discord_client, botMode):
 
 if __name__ == "__main__":
     discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
-    discord_client.run(config[botMode]['Bot_Token'])
-
-    loop = asyncio.get_event_loop()
-    loop.run()    
+    discord_client.run(config[botMode]['bot_token'])

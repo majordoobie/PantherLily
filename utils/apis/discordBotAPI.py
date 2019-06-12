@@ -38,13 +38,13 @@ class BotAssist:
         data = (
         f"[Bot Data]\n"
         f"  Mode:             {self.botMode}\n"
-        f"  ConfigName:       {config[self.botMode]['Bot_Name']}\n"
+        f"  ConfigName:       {config[self.botMode]['bot_name']}\n"
         f"  BotName:          {bot.user.name}\n\n"
         f"[Config Data]\n"
         f"  Called From:      {ctx.guild.name}\n"
         f"  Called From:      {ctx.guild.id}\n"
-        f"  Set To:           {config[self.botMode]['Guild_Name']}\n"
-        f"  Set To:           {config[self.botMode]['Guild_Lock']}\n"
+        f"  Set To:           {config[self.botMode]['guild_name']}\n"
+        f"  Set To:           {config[self.botMode]['guild_Lock']}\n"
         f"  ConfigLoc:        {self.configLoc}\n"
         f"  Pref:             {ctx.prefix}\n"
         f"  Created:          {bot.user.created_at}"
@@ -73,7 +73,7 @@ class BotAssist:
             ctx     (obj):      Objected intercepted by discord decorator
             config  (obj):      configparser object 
         """
-        if str(ctx.guild.id) == str(config[self.botMode]['Guild_Lock']):
+        if str(ctx.guild.id) == str(config[self.botMode]['guild_lock']):
             return True
         else:
             await ctx.channel.send("You are using this command from the wrong server.")
