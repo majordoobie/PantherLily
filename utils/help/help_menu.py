@@ -8,7 +8,7 @@ class Help_Menu:
         with open("utils/help/help_menu.json") as infile:
             self.help_menu = json.load(infile)
         self.botMode = botMode
-        self.prefix = conf[self.botMode]["bot_prefix"]
+        self.prefix = conf[self.botMode]["bot_prefix"][0]
 
     def utility(self, last=False):
         """Return the utility commands"""
