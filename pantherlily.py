@@ -392,7 +392,7 @@ async def roster(ctx):
         return
 
     # get all clan members
-    res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
+    res = coc_client.get_clan(config['clash']['zulu'])
 
     # Quick check to  make sure that the https request was good
     if int(res.status_code) != 200:
@@ -534,25 +534,25 @@ async def roster(ctx):
 
 
             # Create the outputs
-            if user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+            if user_distribution[f"#{config['clash']['misfits']}"]:
                 misfits_out = "**Reddit Misfits:**\n"
-                for member in user_distribution[f"#{config['ALL_CLANS']['misfits']}"]:
+                for member in user_distribution[f"#{config['clash']['misfits']}"]:
                     misfits_out += f"`{member[1]:<4}{member[0]}`\n"
-                misfits_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['misfits']}"])}/{len(active_members)}"""
+                misfits_out += f"""Count: {len(user_distribution[f"#{config['clash']['misfits']}"])}/{len(active_members)}"""
                 await ctx.send(misfits_out)
 
-            if user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+            if user_distribution[f"#{config['clash']['elephino']}"]:
                 elephino_out = "**Reddit Elephino:**\n"
-                for member in user_distribution[f"#{config['ALL_CLANS']['elephino']}"]:
+                for member in user_distribution[f"#{config['clash']['elephino']}"]:
                     elephino_out += f"`{member[1]:<4}{member[0]}`\n"
-                elephino_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['elephino']}"])}/{len(active_members)}"""
+                elephino_out += f"""Count: {len(user_distribution[f"#{config['clash']['elephino']}"])}/{len(active_members)}"""
                 await ctx.send(elephino_out)
 
-            if user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+            if user_distribution[f"#{config['clash']['zulu']}"]:
                 zulu_out = "**Reddit Zulu:**\n"
-                for member in user_distribution[f"#{config['ALL_CLANS']['zulu']}"]:
+                for member in user_distribution[f"#{config['clash']['zulu']}"]:
                     zulu_out += f"`{member[1]:<4}{member[0]}`\n"
-                zulu_out += f"""Count: {len(user_distribution[f"#{config['ALL_CLANS']['zulu']}"])}/{len(active_members)}"""
+                zulu_out += f"""Count: {len(user_distribution[f"#{config['clash']['zulu']}"])}/{len(active_members)}"""
                 await ctx.send(zulu_out)
 
             if user_distribution["Unknown"]:
