@@ -282,7 +282,7 @@ async def roster(ctx):
         return
 
     # get all clan members
-    res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
+    res = coc_client.get_clan(config['clash']['zulu'])
 
     # Quick check to  make sure that the https request was good
     if int(res.status_code) != 200:
