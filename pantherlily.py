@@ -74,7 +74,7 @@ if botMode == "liveBot":
     with open(configLoc) as infile:
         config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix=config[botMode]['bot_prefix'])
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
@@ -87,7 +87,7 @@ elif botMode == "devBot":
     with open(configLoc) as infile:
         config = json.load(infile)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix=f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix=config[botMode]['bot_prefix'])
     discord_client.remove_command("help")
 
 
@@ -1737,6 +1737,10 @@ async def top(ctx, arg=None):
     # Initialize list
     top_stats = []
 
+    # Update all data first
+    async with ctx.typing():
+        await udt.update_donationstable(dbconn, coc_client2)
+
     # gather data
     users = dbconn.get_all_active()
     for user in users:
@@ -1884,7 +1888,6 @@ async def killbot_error(ctx, error):
 
 @discord_client.event
 async def on_message(message):
-    print(message)
     if message.channel.id == 293953660059385857: # replace with leaders chat
         if message.content.startswith("Application"):
             data = message.content.split(":")[1]

@@ -422,11 +422,13 @@ def stat_stitcher(player, emot_loc, _max):
     else:
         spell_levels += (f"{emoticons['spells']['skeleton']} {str(player.spells_dict['Skeleton Spell'].level):<2}| {str(troop[plvl]['Skeleton Spell']):<2}")
 
-    if player.spells_dict['Bat Spell'].level == int(troop[plvl]['Bat Spell']):
-        spell_levels += (f"{emoticons['spells']['batspell']} **{str(player.spells_dict['Bat Spell'].level):<2}| {str(troop[plvl]['Bat Spell']):<2}\n**")
-    else:
-        spell_levels += (f"{emoticons['spells']['batspell']} {str(player.spells_dict['Bat Spell'].level):<2}| {str(troop[plvl]['Bat Spell'])}\n")
-
+    try:
+        if player.spells_dict['Bat Spell'].level == int(troop[plvl]['Bat Spell']):
+            spell_levels += (f"{emoticons['spells']['batspell']} **{str(player.spells_dict['Bat Spell'].level):<2}| {str(troop[plvl]['Bat Spell']):<2}\n**")
+        else:
+            spell_levels += (f"{emoticons['spells']['batspell']} {str(player.spells_dict['Bat Spell'].level):<2}| {str(troop[plvl]['Bat Spell'])}\n")
+    except:
+        pass
     # Hero stitcher
     if player.heroes_dict['Barbarian King'].level == int(troop[plvl]['Barbarian King']):
         heroLevels = (f"{emoticons['heroes']['barbking']} **{str(player.heroes_dict['Barbarian King'].level):<2} | {str(troop[plvl]['Barbarian King']):<2}**")
@@ -444,7 +446,8 @@ def stat_stitcher(player, emot_loc, _max):
         else:
             heroLevels += (f"{emoticons['heroes']['grandwarden']} {str(player.heroes_dict['Grand Warden'].level):<2} | {str(troop[plvl]['Grand Warden']):<2}")
     except:
-        heroLevels += (f"{emoticons['heroes']['grandwarden']} 0 | 0")
+        pass
+        #heroLevels += (f"{emoticons['heroes']['grandwarden']} 0 | 0")
 
     siege_flag = False
     try:
