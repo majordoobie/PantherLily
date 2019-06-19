@@ -1,10 +1,9 @@
-import discord
-
 class Rolemgr:
     """
     Class used to manage roles
     """
     def __init__(self, config):
+        """Init"""
         self.config = config
         self.guild = None
 
@@ -13,7 +12,7 @@ class Rolemgr:
         self.guild = guild
 
     def get_role(self, role_str):
-        """Simple method to get rule objects""" 
+        """Simple method to get rule objects"""
         for role in self.guild.roles:
             if role.name == role_str:
                 return role
@@ -27,5 +26,10 @@ class Rolemgr:
             if thlvl == level:
                 return self.get_role(str_role)
         return None
+
+    async def change_name(self, disc_user, name):
+        """Changes the users name"""
+        await disc_user.edit(nick=name)
+        return
 
     

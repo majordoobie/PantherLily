@@ -700,39 +700,35 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         return
 
     # Query CoC API to see if we have the right token and the right tag
-    res = coc_client.get_member(clash_tag)
-
+    try:
+        player = await coc_client2.get_player(f"{clash_tag}")
+    except coc.errors.NotFound as exception:
+        player = None
+    
     # Handle HTTP error
-    if res.status_code == 404:
+    if player == None:
         msg = (f"Was not able to find {clash_tag} in CoC servers.") 
         await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
         return
-    elif res.status_code != 200:
-        msg = (f"Clash tag {clash_tag} was not found in Reddit Zulu. "
-        "Or our exit node is not currently whitelisted. "
-        f"Use {config[botMode]['bot_Prefix']}lcm to see the available Clash tags "
-        "in Reddit Zulu and to verify if your IP is whitelisted.")
-        await ctx.send(embed = Embed(title="HTTP ERROR", description=msg, color=0xFF0000))
-        return
-    else:
-        mem_stats = clash_stats.ClashStats(res.json())
 
     # Retrieve the roles
     role_cocmember = role_mgr.get_role("CoC Members")
+    role_thlvl = role_mgr.get_th(player.town_hall)
+
     if role_cocmember == None:
         msg = (f"Clash role [CoC Members] was not found in Reddit Zulu discord")
         await botAPI.await_error(msg, "INSTANCE ERROR")
         return
-    role_thlvl = role_mgr.get_th(mem_stats.townHallLevel)
     if role_thlvl == None:
-        msg = (f"Clash role [th{mem_stats.townHallLevel}s] was not found in Reddit Zulu discord")
+        msg = (f"Clash role [th{player.town_hall}s] was not found in Reddit Zulu discord")
         await botAPI.await_error(msg, "INSTANCE ERROR")
         return
+
     # Add roles to a role list
     role_list = [role_cocmember, role_thlvl]
 
     # Change users default roles
-    msg = (f"Applying default roles to {mem_stats.name}")
+    msg = (f"Applying default roles to {player.name}")
     await ctx.send(embed = Embed(description=msg, color=0x5c0189))
     try:
         await disc_user_obj.add_roles(*role_list)
@@ -743,18 +739,18 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         await botAPI.await_error(ctx, "Could not add roles")
         
 
-    msg = (f"Changing {mem_stats.name}'s nickname to reflect their in-game name.")
+    msg = (f"Changing {player.name}'s nickname to reflect their in-game name.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
 
     # Change users nickname
-    if disc_user_obj.display_name == mem_stats.name:
-        msg = (f"{mem_stats.name}'s discord nickname already reflects their in-game name.")
+    if disc_user_obj.display_name == player.name:
+        msg = (f"{player.name}'s discord nickname already reflects their in-game name.")
         await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
     else:
         oldName = disc_user_obj.display_name
         try:
-            await disc_user_obj.edit(nick=mem_stats.name)
-            msg = (f"Changed {mem_stats.name} discord nickname from {oldName} to {disc_user_obj.display_name}")
+            await role_mgr.change_name(disc_user_obj, player.name)
+            msg = (f"Changed {player.name} discord nickname from {oldName} to {disc_user_obj.display_name}")
             await ctx.send(embed = Embed(description=msg, color=0x00ff00))
         except:
             msg = (f"It is impossible for a mere bot to change the nickname of a boss like you. "
@@ -763,13 +759,13 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 
 
     # Add user to database
-    msg = (f"Adding {mem_stats.name} to Reddit Zulu's database.")
+    msg = (f"Adding {player.name} to Reddit Zulu's database.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
     error = dbconn.insert_userdata((
-        mem_stats.tag,
-        mem_stats.name,
-        mem_stats.townHallLevel,
-        mem_stats.league_name,
+        player.tag,
+        player.name,
+        player.town_hall,
+        player.league.name,
         disc_user_obj.id,
         disc_user_obj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
         "False",
@@ -778,47 +774,30 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     ))
     if error != None:
         if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
-            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {mem_stats.tag}\n\nUser already exists. Attempting to re-activate {mem_stats.name}")
+            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {player.tag}\n\nUser already exists. Attempting to re-activate {mem_stats.name}")
             await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
-            result = dbconn.is_Active((mem_stats.tag))
+            result = dbconn.is_Active((player.tag))
             if isinstance(result, str):
                 await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                 return
 
             elif result[7] == "True": # If activ
-                msg = (f"{mem_stats.name} is already set to active in the database.")
+                msg = (f"{player.name} is already set to active in the database.")
                 await ctx.send(embed = Embed(title="SQL ERROR", description=msg, color=0xFF0000))
                 return
             else:
-                result = dbconn.set_Active(("True", mem_stats.tag))
+                result = dbconn.set_Active(("True", player.tag))
 
                 if isinstance(result, str):
                     await ctx.send(embed = Embed(title="SQL ERROR", description=result, color=0xFF0000))
                     return
                 else:
-                    msg = (f"Successfully set {mem_stats.name} to active")
+                    msg = (f"Successfully set {player.name} to active")
                     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
         else:
             await ctx.send(embed = Embed(title="SQL ERROR", description=error.args[0], color=0xFF0000)) #send.args[0] == "database is locked":
             return
 
-    # Add the ability to override the current fin so that we can get the fin from the last "Sunday"
-    if fin_override:
-        fin_apply = fin_override
-    else:
-        fin_apply = mem_stats.achieve['Friend in Need']['value']
-
-    error = dbconn.update_donations((
-        datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-        mem_stats.tag,
-        fin_apply,
-        "True",
-        mem_stats.trophies
-        ))
-
-    if isinstance(error, str):
-        await ctx.send(embed = Embed(title="SQL ERROR", description=error, color=0xFF0000))
-        return
 
     msg = (f"{disc_user_obj.display_name} added. Please copy and paste the following output into #sidekick-war-caller")
     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
@@ -913,13 +892,7 @@ async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
                 "user.")
             await ctx.send(embed = discord.Embed(title="SQL ERROR", description=desc, color=0xFF0000))
 
-    elif suppress and note_to_add:
-        if suppress not in ["-m", "--message"]:
-            msg = ("Using suppression mode requires -m then a message in quotes. "
-            "For example:\n\n**panther.user_remove** sgtmajordoobie __-m \"In LOA \\nMsgID:123456\"__"
-            "\n\nPlease notice the [\\n] character, this will create a new line for you.")
-            await botAPI.await_error(ctx, msg)
-        
+    elif suppress and note_to_add:      
         # Re query just incase we got the user from the Discord API
         oldNote = dbconn.get_user_byDiscID((member_id,))
 
@@ -1802,17 +1775,17 @@ async def weeklyRefresh(discord_client, botMode):
                 res = coc_client.get_member(user[0])
             except:
                 print(f"Could not retrive clash member {user[0]} data")
-                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data")
+                await (discord_client.get_channel(int(config["discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data")
                 continue
 
             if isinstance(res, Response) == False:
                 print(f"Could not retrive clash member {user[0]} {user[1]} data. Returned a None object")
-                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data. Returned a None object")
+                await (discord_client.get_channel(int(config["discord"]["thelawn"]))).send(f"Could not retrive clash member {user[0]} data. Returned a None object")
                 continue
 
             if res.status_code != 200:
                   print(f"Could not connect to CoC API with {user[0]}")
-                  await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not connect to CoC API with {user[0]}")
+                  await (discord_client.get_channel(int(config["discord"]["thelawn"]))).send(f"Could not connect to CoC API with {user[0]}")
                   continue
 
             # Instantiate the users clash data
@@ -1820,7 +1793,7 @@ async def weeklyRefresh(discord_client, botMode):
                 mem_stats = clash_stats.ClashStats(res.json())
             except:
                 print(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
-                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
+                await (discord_client.get_channel(int(config["discord"]["thelawn"]))).send(f"Could not instantiate ClashStat object: {user[0]} {user[1]}")
                 continue
 
             # Grab the users discord object and the object for the TH role
@@ -1828,7 +1801,7 @@ async def weeklyRefresh(discord_client, botMode):
 
             if exists == False:
                 print(f"User does not exist {user[1]} does not exist in this server")
-                await (discord_client.get_channel(int(config["Discord"]["thelawn"]))).send(f"User does not exist {user[1]} does not exist in this server")
+                await (discord_client.get_channel(int(config["discord"]["thelawn"]))).send(f"User does not exist {user[1]} does not exist in this server")
                 continue
 
             # Grab users role object
