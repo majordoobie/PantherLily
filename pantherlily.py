@@ -201,7 +201,7 @@ async def lcm(ctx):
     else:
         return
 
-    res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
+    res = coc_client.get_clan(config['clash']['zulu'])
     # get all mems from DB
     db_result = dbconn.get_all_active()
 
@@ -689,7 +689,6 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         return
 
     # try to get the user object 
-    clash_tag = clash_tag.lstrip("#")
     disc_user_id = await botAPI.user_converter_db(ctx, disc_mention)
     disc_user_obj = await botAPI.userConverter(ctx, disc_user_id)
 
@@ -701,7 +700,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 
     # Query CoC API to see if we have the right token and the right tag
     try:
-        player = await coc_client2.get_player(f"{clash_tag}")
+        player = await coc_client2.get_player(f"#{clash_tag.lstrip('#')}")
     except coc.errors.NotFound as exception:
         player = None
     
@@ -774,7 +773,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     ))
     if error != None:
         if error.args[0] == "UNIQUE constraint failed: MembersTable.Tag":
-            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {player.tag}\n\nUser already exists. Attempting to re-activate {mem_stats.name}")
+            msg = (f"UNIQUE constraint failed: MembersTable.Tag: {player.tag}\n\nUser already exists. Attempting to re-activate {player.name}")
             await ctx.send(embed = Embed(description=msg, color=0xFFFF00))
             result = dbconn.is_Active((player.tag))
             if isinstance(result, str):
@@ -804,9 +803,9 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.mention}")
     return
 
-# @user_add.error
-# async def info_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@user_add.error
+async def info_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
 async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
@@ -1692,8 +1691,6 @@ async def killbot(ctx):
     await ctx.send("Tearing down, please hold.")
     await ctx.send("Closing database..")
     dbconn.conn.close()
-    with open(configLoc, 'w') as f:
-            config.write(f)
     await ctx.send("Terminating bot..")
     await ctx.send("_Later._")
     await discord_client.logout()
