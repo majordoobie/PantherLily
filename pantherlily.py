@@ -800,7 +800,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 
     msg = (f"{disc_user_obj.display_name} added. Please copy and paste the following output into #sidekick-war-caller")
     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
-    await ctx.send(f"/add #{clash_tag.upper()} {disc_user_obj.mention}")
+    await ctx.send(f"/add {clash_tag.upper()} {disc_user_obj.mention}")
     return
 
 @user_add.error
