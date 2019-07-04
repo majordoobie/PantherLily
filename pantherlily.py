@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import Embed, Game, Guild
 
 #APIs
+from utils.apis import d_sync
 from utils.apis.discordBotAPI import BotAssist
 from utils.apis.ClashConnect import ClashConnectAPI
 from utils.apis.rolemanager import Rolemgr
@@ -131,6 +132,8 @@ async def on_ready():
     await discord_client.change_presence(status=discord.Status.online, activity=game)
     guild = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
     role_mgr.initializer(guild)
+    update = d_sync.UpdateLoop(discord_client, dbconn, botMode, coc_client2, config) 
+    discord_client.loop.create_task(update.run())
 
 #####################################################################################################################
                                              # Help Menu
@@ -1665,15 +1668,10 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    help_m = help_menu.Help_Menu(config, botMode)
-    embed = help_m.utility()
-    await ctx.send(embed=embed)
-    print("hi")
-    # player = await coc_client2.get_player("#L2G9VLUC")
-    # for i in player.troops:
-    #     print(i)
-    # await udt.update_donationstable(dbconn, coc_client2)
-    # print("After await")
+    dg = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
+    print(dg)
+    ud = dg.get_member(328247925786279940)
+    print(ud)
 
 
 #####################################################################################################################
@@ -1737,8 +1735,6 @@ async def weeklyRefresh(discord_client, botMode):
 
         print(f"\n\nWaiting {wait_time} minutes until next update.")
         await asyncio.sleep(wait_time * 60) #60
-        #await asyncio.sleep(5 * 60) # set to 5 minutes for now
-        #await asyncio.sleep(60)
 
         # Update message every time we update db
         game = Game("Updating Donations")
@@ -1859,5 +1855,9 @@ async def weeklyRefresh(discord_client, botMode):
 
 
 if __name__ == "__main__":
-    discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
+    #discord_client.loop.create_task(weeklyRefresh(discord_client, botMode))
     discord_client.run(config[botMode]['bot_token'])
+    # print(discord_client.guilds)
+    # print('wttfff')
+    # update = d_sync.UpdateLoop(discord_client, dbconn, botMode, coc_client2, config) 
+    # discord_client.loop.create_task(update.run())

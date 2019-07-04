@@ -425,7 +425,3 @@ class ZuluDB:
         cur.execute(sql_query, (from_date, to_date,))
         rows = cur.fetchall()
         return rows
-
-    
-
-
