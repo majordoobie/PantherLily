@@ -35,14 +35,13 @@ class UpdateLoop():
         """Looping function to update users information and tables"""
         if self.bot_mode == "devBot":
             print("Running in dev mode, disabling database update.")
-            #return
+            return
         await self.d_client.wait_until_ready()
         while not self.d_client.is_closed():
             # Sleep for the amount needed
             sleep = self.sleep_time()
             LOG.info(f"Looping starts in {sleep} minutes")
-            #await asyncio.sleep(sleep)
-            await asyncio.sleep(5)
+            await asyncio.sleep(sleep * 60)
 
             # Change presense
             LOG.info("Change presense to busy")
@@ -115,6 +114,9 @@ class UpdateLoop():
                                                     ))
                 except:
                     LOG.error(f"Could not write to database for {player.name}")
+
+            # Change precsne when done
+            await self.change_presence(None)
 
     def get_updated_roles(self, player, d_user):
         """Method used to check if a members TH role needs to be updated"""
