@@ -284,85 +284,141 @@ async def roster(ctx):
     else:
         return
 
-    # get all clan members
-    res = coc_client.get_clan(config['clash']['zulu'])
-
-    # Quick check to  make sure that the https request was good
-    if int(res.status_code) != 200:
-        embed = Embed(color=0xff0000)
-        msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
-        f"Our current exit node is {get('https://api.ipify.org').text}")
-        embed.add_field(name="Bad Request: {}".format(res.status_code),value=msg)
-        await ctx.send(embed=embed)
-        return
-
-    zuluServer = discord_client.get_guild(int(config['discord']['zuludisc_id']))
-    zbpServer = discord_client.get_guild(int(config['discord']['plandisc_id']))
-
-    if zuluServer == None or zbpServer == None:
+    zulu_guild = discord_client.get_guild(int(config['discord']['zuludisc_id']))
+    zbp_guild = discord_client.get_guild(int(config['discord']['plandisc_id']))
+    if zulu_guild == None or zbp_guild == None:
         await ctx.send("Unable to instantiate the guild object")
         return
 
+    # set up roster dictionary and user_distribution and levels
     roster = {}
-    # for zMember in (mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles)):
-    mems = [ mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles) and mem.name != "ZuluTest" ]
-    mems.sort(key=lambda x: x.display_name.lower())
-    for zMember in mems:
-        roster[zMember.display_name] = {
-            "Clash"       :   False,
-            "zuluServer"  :   True,
-            "zbpServer"   :   False,
-            "database"    :   False
-        }
-         # check if member is in zbpServer
-        if zMember.id in ( pMember.id for pMember in zbpServer.members ):
-            roster[zMember.display_name]['zbpServer'] = True
+    user_distribution = {
+                "#P0Q8VRC8" : [],
+                "#2Y28CGP8" : [],
+                "#8YGOCQRY" : [],
+                "Unknown" : []
+            }
+    strength = {
+        12 : 0,
+        11 : 0,
+        10 : 0,
+         9 : 0,
+         8 : 0,
+        "total" : 0
+    }
 
-        queryResult = dbconn.get_user_byDiscID((zMember.id,))
-        if len(queryResult) == 1:
-            roster[zMember.display_name]['database'] = True
+    # for zulu_member in (mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles)):
+    members = [mem for mem in zulu_guild.members if 'CoC Members' in (role.name for role in mem.roles)
+                and mem.name != "ZuluTest"]
+    members.sort(key=lambda x: x.display_name.lower())
 
-            if queryResult[0][0] in ( member['tag'] for member in res.json()['memberList'] ):
-                roster[zMember.display_name]['Clash'] = True
-
-
-    line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}\u0080\n")
-    mem_count = 1
-    for userName in roster.keys():
-        if roster[userName]['zuluServer'] == True:
-            line += f"{emoticons['tracker bot']['true']}"
-        else:
-            line += f"{emoticons['tracker bot']['false']}"
-
-        if roster[userName]['zbpServer'] == True:
-            line += f"{emoticons['tracker bot']['true']}"
-        else:
-            line += f"{emoticons['tracker bot']['false']}"
-
-        if roster[userName]['Clash'] == True:
-            line += f"{emoticons['tracker bot']['true']}"
-        else:
-            line += f"{emoticons['tracker bot']['false']}"
-
-        if roster[userName]['database'] == True:
-            line += f"{emoticons['tracker bot']['true']}"
-        else:
-            line += f"{emoticons['tracker bot']['false']}"
-
-        line += f"  **{mem_count:>2}**  {userName}\n"
-        mem_count += 1
-        if len(line) > 1700:
-            await ctx.send(line)
-            line = ''
-    if line != '':
-        await ctx.send(line)
+    # Legend
     legend = (f"{emoticons['tracker bot']['zuluServer']} Member is in Reddit Zulu discord.\n"
-            f"{emoticons['tracker bot']['planningServer']} Member is in ZBP discord.\n"
-            f"{emoticons['tracker bot']['redditzulu']} Member is currently in Reddit Zulu in-game.\n"
-            f"{emoticons['tracker bot']['database']} Member is registered with PantherLily.\n"
-            f"{emoticons['tracker bot']['plus']} Locate all users in real-time, may take 15 seconds.")
-    view = await ctx.send(f"**LEGEND**\n{legend}\n**WARNING**\nClash query is not performed if user is missing from the database. Use `{prefx}lcm` "
-        "to get an up to date list of clan members.")
+                f"{emoticons['tracker bot']['planningServer']} Member is in ZBP discord.\n"
+                f"{emoticons['tracker bot']['redditzulu']} Member is currently in Reddit Zulu in-game. *NOTE* May not be a registered member.\n"
+                f"{emoticons['tracker bot']['database']} Member is registered with PantherLily.\n"
+                f"{emoticons['tracker bot']['plus']} Locate all users.")
+    await ctx.send(f"**LEGEND**\n{legend}\n")
+    # get clan and async iterate overthem
+    active_members = [tag[0] for tag in dbconn.get_all_active()]
+    in_zulu = []
+    async with ctx.typing():
+        async for player in coc_client2.get_players(active_members):
+            # Set player level count
+            strength["total"] += 1
+            strength[player.town_hall] += 1
+
+            # Attempt to get the member discord object
+            z_member = ''
+            for member in members:
+                if member.display_name == player.name:
+                    z_member = True
+                    z_member_obj = member
+            if z_member == '':
+                z_member = False
+                z_member_obj = None
+
+            # create the template to add to the roster dic
+            roster[player.name] = {
+                "Clash"       :   False,
+                "zuluServer"  :   z_member,
+                "zbpServer"   :   False,
+                "database"    :   True,
+            }
+            # check if member is in zbpServer
+            if z_member:
+                if z_member_obj.id in (pMember.id for pMember in zbp_guild.members):
+                    roster[player.name]['zbpServer'] = True
+            if player.clan:
+                if player.clan.name == 'Reddit Zulu':
+                    roster[player.name]['Clash'] = True
+                    in_zulu.append(player.name)
+            try:
+                user_distribution[player.clan.tag].append((
+                    player.name,
+                    player.town_hall
+                ))
+            except:
+                if player.clan:
+                    clan = player.clan.name
+                else:
+                    clan = "No Clan"
+                user_distribution["Unknown"].append((
+                    player.name,
+                    clan
+                ))
+
+        clan = await coc_client2.get_clan('#'+config['clash']['zulu'])
+        for member in clan.members:
+            if member.name not in in_zulu:
+                roster[member.name] = {
+                "Clash"       :   True,
+                "zuluServer"  :   False,
+                "zbpServer"   :   False,
+                "database"    :   False,
+                }
+        #sorted_x = sorted(x.items(), key=lambda kv: kv[1])
+        sorted_users = sorted(roster.keys(), key=lambda k: k.upper())
+
+        line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}\u0080\n")
+        mem_count = 1
+        for userName in sorted_users:
+            if roster[userName]['zuluServer'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"
+
+            if roster[userName]['zbpServer'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"
+
+            if roster[userName]['Clash'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"
+
+            if roster[userName]['database'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"
+
+            line += f"  **{mem_count:>2}**  {userName}\n"
+            mem_count += 1
+            if len(line) > 1700:
+                await ctx.send(line)
+                line = ''
+        if line != '':
+            await ctx.send(line)
+        
+        output = ''
+        output += f"`⠀{'Total members':\u00A0<13}⠀` `⠀{strength['total']:>2}⠀`\n"
+        output += f"`⠀{'Total th12':\u00A0<13}⠀` `⠀{strength[12]:>2}⠀`\n"
+        output += f"`⠀{'Total th11':\u00A0<13}⠀` `⠀{strength[11]:>2}⠀`\n"
+        output += f"`⠀{'Total th10':\u00A0<13}⠀` `⠀{strength[10]:>2}⠀`\n"
+        output += f"`⠀{'Total th9':\u00A0<13}⠀` `⠀{strength[9]:>2}⠀`\n"
+        view = await ctx.send(embed=discord.Embed(title=f"**Registered Members**",
+                                                description=output, color=0x000080))
 
     # Add reaction button
     await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
@@ -376,39 +432,14 @@ async def roster(ctx):
             return False
 
     try:
-        await ctx.bot.wait_for('reaction_add', timeout = 10, check=check)
-        await ctx.send("**[!] **Please hold while I get that for ya...")
+        await ctx.bot.wait_for('reaction_add', timeout=300, check=check)
         await view.clear_reactions()
         async with ctx.typing():
-            # Dictionary of clans
-            user_distribution = {
-                "#P0Q8VRC8" : [],
-                "#2Y28CGP8" : [],
-                "#8YGOCQRY" : [],
-                "Unknown" : []
-            }
-            # get all active users from database 
-            active_members = [ tag[0] for tag in dbconn.get_all_active() ]
-            async for player in coc_client2.get_players(active_members):
-                try:
-                    user_distribution[player.clan.tag].append((
-                        player.name,
-                        player.town_hall
-                    ))
-                except:
-                    if player.clan:
-                        clan = player.clan.name
-                    else:
-                        clan = "No Clan"
-                    user_distribution["Unknown"].append((
-                        player.name,
-                        clan
-                    ))
-            
+
             # Sort the list
             for section in user_distribution.keys():
                 th12, th11, th10, th9 = [], [], [], []
-                user_distribution[section].sort(key = lambda x: x[0].lower())
+                user_distribution[section].sort(key=lambda x: x[0].lower())
                 for user in user_distribution[section]:
                     if user[1] == 12:
                         th12.append(user)
@@ -428,38 +459,39 @@ async def roster(ctx):
 
             # Create the outputs
             if user_distribution[f"#{config['clash']['misfits']}"]:
-                misfits_out = "**Reddit Misfits:**\n"
+                misfits_out = "__**Members in Reddit Misfits:**__\n"
                 for member in user_distribution[f"#{config['clash']['misfits']}"]:
-                    misfits_out += f"`{member[1]:<4}{member[0]}`\n"
-                misfits_out += f"""Count: {len(user_distribution[f"#{config['clash']['misfits']}"])}/{len(active_members)}"""
+                    misfits_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
+                misfits_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['misfits']}"])}/{len(active_members)}"""
                 await ctx.send(misfits_out)
 
             if user_distribution[f"#{config['clash']['elephino']}"]:
-                elephino_out = "**Reddit Elephino:**\n"
+                elephino_out = "__**Members in Reddit Elephino:**__\n"
                 for member in user_distribution[f"#{config['clash']['elephino']}"]:
-                    elephino_out += f"`{member[1]:<4}{member[0]}`\n"
-                elephino_out += f"""Count: {len(user_distribution[f"#{config['clash']['elephino']}"])}/{len(active_members)}"""
+                    elephino_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
+                elephino_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['elephino']}"])}/{len(active_members)}"""
                 await ctx.send(elephino_out)
 
             if user_distribution[f"#{config['clash']['zulu']}"]:
-                zulu_out = "**Reddit Zulu:**\n"
+                zulu_out = "__**Members in Reddit Zulu:**__\n"
                 for member in user_distribution[f"#{config['clash']['zulu']}"]:
-                    zulu_out += f"`{member[1]:<4}{member[0]}`\n"
-                zulu_out += f"""Count: {len(user_distribution[f"#{config['clash']['zulu']}"])}/{len(active_members)}"""
+                    zulu_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
+                zulu_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['zulu']}"])}/{len(active_members)}"""
                 await ctx.send(zulu_out)
 
             if user_distribution["Unknown"]:
-                unknown_out = "**Users not in our clans**:\n"
+                unknown_out = "__**Users not in our clans:**__\n"
+                unknown_out += f"`⠀{'**Player**':<15.15}⠀` `⠀{'**Clan**':<13.13}⠀`\n"
                 for member in user_distribution["Unknown"]:
-                    unknown_out += f"`{member[0]:<24}{member[1]}`\n"
-                unknown_out += f"""Count: {len(user_distribution["Unknown"])}/{len(active_members)}"""
+                    unknown_out += f"`⠀{member[0]:<15.15}⠀` `⠀{member[1]:<13.13}⠀`\n"
+                unknown_out += f"""**Count:** {len(user_distribution["Unknown"])}/{len(active_members)}"""
                 await ctx.send(unknown_out)
 
     except asyncio.TimeoutError:
         await view.clear_reactions()
-@roster.error
-async def roster_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @roster.error
+# async def roster_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
 #####################################################################################################################
@@ -561,7 +593,7 @@ async def stats(ctx, *, user=None):
     embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
     if sieges != None:
         embed.add_field(name = "**Sieges**", value=sieges, inline = False)
-    embed.set_footer(text=config[botMode]["version"]+" "+config[botMode]["panther_url"])
+    embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
     if player.league.badge.small == None:
         f = discord.File("Images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
@@ -1476,7 +1508,7 @@ async def export_err(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
-async def report(ctx):
+async def report(ctx, format=None):
     today = datetime.utcnow()
     #lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
     lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1536,63 +1568,83 @@ async def report(ctx):
     #df_out.sort_values(by='Name.Upper', inplace=True)
     df_out = df_out.iloc[df_out.Name.str.lower().argsort()]
 
-    # Dataframe to html
-    html = df_out.to_html(index=False, justify="center")
-    # load into a BS object
-    soup = bs4.BeautifulSoup(html, "lxml")
-    # extract the table
-    table = soup.find("table")
+    if format == None:
+        # Dataframe to html
+        html = df_out.to_html(index=False, justify="center")
+        # load into a BS object
+        soup = bs4.BeautifulSoup(html, "lxml")
+        # extract the table
+        table = soup.find("table")
 
-    scriptTag = """// Query for the table tags and coloring to the table
-const tableElm = document.getElementsByTagName("table")[0]; 
-for (const row of tableElm.rows) {
-  const childToStyle = row.children[1];
-  console.log(childToStyle.textContent);
-  if (Number(childToStyle.textContent) < 300) { 
-    childToStyle.classList.add("redClass");
-  } else if (Number(childToStyle.textContent) > 299) {
-      childToStyle.classList.add("greenClass")
-  }
-}  """
+        scriptTag = """// Query for the table tags and coloring to the table
+    const tableElm = document.getElementsByTagName("table")[0]; 
+    for (const row of tableElm.rows) {
+    const childToStyle = row.children[1];
+    console.log(childToStyle.textContent);
+    if (Number(childToStyle.textContent) < 300) { 
+        childToStyle.classList.add("redClass");
+    } else if (Number(childToStyle.textContent) > 299) {
+        childToStyle.classList.add("greenClass")
+    }
+    }  """
 
-    cssTag = """.redClass {
-                    background-color: red;
-                    font-weight : bold;
-                    }
-                    .greenClass {
-                        background-color : green;
+        cssTag = """.redClass {
+                        background-color: red;
                         font-weight : bold;
-                    }"""
+                        }
+                        .greenClass {
+                            background-color : green;
+                            font-weight : bold;
+                        }"""
 
-    base = (f"""<!DOCTYPE html>
-                <html>
-                <head>
-                    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"> 
-                    <title>Reddit Zulu</title>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css"/>
-                    <style>
-                    {cssTag}
-                    </style>
-                </head>
-                <body>
-                {table}
-                <script type="text/javascript">
-                {scriptTag}
-                </script>
-                </body>
-                </html>""") #.format(cssTag, table, scriptTag)
+        base = (f"""<!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"> 
+                        <title>Reddit Zulu</title>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css"/>
+                        <style>
+                        {cssTag}
+                        </style>
+                    </head>
+                    <body>
+                    {table}
+                    <script type="text/javascript">
+                    {scriptTag}
+                    </script>
+                    </body>
+                    </html>""") #.format(cssTag, table, scriptTag)
 
-    soup = bs4.BeautifulSoup(base, "lxml")
-    #new_link = soup.new_tag("script", src="pandamod.js")
-    #soup.html.append(new_link)
+        soup = bs4.BeautifulSoup(base, "lxml")
+        #new_link = soup.new_tag("script", src="pandamod.js")
+        #soup.html.append(new_link)
 
-    with open("utils/web/report.html", "w", encoding="utf-8") as outfile:
-        outfile.write(str(soup))
+        with open("utils/web/report.html", "w", encoding="utf-8") as outfile:
+            outfile.write(str(soup))
 
-    f = discord.File("utils/web/report.html", filename="report.html")
-    await ctx.send(file=f)
-    await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
-    return
+        f = discord.File("utils/web/report.html", filename="report.html")
+        await ctx.send(file=f)
+        await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
+        return
+#output += f"`⠀{'Total th9':\u00A0<13}⠀` `⠀{strength[9]:>2}⠀`\n"
+# "{emoticons['tracker bot']['true']}
+    elif format in ['-d', '--discord']:
+        df_dict = df_out.to_dict()
+        data = f"`⠀{'Player':<20.20}⠀` `⠀{'Donation'}⠀`\n"
+        for name in df_dict['Name']:
+            if int(df_dict['Current'][name]) < 300:
+                emote = emoticons['tracker bot']['false']
+                data += f"{emote}\u00A0`⠀{df_dict['Name'][name]:<17.17}⠀` `⠀{df_dict['Current'][name]:⠀>5}⠀`\n"
+            else:
+                emote = emoticons['tracker bot']['true']
+                data += f"{emote}\u00A0`⠀{df_dict['Name'][name]:<17.17}⠀` `⠀{df_dict['Current'][name]:⠀>5}⠀`\n"
+
+            if len(data) > 1500:
+                await ctx.send(data)
+                data = ""
+        if data != "":
+            await ctx.send(data)
+
 
 @discord_client.command(aliases=["q"])
 async def queue(ctx):

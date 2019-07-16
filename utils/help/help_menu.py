@@ -15,9 +15,11 @@ class Help_Menu:
         embed = discord.Embed(title="__Utility Commands__", url="https://discordapp.com")
         embed.add_field(name=f"**{self.prefix}help** [opt: __--all__, __admin__, __acc__]", value=self.help_menu["utility"]["help"])
         embed.add_field(name=f"**{self.prefix}donation** [opt: __d_user__]", value=self.help_menu["utility"]["donation"])
+        embed.add_field(name=f"**{self.prefix}report** [opt: __--discord__]", value=self.help_menu["utility"]["report"])
         embed.add_field(name=f"**{self.prefix}stats** [opt: __d_user__, __--max__]", value=self.help_menu["utility"]["stats"])
         embed.add_field(name=f"**{self.prefix}top**", value=self.help_menu["utility"]["stats"])
         embed.add_field(name=f"**{self.prefix}invite** [opt: __<int>__]", value=self.help_menu["utility"]["newinvite"])
+        embed.add_field(name=f"**OPTIONS**", value=self.help_menu["utility"]["OPTIONS"])
         if last:
             embed = self.add_footer(embed)
         return embed
