@@ -25,7 +25,7 @@ from configparser import ConfigParser
 from datetime import datetime, timedelta
 from requests import Response
 import io
-from os import path, listdir
+from os import path, listdir, chdir
 from pathlib import Path
 import random
 import re
@@ -43,10 +43,14 @@ import json
 import coc
 import logging
 
+# Working Directory
+WORK_DIR = '/home/doob/Documents/Bots/PantherLily'
+chdir(WORK_DIR)
+
 # Set up logging
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename=f'{WORK_DIR}/discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 #####################################################################################################################
@@ -68,8 +72,8 @@ else:
 emoticons = ConfigParser(allow_no_value=True)
 
 if botMode == "liveBot":
-    configLoc = 'utils/configurations/panther_conf.json'
-    emoticonLoc = 'utils/configurations/emoticons.ini'
+    configLoc = WORK_DIR+'/utils/configurations/panther_conf.json'
+    emoticonLoc = WORK_DIR+'/utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
@@ -81,8 +85,8 @@ if botMode == "liveBot":
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
-    configLoc = 'utils/configurations/panther_conf.json'
-    emoticonLoc = 'utils/configurations/emoticons.ini'
+    configLoc = WORK_DIR+'/utils/configurations/panther_conf.json'
+    emoticonLoc = WORK_DIR+'/utils/configurations/emoticons.ini'
     if path.exists(configLoc):
         pass
     else:
@@ -95,7 +99,7 @@ elif botMode == "devBot":
 
 
 # Instanciate botAssit and DB
-dbLoc = config[botMode]['db']
+dbLoc = f"{WORK_DIR}/{config[botMode]['db']}"
 if dbLoc == "None":
     print(f"No dev file set in {botMode}")
     ex("Exiting")
@@ -219,6 +223,7 @@ async def lcm(ctx):
          9 : 0,
          8 : 0
     }
+
     for row in db_result:
         strength[int(row[2])] = strength[int(row[2])] + 1
 
@@ -310,6 +315,7 @@ async def roster(ctx):
          8 : 0,
         "total" : 0
     }
+    #/home/doob/Documents/Bots/PantherLily
 
     # for zulu_member in (mem for mem in zuluServer.members if 'CoC Members' in (role.name for role in mem.roles)):
     members = [mem for mem in zulu_guild.members if 'CoC Members' in (role.name for role in mem.roles)
@@ -536,7 +542,7 @@ async def newinvite_error(ctx, error):
 
 @discord_client.command(aliases=["man"])
 async def manual(ctx):
-    f = discord.File("utils/configurations/PantherLily_V1.pdf", filename="Manual.pdf")
+    f = discord.File(f"{WORK_DIR}/utils/configurations/PantherLily_V1.pdf", filename="Manual.pdf")
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
@@ -600,7 +606,7 @@ async def stats(ctx, *, user=None):
         embed.add_field(name = "**Sieges**", value=sieges, inline = False)
     embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
     if player.league.badge.small == None:
-        f = discord.File("Images/Unranked_League.png", filename='unrank.png')
+        f = discord.File(f"{WORK_DIR}/images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
         await ctx.send(embed=embed, file=f)
     else:
@@ -1386,7 +1392,7 @@ async def getmsg_error(ctx, error):
 
 @discord_client.command()
 async def caketime(ctx):
-    cakePath = "utils/images/cakes"
+    cakePath = f"{WORK_DIR}/utils/images/cakes"
     ranCake = Path(cakePath).joinpath(random.choice(listdir(cakePath)))
     f = discord.File(str(ranCake), filename=str(ranCake.name))
     if ranCake.suffix == ".mp4":
@@ -1507,8 +1513,8 @@ async def export(ctx):
         else:
             cell.fill = greFill
     
-    wb.save("pandas_openpyxl.xlsx")
-    f = discord.File("pandas_openpyxl.xlsx", filename=f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}.xlsx')
+    wb.save(f"{WORK_DIR}/web/pandas_openpyxl.xlsx")
+    f = discord.File(f"{WORK_DIR}/web/pandas_openpyxl.xlsx", filename=f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}.xlsx')
     await ctx.send(file=f)
 
 @export.error
@@ -1627,10 +1633,10 @@ async def report(ctx, format=None):
         #new_link = soup.new_tag("script", src="pandamod.js")
         #soup.html.append(new_link)
 
-        with open("utils/web/report.html", "w", encoding="utf-8") as outfile:
+        with open(f"{WORK_DIR}/utils/web/report.html", "w", encoding="utf-8") as outfile:
             outfile.write(str(soup))
 
-        f = discord.File("utils/web/report.html", filename="report.html")
+        f = discord.File(f"{WORK_DIR}/utils/web/report.html", filename="report.html")
         await ctx.send(file=f)
         await ctx.send(f"Keep in mind that the database only updates every 15 minutes.")
         return

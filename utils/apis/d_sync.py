@@ -10,7 +10,7 @@ import coc.errors as coc_error
 # set up global logging
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
-HDNL = logging.FileHandler(filename='weekly.log', encoding='utf-8', mode='a+')
+HDNL = logging.FileHandler(filename='weekly.log', encoding='utf-8', mode='w')
 HDNL.setFormatter(logging.Formatter('[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Fun'
                                     'c:%(funcName)s]\n[Path:%(pathname)s]\n MSG: %(message)s\n',
                                     "%d %b %H:%M:%S"))
