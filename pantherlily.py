@@ -189,6 +189,10 @@ async def listroles(ctx):
     for name in tupe:
         output += "{:<{}} {}\n".format(name[0], max_length, name[1])
 
+        if len(output) > 1500:
+            await ctx.send("```{}```".format(output))
+            output = ''
+
     await ctx.send("```{}```".format(output))
 
 @listroles.error
@@ -311,14 +315,15 @@ async def roster(ctx):
     members = [mem for mem in zulu_guild.members if 'CoC Members' in (role.name for role in mem.roles)
                 and mem.name != "ZuluTest"]
     members.sort(key=lambda x: x.display_name.lower())
-
-    # Legend
-    legend = (f"{emoticons['tracker bot']['zuluServer']} Member is in Reddit Zulu discord.\n"
-                f"{emoticons['tracker bot']['planningServer']} Member is in ZBP discord.\n"
-                f"{emoticons['tracker bot']['redditzulu']} Member is currently in Reddit Zulu in-game. *NOTE* May not be a registered member.\n"
-                f"{emoticons['tracker bot']['database']} Member is registered with PantherLily.\n"
-                f"{emoticons['tracker bot']['plus']} Locate all users.")
-    await ctx.send(f"**LEGEND**\n{legend}\n")
+ 
+    legend = f"⠀{emoticons['tracker bot']['redditzulu']}⠀Member is Reddit Zulu in-game.\n"
+    legend += f"⠀{emoticons['tracker bot']['database']}⠀Member is registered with PantherLily.\n"
+    legend += f"⠀{emoticons['tracker bot']['zuluServer']}⠀Member is in Reddit Zulu Discord.\n"
+    legend += f"⠀{emoticons['tracker bot']['planningServer']}⠀Member is in ZBP Discord.\n"
+    legend += f"⠀{emoticons['tracker bot']['waze']}⠀Get realtime locations of members.\n"
+    await ctx.send(embed=discord.Embed(title=f"**Legend**",
+                                                description=legend, color=0x000080))
+    
     # get clan and async iterate overthem
     active_members = [tag[0] for tag in dbconn.get_all_active()]
     in_zulu = []
@@ -421,7 +426,7 @@ async def roster(ctx):
                                                 description=output, color=0x000080))
 
     # Add reaction button
-    await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+    await view.add_reaction(emoticons["tracker bot"]["waze"].lstrip("<").rstrip(">"))
 
     # Check for click
     def check(reaction, user):
@@ -489,9 +494,9 @@ async def roster(ctx):
 
     except asyncio.TimeoutError:
         await view.clear_reactions()
-# @roster.error
-# async def roster_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@roster.error
+async def roster_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
 #####################################################################################################################
@@ -733,9 +738,12 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
         await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
         return
 
+    # fix the clashtag
+    clash_tag = f"#{clash_tag.lstrip('#')}".upper()
+
     # Query CoC API to see if we have the right token and the right tag
     try:
-        player = await coc_client2.get_player(f"#{clash_tag.lstrip('#')}")
+        player = await coc_client2.get_player(clash_tag)
     except coc.errors.NotFound as exception:
         player = None
     
@@ -835,7 +843,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 
     msg = (f"{disc_user_obj.display_name} added. Please copy and paste the following output into #sidekick-war-caller")
     await ctx.send(embed = Embed(description=msg, color=0x00FF00))
-    await ctx.send(f"/add {clash_tag.upper()} {disc_user_obj.mention}")
+    await ctx.send(f"/add {clash_tag} {disc_user_obj.mention}")
     return
 
 @user_add.error
@@ -1655,7 +1663,14 @@ async def queue(ctx):
         if app[0] not in app_u:
             app_u.append(app[0])
             app_m += f"{app[0]:<15} {app[1]}\n"
-    await ctx.send(app_m)
+            if len(app_m) > 1500:
+                await ctx.send(app_m)
+                app_m = ''
+
+    if app_m:
+        await ctx.send(app_m)
+    else:
+        await ctx.send("No applications in queue at this time.")
 
 @discord_client.command(aliases=["t", "T"])
 async def top(ctx, arg=None):
