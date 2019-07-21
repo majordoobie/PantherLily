@@ -4,6 +4,7 @@ import logging
 import random
 import discord
 import coc.errors as coc_error
+import traceback
 
 
 
@@ -58,65 +59,70 @@ class UpdateLoop():
 
             # Get zbp guild member list 
             plan_mem = self.d_client.get_guild(int(self.config['discord']['plandisc_id'])).members
-
-            # Iterate over all active users 
-            for user in all_active:
-                LOG.info(f"Starting update loop for {user[1]}")
-                # get users coc object
-                try:
-                    player = await self.coc_client2.get_player(user[0], cache=False)
-                    LOG.info(f"Player retrived with coc.py: {player.name}")
-                except coc_error.NotFound as exception:
-                    LOG.error(f"{exception} from {user[0]} {user[1]}")
-                    continue
-
-                # get discord user object
-                try:
-                    d_user = self.guild.get_member(int(user[4])) # Returns none if not there
-                except:
-                    LOG.error(f"Could not retrieve the users discord member object for {player.name}")
-                    continue
-
-                if d_user == None:
-                    continue
-
-                # Check if user is in zbp and update their table accordingly
-                in_zbp = "False"
-                if int(user[4]) in (mem.id for mem in plan_mem):
-                    in_zbp = "True"
-
-                # Get roles and apply them
-                role_list, apply = self.get_updated_roles(player, d_user)
-                if apply:
+            if plan_mem == None:
+                LOG.error(f"Could not get plan_memners")
+            else:
+                # Iterate over all active users 
+                for user in all_active:
+                    LOG.info(f"Starting update loop for {user[1]}")
+                    # get users coc object
                     try:
-                        await d_user.edit(roles=role_list)
-                        LOG.info(f"Applying roles to {user[1]}")
-                    except:
-                        LOG.error(f"Could not apply roles to {user[1]}")
-                        pass
+                        player = await self.coc_client2.get_player(user[0], cache=False)
+                        LOG.info(f"Player retrived with coc.py: {player.name}")
+                    except coc_error.NotFound as exception:
+                        LOG.error(f"{exception} from {user[0]} {user[1]}")
+                        continue
 
-                # Update users discord name
-                if d_user.display_name != player.name:
+                    # get discord user object
                     try:
-                        await self.change_name(d_user, player.name)
-                        LOG.info(f"Changing {player.name} discord name")
+                        d_user = self.guild.get_member(int(user[4])) # Returns none if not there
                     except:
-                        LOG.error(f"Could not change {player.name} discord name")
-                        pass
+                        LOG.error(f"Could not retrieve the users discord member object for {player.name}")
+                        continue
 
-                # Update the datebase 
-                LOG.info(f"Updating member table of {player.name}")
-                try:
-                    self.dbconn.update_members_table((player.town_hall,
-                                                    player.league.name,
-                                                    in_zbp,
-                                                    player.tag
-                                                    ))
-                except:
-                    LOG.error(f"Could not write to database for {player.name}")
+                    if d_user == None:
+                        continue
+
+                    # Check if user is in zbp and update their table accordingly
+                    in_zbp = "False"
+                    if int(user[4]) in (mem.id for mem in plan_mem):
+                        in_zbp = "True"
+
+                    # Get roles and apply them
+                    role_list, apply = self.get_updated_roles(player, d_user)
+                    if apply:
+                        try:
+                            await d_user.edit(roles=role_list)
+                            LOG.info(f"Applying roles to {user[1]}")
+                        except:
+                            LOG.error(f"Could not apply roles to {user[1]}")
+                            pass
+
+                    # Update users discord name
+                    if d_user.display_name != player.name:
+                        try:
+                            await self.change_name(d_user, player.name)
+                            LOG.info(f"Changing {player.name} discord name")
+                        except:
+                            LOG.error(f"Could not change {player.name} discord name")
+                            pass
+
+                    # Update the datebase 
+                    LOG.info(f"Updating member table of {player.name}")
+                    try:
+                        self.dbconn.update_members_table((player.town_hall,
+                                                        player.league.name,
+                                                        in_zbp,
+                                                        player.tag
+                                                        ))
+                    except:
+                        LOG.error(f"Could not write to database for {player.name}")
 
             # Change precsne when done
-            await self.change_presence(None)
+            try:
+                await self.change_presence(None)
+            except:
+                LOG.error(traceback.print_exc())
 
     def get_updated_roles(self, player, d_user):
         """Method used to check if a members TH role needs to be updated"""
@@ -191,7 +197,10 @@ class UpdateLoop():
             LOG.info("Chaning presense to random")
             activ = random.choice(messages)
             activity = discord.Activity(type = activ[0], name=activ[1])
-            await self.d_client.change_presence(status=discord.Status.online, activity=activity)
+            try:
+                await self.d_client.change_presence(status=discord.Status.online, activity=activity)
+            except:
+                LOG.error(traceback.print_exc())
 
     def get_role(self, role_str):
         """Simple method to get rule objects"""
