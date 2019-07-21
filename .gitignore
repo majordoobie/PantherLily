@@ -1,4 +1,4 @@
-utils/configurations/*.ini
+utils/configurations/emoticons.ini
 utils/configurations/*.json
 utils/database/*.db
 utils/images/
@@ -7,7 +7,6 @@ utils/images/
 __py*
 *.txt
 *.db
-*.ini
 */*__py*
 */*db
 dumps/*.ipynb
