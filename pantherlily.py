@@ -232,7 +232,7 @@ async def lcm(ctx):
         embed = Embed(color=0xff0000)
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
-        embed.add_field(name="Bad Request: {}".format(res.status_code),value=msg)
+        embed.add_field(name="Bad Request: {}".format(res.status_code), value=msg)
         await ctx.send(embed=embed)
         return
 
@@ -1513,8 +1513,8 @@ async def export(ctx):
         else:
             cell.fill = greFill
     
-    wb.save(f"{WORK_DIR}/web/pandas_openpyxl.xlsx")
-    f = discord.File(f"{WORK_DIR}/web/pandas_openpyxl.xlsx", filename=f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}.xlsx')
+    wb.save(f"{WORK_DIR}/utils/web/pandas_openpyxl.xlsx")
+    f = discord.File(f"{WORK_DIR}/utils/web/pandas_openpyxl.xlsx", filename=f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}.xlsx')
     await ctx.send(file=f)
 
 @export.error
@@ -1680,64 +1680,119 @@ async def queue(ctx):
 
 @discord_client.command(aliases=["t", "T"])
 async def top(ctx, arg=None):
-    # Set dates
-    start_date = botAPI.last_sunday().strftime("%Y-%m-%d %H:%M:%S")
-    end_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-    # Initialize list
-    top_stats = []
-
     # Update all data first
     async with ctx.typing():
         await udt.update_donationstable(dbconn, coc_client2)
 
-    # gather data
-    users = dbconn.get_all_active()
-    for user in users:
-        users_week = dbconn.get_Donations((user[0], start_date, end_date))
-        #print(users_week[0], users_week[-1])
-        top_stats.append(user_tops.Tops(
-            user[1],
-            user[0],
-            user[2],
-            users_week[0][4],
-            users_week[-1][4],
-            users_week[0][2],
-            users_week[-1][2]
-        ))
-    
     if arg == None or arg.lower() in ["-t", "--trophes"]:
+        # Set dates
+        start_date = botAPI.last_sunday().strftime("%Y-%m-%d %H:%M:%S")
+        end_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Initialize list
+        top_stats = []
+        # gather data
+        users = dbconn.get_all_active()
+        for user in users:
+            users_week = dbconn.get_Donations((user[0], start_date, end_date))
+            #print(users_week[0], users_week[-1])
+            top_stats.append(user_tops.Tops(
+                user[1],
+                user[0],
+                user[2],
+                users_week[0][4],
+                users_week[-1][4],
+                users_week[0][2],
+                users_week[-1][2]
+            ))
         # sort list by top trophies
         top_stats.sort(key = lambda x: x.e_trophy, reverse=True)
 
         # Set up output
         output = "**Top Trophies:**\n"
-        output += (f"`{'rk':<2} {'th':<2} {'trop':<4} {'diff':>5}`\n")
+        output += (f"`⠀{'rk':<2}⠀{'th':<2}⠀{'trop':<4}⠀{'diff':>5}⠀`\n")
         count = 1
         for user in top_stats:
             output += (
-                f"`{count:<2} {user.townhall:<2} {user.e_trophy:<4} {user.e_trophy - user.s_trophy:>5} {user.name}`\n"
+                f"`⠀{count:<2}⠀{user.townhall:<2}⠀{user.e_trophy:<4}⠀{user.e_trophy - user.s_trophy:<5}⠀{user.name:<14.14}`\n"
             )
             count +=1
         await ctx.send(output)
 
-    elif arg.lower() in ["-d", "--donation"]:
-        # sort list by top donation
-        top_stats.sort(key = lambda x: x.e_donation, reverse=True)
+    if arg == None or arg.lower() in ["-d", "--donation"]:
+        today = datetime.utcnow()
+        #lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
+        lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=0, minute=0, second=0, microsecond=0)
+        today = today.strftime('%Y-%m-%d %H:%M:%S')
+        startDate = (lastSunday - timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Set up output
-        output = "**Top Donations:**\n"
-        output += (f"`{'th':<2} {'don':<4} {'diff':>5}`\n")
-        count = 1
-        for user in top_stats:
-            if count == 10:
-                break
-            output += (
-                f"`{user.townhall:<2} {user.e_donation:<4} {user.e_donation - user.s_donation:>5} {user.name}`\n"
-            )
-            count +=1
-            
-        await ctx.send(output)
+        sql = (f"""
+            SELECT MembersTable.Name, 
+                Memberstable.Tag, 
+                MembersTable.is_Active, 
+                DonationsTable.Tag, 
+                DonationsTable.increment_date, 
+                DonationsTable.Current_Donation 
+            FROM 
+                MembersTable, DonationsTable 
+            WHERE
+                MembersTable.Tag = DonationsTable.Tag
+            AND
+                DonationsTable.increment_date BETWEEN '{startDate}' AND '{today}'
+            AND
+                MembersTable.is_Active = 'True';
+            """)
+
+        # read SQL then convert date to tdate
+        df = pd.read_sql_query(sql, dbconn.conn)
+        df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
+
+        # Remove duplicate Tag column
+        df = df.loc[:,~df.columns.duplicated()]
+
+        # First make the two masks
+        before_sun = df['increment_date'] <= lastSunday
+        after_sun = df['increment_date'] >= lastSunday   
+
+        # Calculate the diff for this week and save it to its own DF
+        # Rename column, reset index
+        df_out = df.loc[after_sun].groupby(['Tag', 'Name'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+        # Exit if there isn't enough data
+        if df_out.empty:
+            await ctx.send("Please wait an hour to accurately calculate your donations. Thank you for your patience.")
+            return
+        df_out.drop('min', axis=1, inplace=True)
+        df_out.rename(columns={'max':'Current'}, inplace=True)
+        df_out.reset_index(inplace=True)
+        df_out.set_index('Tag', inplace=True)
+
+        # Create current FIN column
+        df_out['Current_FIN'] = df.loc[after_sun].groupby(['Tag'])['Current_Donation'].max()
+
+        # create last sunday column
+        df_out[f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
+
+        # Clean up data change NaN and Float to 
+        df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
+
+        # Sort names column
+        #df_out.sort_values(by='Name.Upper', inplace=True)
+        df_out = df_out.iloc[df_out.Name.str.lower().argsort()]
+        
+        df_dict = df_out.to_dict()
+        user_data = []
+        for name in df_dict['Name']:
+            user_data.append((f"{df_dict['Name'][name]}", f"{df_dict['Current'][name]}"))
+
+        # Sort users by donation
+        user_data.sort(key=lambda x: x[1], reverse=True)
+        
+        # Create template
+        _data = "**Top 15 donors**\n"
+        _data += f"`⠀{'Player':<17.17}⠀` `⠀{'Donation'}⠀`\n"
+        for data in user_data[:15]:
+            _data += f"`⠀{data[0]:<17.17}⠀` `⠀{data[1]:⠀>5}⠀`\n"
+        await ctx.send(_data)
 
 @discord_client.command()
 async def test(ctx):
