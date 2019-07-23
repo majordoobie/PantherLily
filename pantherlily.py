@@ -1785,7 +1785,7 @@ async def top(ctx, arg=None):
             user_data.append((f"{df_dict['Name'][name]}", f"{df_dict['Current'][name]}"))
 
         # Sort users by donation
-        user_data.sort(key=lambda x: x[1], reverse=True)
+        user_data.sort(key=lambda x: int(x[1]), reverse=True)
         
         # Create template
         _data = "**Top 15 donors**\n"
