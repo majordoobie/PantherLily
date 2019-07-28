@@ -10,13 +10,13 @@ import coc.errors as coc_error
 
 
 # set up global logging
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 HDNL = logging.FileHandler(filename='weekly.log', encoding='utf-8', mode='w')
 HDNL.setFormatter(logging.Formatter('[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Fun'
                                     'c:%(funcName)s]\n[Path:%(pathname)s]\n MSG: %(message)s\n',
                                     "%d %b %H:%M:%S"))
-LOG.addHandler(HDNL)
+log.addHandler(HDNL)
 
 class UpdateLoop():
     """Looping function to update users information and tables"""
@@ -42,43 +42,43 @@ class UpdateLoop():
         while not self.d_client.is_closed():
             # Sleep for the amount needed
             sleep = self.sleep_time()
-            LOG.info(f"Looping starts in {sleep} minutes")
+            log.info("Looping starts in sleep minutes" % (sleep))
             await asyncio.sleep(sleep * 60)
 
             # Change presense
-            LOG.info("Change presense to busy")
+            log.info("Change presense to busy")
             await self.change_presence("busy")
 
             # Get all users in the database
-            LOG.info("DB getting all users")
+            log.info("DB getting all users")
             all_active = self.dbconn.get_all_active()
 
             # Update all donations
-            LOG.info("Updating all users tables")
+            log.info("Updating all users tables")
             await update_donationstable(self.dbconn, self.coc_client2)
-            LOG.info("All donation tables updated")
+            log.info("All donation tables updated")
 
             # Get zbp guild member list 
             plan_mem = self.d_client.get_guild(int(self.config['discord']['plandisc_id'])).members
-            if plan_mem == None:
-                LOG.error(f"Could not get plan_memners")
+            if plan_mem is None:
+                log.error("Could not get plan_memners")
             else:
                 # Iterate over all active users 
                 for user in all_active:
-                    LOG.info(f"Starting update loop for {user[1]}")
+                    log.info(f"Starting update loop for {user[1]}")
                     # get users coc object
                     try:
                         player = await self.coc_client2.get_player(user[0], cache=False)
-                        LOG.info(f"Player retrived with coc.py: {player.name}")
+                        log.info(f"Player retrived with coc.py: {player.name}")
                     except coc_error.NotFound as exception:
-                        LOG.error(f"{exception} from {user[0]} {user[1]}")
+                        log.error(f"{exception} from {user[0]} {user[1]}")
                         continue
 
                     # get discord user object
                     try:
                         d_user = self.guild.get_member(int(user[4])) # Returns none if not there
                     except:
-                        LOG.error(f"Could not retrieve the users discord member object for {player.name}")
+                        log.error(f"Could not retrieve the users discord member object for {player.name}")
                         continue
 
                     if d_user == None:
@@ -94,22 +94,22 @@ class UpdateLoop():
                     if apply:
                         try:
                             await d_user.edit(roles=role_list)
-                            LOG.info(f"Applying roles to {user[1]}")
+                            log.info(f"Applying roles to {user[1]}")
                         except:
-                            LOG.error(f"Could not apply roles to {user[1]}")
+                            log.error(f"Could not apply roles to {user[1]}")
                             pass
 
                     # Update users discord name
                     if d_user.display_name != player.name:
                         try:
                             await self.change_name(d_user, player.name)
-                            LOG.info(f"Changing {player.name} discord name")
+                            log.info(f"Changing {player.name} discord name")
                         except:
-                            LOG.error(f"Could not change {player.name} discord name")
+                            log.error(f"Could not change {player.name} discord name")
                             pass
 
                     # Update the datebase 
-                    LOG.info(f"Updating member table of {player.name}")
+                    log.info(f"Updating member table of {player.name}")
                     try:
                         self.dbconn.update_members_table((player.town_hall,
                                                         player.league.name,
@@ -117,13 +117,13 @@ class UpdateLoop():
                                                         player.tag
                                                         ))
                     except:
-                        LOG.error(f"Could not write to database for {player.name}")
+                        log.error(f"Could not write to database for {player.name}")
 
             # Change precsne when done
             try:
                 await self.change_presence(None)
             except:
-                LOG.error(traceback.print_exc())
+                log.error(traceback.print_exc())
 
     def get_updated_roles(self, player, d_user):
         """Method used to check if a members TH role needs to be updated"""
@@ -182,7 +182,7 @@ class UpdateLoop():
     async def change_presence(self, mode):
         """Function to change the mode of presense"""
         if mode == "busy":
-            LOG.info("Chaning presense to busy")
+            log.info("Chaning presense to busy")
             game = discord.Game("Updating Donations")
             await self.d_client.change_presence(status=discord.Status.dnd, activity=game)
         else:
@@ -195,13 +195,14 @@ class UpdateLoop():
                 (discord.ActivityType.playing   ,   "I'm not a cat!"),
                 (discord.ActivityType.watching  ,   "panther.help")
             ]
-            LOG.info("Chaning presense to random")
+            log.info("Chaning presense to random")
             activ = random.choice(messages)
             activity = discord.Activity(type = activ[0], name=activ[1])
             try:
+                log.info("Trying to change presence back to normal")
                 await self.d_client.change_presence(status=discord.Status.online, activity=activity)
             except:
-                LOG.error(traceback.print_exc())
+                log.error(traceback.print_exc())
 
     def get_role(self, role_str):
         """Simple method to get rule objects"""
@@ -236,7 +237,7 @@ async def update_donationstable(dbcon, coc_api):
      No returns"""
     active_members = [tag[0] for tag in dbcon.get_all_active()]
     async for player in coc_api.get_players(active_members):
-        LOG.info(f"Attempting to update {player.name}")
+        log.info(f"Attempting to update {player.name}")
         commit_database(player, dbcon)
 
 async def update_user(dbcon, coc_api, user_tag):
@@ -269,7 +270,7 @@ def commit_database(player, dbcon):
     except:
         in_zulu = "False"
 
-    LOG.info(f"Updating {player.name}")
+    log.info(f"Updating {player.name}")
     try:
         dbcon.update_donations((
             datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
@@ -279,4 +280,4 @@ def commit_database(player, dbcon):
             player.trophies
         ))
     except:
-        LOG.error(f"Could not update for {player.name}")
+        log.error(f"Could not update for {player.name}")
