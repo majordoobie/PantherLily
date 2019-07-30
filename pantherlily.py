@@ -391,19 +391,9 @@ async def roster(ctx):
         #sorted_x = sorted(x.items(), key=lambda kv: kv[1])
         sorted_users = sorted(roster.keys(), key=lambda k: k.upper())
 
-        line = (f"{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}\u0080\n")
+        line = (f"{emoticons['tracker bot']['redditzulu']}{emoticons['tracker bot']['database']}{emoticons['tracker bot']['zuluServer']}{emoticons['tracker bot']['planningServer']}\u0080\n")
         mem_count = 1
         for userName in sorted_users:
-            if roster[userName]['zuluServer'] == True:
-                line += f"{emoticons['tracker bot']['true']}"
-            else:
-                line += f"{emoticons['tracker bot']['false']}"
-
-            if roster[userName]['zbpServer'] == True:
-                line += f"{emoticons['tracker bot']['true']}"
-            else:
-                line += f"{emoticons['tracker bot']['false']}"
-
             if roster[userName]['Clash'] == True:
                 line += f"{emoticons['tracker bot']['true']}"
             else:
@@ -413,6 +403,16 @@ async def roster(ctx):
                 line += f"{emoticons['tracker bot']['true']}"
             else:
                 line += f"{emoticons['tracker bot']['false']}"
+
+            if roster[userName]['zuluServer'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"
+
+            if roster[userName]['zbpServer'] == True:
+                line += f"{emoticons['tracker bot']['true']}"
+            else:
+                line += f"{emoticons['tracker bot']['false']}"            
 
             line += f"  **{mem_count:>2}**  {userName}\n"
             mem_count += 1
@@ -723,7 +723,7 @@ async def mydonations_error(ctx, error):
 #####################################################################################################################
                                              # Admin Commands
 #####################################################################################################################
-@discord_client.command(aliases=["add_user"])
+@discord_client.command(aliases=["add_user", "add"])
 async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     """
     Function to add a user to the database and initiate tracking of that user
@@ -809,11 +809,17 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
     # Add user to database
     msg = (f"Adding {player.name} to Reddit Zulu's database.")
     await ctx.send(embed = Embed(title=msg, color=0x5c0189))
+
+    # Check if league is none
+    if player.league:
+        league = player.league.name
+    else:
+        league = "None"
     error = dbconn.insert_userdata((
         player.tag,
         player.name,
         player.town_hall,
-        player.league.name,
+        league,
         disc_user_obj.id,
         disc_user_obj.joined_at.strftime('%Y-%m-%d %H:%M:%S'),
         "False",

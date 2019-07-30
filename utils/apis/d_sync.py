@@ -7,12 +7,10 @@ import asyncio
 import coc.errors as coc_error
 
 
-
-
 # set up global logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-HDNL = logging.FileHandler(filename='weekly.log', encoding='utf-8', mode='w')
+HDNL = logging.FileHandler(filename='/home/doob/Documents/Bots/PantherLily/weekly.log', encoding='utf-8', mode='w')
 HDNL.setFormatter(logging.Formatter('[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Fun'
                                     'c:%(funcName)s]\n[Path:%(pathname)s]\n MSG: %(message)s\n',
                                     "%d %b %H:%M:%S"))
@@ -42,7 +40,7 @@ class UpdateLoop():
         while not self.d_client.is_closed():
             # Sleep for the amount needed
             sleep = self.sleep_time()
-            log.info("Looping starts in sleep minutes" % (sleep))
+            log.info(f"Looping starts in {sleep} minutes")
             await asyncio.sleep(sleep * 60)
 
             # Change presense
