@@ -48,11 +48,9 @@ class UpdateLoop():
             await self.change_presence("busy")
 
             # Get all users in the database
-            log.info("DB getting all users")
             all_active = self.dbconn.get_all_active()
 
             # Update all donations
-            log.info("Updating all users tables")
             await update_donationstable(self.dbconn, self.coc_client2)
             log.info("All donation tables updated")
 
@@ -63,11 +61,9 @@ class UpdateLoop():
             else:
                 # Iterate over all active users 
                 for user in all_active:
-                    log.info(f"Starting update loop for {user[1]}")
                     # get users coc object
                     try:
                         player = await self.coc_client2.get_player(user[0], cache=False)
-                        log.info(f"Player retrived with coc.py: {player.name}")
                     except coc_error.NotFound as exception:
                         log.error(f"{exception} from {user[0]} {user[1]}")
                         continue
@@ -92,7 +88,8 @@ class UpdateLoop():
                     if apply:
                         try:
                             await d_user.edit(roles=role_list)
-                            log.info(f"Applying roles to {user[1]}")
+                            roles = [i.name for i in role_list]
+                            log.info(f"Applying roles to {user[1]}\n{roles}")
                         except:
                             log.error(f"Could not apply roles to {user[1]}")
                             pass
@@ -101,16 +98,18 @@ class UpdateLoop():
                     if d_user.display_name != player.name:
                         try:
                             await self.change_name(d_user, player.name)
-                            log.info(f"Changing {player.name} discord name")
+                            log.info(f"Changing {player.name} discord name from {d_user.display_name} to {player.name}")
                         except:
                             log.error(f"Could not change {player.name} discord name")
                             pass
 
-                    # Update the datebase 
-                    log.info(f"Updating member table of {player.name}")
+                    # Update the datehttps://github.com/majordoobie/dragontoolkitbase 
+                    league = None
+                    if player.league:
+                        league = player.league.name
                     try:
                         self.dbconn.update_members_table((player.town_hall,
-                                                        player.league.name,
+                                                        league,
                                                         in_zbp,
                                                         player.tag
                                                         ))
@@ -235,7 +234,6 @@ async def update_donationstable(dbcon, coc_api):
      No returns"""
     active_members = [tag[0] for tag in dbcon.get_all_active()]
     async for player in coc_api.get_players(active_members):
-        log.info(f"Attempting to update {player.name}")
         commit_database(player, dbcon)
 
 async def update_user(dbcon, coc_api, user_tag):
@@ -268,7 +266,6 @@ def commit_database(player, dbcon):
     except:
         in_zulu = "False"
 
-    log.info(f"Updating {player.name}")
     try:
         dbcon.update_donations((
             datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
