@@ -29,20 +29,28 @@ class UpdateLoop():
     def set_guild(self):
         """ Method used to get the guild object"""
         _id = int(self.config["discord"]["zuludisc_id"])
-        self.guild = self.d_client.get_guild(_id)
+        self.guild = self.d_client.get_guild(_id)     
+        
 
     async def run(self):
         """Looping function to update users information and tables"""
+        guild = 503660106110730256
+        channel = 606278536457748481
+        g = self.d_client.get_guild(guild)
+        c = g.get_channel(channel)
         if self.bot_mode == "devBot":
             print("Running in dev mode, disabling database update.")
-            return
+            #return
+
         await self.d_client.wait_until_ready()
         while not self.d_client.is_closed():
             # Sleep for the amount needed
             sleep = self.sleep_time()
             log.info(f"Looping starts in {sleep} minutes")
+            await c.send(f'`{f"Looping starts in {sleep} minutes"}`')
             await asyncio.sleep(sleep * 60)
-
+            log.info("Starting d_sync")
+            await c.send(f'`{f"Starting d_sync"}`')
             # Change presense
             log.info("Change presense to busy")
             await self.change_presence("busy")
@@ -58,6 +66,7 @@ class UpdateLoop():
             plan_mem = self.d_client.get_guild(int(self.config['discord']['plandisc_id'])).members
             if plan_mem is None:
                 log.error("Could not get plan_memners")
+                await c.send(f'`{"Could not get plan_memners"}`')
             else:
                 # Iterate over all active users 
                 for user in all_active:
@@ -66,6 +75,7 @@ class UpdateLoop():
                         player = await self.coc_client2.get_player(user[0], cache=False)
                     except coc_error.NotFound as exception:
                         log.error(f"{exception} from {user[0]} {user[1]}")
+                        await c.send(f'`{exception} from {user[0]} {user[1]}`')
                         continue
 
                     # get discord user object
@@ -73,6 +83,7 @@ class UpdateLoop():
                         d_user = self.guild.get_member(int(user[4])) # Returns none if not there
                     except:
                         log.error(f"Could not retrieve the users discord member object for {player.name}")
+                        await c.send(f'`{f"Could not retrieve the users discord member object for {player.name}"}`')
                         continue
 
                     if d_user == None:
@@ -92,6 +103,7 @@ class UpdateLoop():
                             log.info(f"Applying roles to {user[1]}\n{roles}")
                         except:
                             log.error(f"Could not apply roles to {user[1]}")
+                            await c.send(f'`{f"Could not apply roles to {user[1]}"}`')
                             pass
 
                     # Update users discord name
@@ -101,6 +113,7 @@ class UpdateLoop():
                             log.info(f"Changing {player.name} discord name from {d_user.display_name} to {player.name}")
                         except:
                             log.error(f"Could not change {player.name} discord name")
+                            await c.send(f'`{f"Could not change {player.name} discord name"}`')
                             pass
 
                     # Update the datehttps://github.com/majordoobie/dragontoolkitbase 
@@ -115,12 +128,14 @@ class UpdateLoop():
                                                         ))
                     except:
                         log.error(f"Could not write to database for {player.name}")
+                        await c.send(f'`{f"Could not write to database for {player.name}"}`')
 
             # Change precsne when done
             try:
                 await self.change_presence(None)
             except:
                 log.error(traceback.print_exc())
+                await c.send(f'`{traceback.print_exc()}`')
 
     def get_updated_roles(self, player, d_user):
         """Method used to check if a members TH role needs to be updated"""
