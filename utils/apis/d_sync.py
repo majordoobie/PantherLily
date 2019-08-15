@@ -101,6 +101,7 @@ class UpdateLoop():
                             await d_user.edit(roles=role_list)
                             roles = [i.name for i in role_list]
                             log.info(f"Applying roles to {user[1]}\n{roles}")
+                            await c.send(f'`{f"Applying roles to {user[1]} [{roles}]"}`')
                         except:
                             log.error(f"Could not apply roles to {user[1]}")
                             await c.send(f'`{f"Could not apply roles to {user[1]}"}`')
@@ -111,6 +112,7 @@ class UpdateLoop():
                         try:
                             await self.change_name(d_user, player.name)
                             log.info(f"Changing {player.name} discord name from {d_user.display_name} to {player.name}")
+                            await c.send(f'`{f"Changing {player.name} discord name from {d_user.display_name} to {player.name}"}`')
                         except:
                             log.error(f"Could not change {player.name} discord name")
                             await c.send(f'`{f"Could not change {player.name} discord name"}`')
@@ -196,7 +198,12 @@ class UpdateLoop():
         if mode == "busy":
             log.info("Chaning presense to busy")
             game = discord.Game("Updating Donations")
-            await self.d_client.change_presence(status=discord.Status.dnd, activity=game)
+            try:
+                await self.d_client.change_presence(status=discord.Status.dnd, activity=game)
+            except:
+                log.error(log.error(traceback.print_exc()))
+                log.error("Could not change precense")
+
         else:
             messages = [
                 (discord.ActivityType.listening ,   "Spotify"),
@@ -205,7 +212,9 @@ class UpdateLoop():
                 (discord.ActivityType.playing   ,   "with cat nip~"),
                 (discord.ActivityType.watching ,   "Fairy Tail"),
                 (discord.ActivityType.playing   ,   "I'm not a cat!"),
-                (discord.ActivityType.watching  ,   "panther.help")
+                (discord.ActivityType.watching  ,   "panther.help"),
+                (discord.ActivityType.watching , "Dragon Ball Z"),
+                (discord.ActivityType.playing , "Reddit Zulu is #1")
             ]
             log.info("Chaning presense to random")
             activ = random.choice(messages)
