@@ -605,8 +605,8 @@ async def stats(ctx, *, user=None):
     if sieges != None:
         embed.add_field(name = "**Sieges**", value=sieges, inline = False)
     embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
-    if player.league.badge.small == None:
-        f = discord.File(f"{WORK_DIR}/images/Unranked_League.png", filename='unrank.png')
+    if player.league == None:
+        f = discord.File(f"{WORK_DIR}/utils/images/Unranked_League.png", filename='unrank.png')
         embed.set_thumbnail(url="attachment://unrank.png")
         await ctx.send(embed=embed, file=f)
     else:
@@ -1794,7 +1794,7 @@ async def top(ctx, arg=None):
         user_data.sort(key=lambda x: int(x[1]), reverse=True)
         
         # Create template
-        _data = "**Top 15 donors**\n"
+        _data = "**Top 15 donors:**\n"
         _data += f"`⠀{'Player':<17.17}⠀` `⠀{'Donation'}⠀`\n"
         for data in user_data[:15]:
             _data += f"`⠀{data[0]:<17.17}⠀` `⠀{data[1]:⠀>5}⠀`\n"
