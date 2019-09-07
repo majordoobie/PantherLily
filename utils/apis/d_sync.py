@@ -40,10 +40,20 @@ class UpdateLoop():
         c = g.get_channel(channel)
         if self.bot_mode == "devBot":
             print("Running in dev mode, disabling database update.")
-            return
+            #return
 
         await self.d_client.wait_until_ready()
         while not self.d_client.is_closed():
+            succ = False
+            while succ == False:
+                try:
+                    await self.coc_client2.get_player("#9P9PRYQJ", cache=False)
+                    succ = True
+                except Exception as e:
+                    log.info(e)
+                    await c.send(f"{e}\nWaiting five minutes before trying again.")
+                    await asyncio.sleep(300)
+
             # Sleep for the amount needed
             sleep = self.sleep_time()
             log.info(f"Looping starts in {sleep} minutes")
@@ -60,7 +70,7 @@ class UpdateLoop():
 
             # Update all donations
             await update_donationstable(self.dbconn, self.coc_client2)
-            log.info("All donation tables updated")
+
 
             # Get zbp guild member list 
             plan_mem = self.d_client.get_guild(int(self.config['discord']['plandisc_id'])).members
@@ -257,8 +267,12 @@ async def update_donationstable(dbcon, coc_api):
      Return:
      No returns"""
     active_members = [tag[0] for tag in dbcon.get_all_active()]
-    async for player in coc_api.get_players(active_members):
-        commit_database(player, dbcon)
+    try:
+        async for player in coc_api.get_players(active_members):
+            commit_database(player, dbcon)
+        return "Success"
+    except Exception as e:
+        return "Failed", e
 
 async def update_user(dbcon, coc_api, user_tag):
     """Function used to retrive a single player to feed to commit_database
