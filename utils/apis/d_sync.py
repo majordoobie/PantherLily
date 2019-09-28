@@ -69,8 +69,9 @@ class UpdateLoop():
             all_active = self.dbconn.get_all_active()
 
             # Update all donations
-            await update_donationstable(self.dbconn, self.coc_client2)
-
+            ret, err = await update_donationstable(self.dbconn, self.coc_client2)
+            if ret == "Failed":
+                log.error(err)
 
             # Get zbp guild member list 
             plan_mem = self.d_client.get_guild(int(self.config['discord']['plandisc_id'])).members
@@ -206,7 +207,7 @@ class UpdateLoop():
     async def change_presence(self, mode):
         """Function to change the mode of presense"""
         if mode == "busy":
-            log.info("Chaning presense to busy")
+            log.info("Changing presense to busy")
             game = discord.Game("Updating Donations")
             try:
                 await self.d_client.change_presence(status=discord.Status.dnd, activity=game)
@@ -216,7 +217,7 @@ class UpdateLoop():
 
         else:
             messages = [
-                (discord.ActivityType.listening ,   "Spotify"),
+                (discord.ActivityType.playing ,   "Spotify"),
                 (discord.ActivityType.playing   ,   "Overwatch"),
                 (discord.ActivityType.playing   ,   "Clash of Clans"),
                 (discord.ActivityType.playing   ,   "with cat nip~"),
@@ -228,7 +229,7 @@ class UpdateLoop():
             ]
             log.info("Chaning presense to random")
             activ = random.choice(messages)
-            activity = discord.Activity(type = activ[0], name=activ[1])
+            activity = discord.Activity(type=activ[0], name=activ[1])
             try:
                 log.info("Trying to change presence back to normal")
                 await self.d_client.change_presence(status=discord.Status.online, activity=activity)
@@ -270,7 +271,7 @@ async def update_donationstable(dbcon, coc_api):
     try:
         async for player in coc_api.get_players(active_members):
             commit_database(player, dbcon)
-        return "Success"
+        return "Success", "Success"
     except Exception as e:
         return "Failed", e
 

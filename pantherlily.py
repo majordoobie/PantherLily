@@ -304,7 +304,7 @@ async def roster(ctx):
     user_distribution = {
                 "#P0Q8VRC8" : [],
                 "#2Y28CGP8" : [],
-                "#8YGOCQRY" : [],
+                "#8YG0CQRY" : [],
                 "Unknown" : []
             }
     strength = {
@@ -469,6 +469,14 @@ async def roster(ctx):
 
 
             # Create the outputs
+
+            if user_distribution[f"#{config['clash']['zulu']}"]:
+                zulu_out = "__**Members in Reddit Zulu:**__\n"
+                for member in user_distribution[f"#{config['clash']['zulu']}"]:
+                    zulu_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
+                zulu_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['zulu']}"])}/{len(active_members)}"""
+                await ctx.send(zulu_out)
+
             if user_distribution[f"#{config['clash']['misfits']}"]:
                 misfits_out = "__**Members in Reddit Misfits:**__\n"
                 for member in user_distribution[f"#{config['clash']['misfits']}"]:
@@ -482,13 +490,6 @@ async def roster(ctx):
                     elephino_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
                 elephino_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['elephino']}"])}/{len(active_members)}"""
                 await ctx.send(elephino_out)
-
-            if user_distribution[f"#{config['clash']['zulu']}"]:
-                zulu_out = "__**Members in Reddit Zulu:**__\n"
-                for member in user_distribution[f"#{config['clash']['zulu']}"]:
-                    zulu_out += f"`⠀{member[1]:<2}⠀` `⠀{member[0]:<26}⠀`\n"
-                zulu_out += f"""**Count:** {len(user_distribution[f"#{config['clash']['zulu']}"])}/{len(active_members)}"""
-                await ctx.send(zulu_out)
 
             if user_distribution["Unknown"]:
                 unknown_out = "__**Users not in our clans:**__\n"
