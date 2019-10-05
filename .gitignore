@@ -4,9 +4,11 @@ __pycache__
 
 # Logs and Settings
 **/logs
-docs/*.json
+utils/context.py
+utils/docs/*.json
 
 # Environment
 venv*
 **.vscode/
+
 
