@@ -631,7 +631,7 @@ async def legend(ctx, *, user=None):
     async with ctx.typing():
         player_tag = query_result[0][0]
         player = await coc_client2.get_player(player_tag)
-        if player.legend.id != 29000022:
+        if player.league.id != 29000022:
             await ctx.send("Must be in legends to use me")
             return
         seasons_list = await coc_client2.get_seasons(player.league.id)
