@@ -1,25 +1,12 @@
-utils/configurations/emoticons.ini
-utils/configurations/*.json
-utils/database/*.db
-utils/images/
-*.log
-.DS*
-__py*
-*.txt
-*.db
-*/*__py*
-*/*db
-dumps/*.ipynb
-vscode/*
-dumps/
-.vscode/
-.idea/
-.ipynb_checkpoints
-*.docx
-*.ipynb
-report.html
-Images/*
-*.xlsx
-panther_env/
-.pylintrc
-venv_panther/
+### Python ###
+# Compiled
+__pycache__
+
+# Logs and Settings
+**/logs
+docs/*.json
+
+# Environment
+venv*
+**.vscode/
+
