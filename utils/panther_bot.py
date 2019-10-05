@@ -30,7 +30,7 @@ class PantherLily(commands.Bot):
         ctx = await self.get_context(message, cls=commands.Context)
         if ctx.command == None:
             return
-        await self.invoke(ctx)
+        await ctx.invoke(ctx.command, ctx)
 
 
     async def on_command(self, ctx):
