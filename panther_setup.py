@@ -7,11 +7,12 @@ import logging.handlers
 from pathlib import Path
 
 # Local
-from utils.panther_bot import PantherLily
+from packages.panther_bot import PantherLily
 
 # Global
 PANTHER_LOG = Path('logs/panther.log')
-PANTHER_CONFIG = Path('utils/docs/panther_conf.json')
+PANTHER_CONFIG = Path('packages/docs/panther_conf.json')
+
 
 class Panther_Args(ArgumentParser):
     def __init__(self):
