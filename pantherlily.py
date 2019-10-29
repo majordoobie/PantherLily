@@ -905,7 +905,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 async def info_error(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
-@discord_client.command(aliases=["remove_user", "user_disable", "disable_user"])
+@discord_client.command(aliases=["remove_user", "user_disable", "disable_user","remove"])
 async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
 
     # Check server and Member Role
@@ -1016,16 +1016,15 @@ async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
             455572149277687809,
             303965664375472128,
             303965505813872641,
-            540615053855162408,
             540615255013851136,
             294287799010590720,
             297113442618179585
         ]
-        role_objects = [ ctx.guild.get_role(role) for role in remove_roles ]
+        role_objects = [ ctx.guild.get_role(role) for role in remove_roles if role != None ]
         await user.remove_roles(*role_objects)
         await ctx.send("Removed roles")
-    except: 
-        await ctx.send("Could not remove roles from the user")        
+    except Exception as e: 
+        await ctx.send(f"Could not remove roles from the user\n{e}")        
     
 
 @user_remove.error
