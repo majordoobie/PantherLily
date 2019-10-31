@@ -1020,7 +1020,11 @@ async def user_remove(ctx, *, query, suppress=None, note_to_add=None):
             294287799010590720,
             297113442618179585
         ]
-        role_objects = [ ctx.guild.get_role(role) for role in remove_roles if role != None ]
+        role_objects = []
+        for role_id in remove_roles:
+            role_obj = ctx.guild.get_role(role_id)
+            if role_obj:
+                role_objects.append(role_obj)
         await user.remove_roles(*role_objects)
         await ctx.send("Removed roles")
     except Exception as e: 
