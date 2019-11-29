@@ -9,5 +9,5 @@ packages/docs/*.json
 # Environment
 venv*
 **.vscode/
-
+coc_test.py
 
