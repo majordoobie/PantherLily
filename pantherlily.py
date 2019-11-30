@@ -115,7 +115,7 @@ prefx = config[botMode]['bot_prefix'][0]
 role_mgr = Rolemgr(config)
 
 # coc.py
-coc_client2 = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
+coc_client2 = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -1110,7 +1110,7 @@ async def lookup(ctx, option, *, query):
     
     # disable showing notes if user is not in coc_head chats
     inLeaderChat = False
-    if ctx.channel.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256]: #513334681354240000  
+    if ctx.channel.id in [293953660059385857, 293953660059385857, 498720245691973672, 331565220688297995, 503660106110730256, 515281933349945405]: #513334681354240000  
         inLeaderChat = True
 
     # Check function -- uses view variable that is scoped later   
@@ -1148,7 +1148,8 @@ async def lookup(ctx, option, *, query):
                     active = "Inactive"
                 embed.add_field(name="Status:", value=active, inline=False)
                 if inLeaderChat:
-                    embed.add_field(name="Profile Note:", value=note, inline=False)
+                    #embed.add_field(name="Profile Note:", value=note, inline=False)
+                    print(note)
                 else:
                     embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
                 view = await ctx.send(embed=embed)
@@ -1195,11 +1196,17 @@ async def lookup(ctx, option, *, query):
                 active = "Inactive"
             embed.add_field(name="Status:", value=active, inline=False)
             if inLeaderChat:
-                embed.add_field(name="Profile Note:", value=note, inline=False)
+                if len(note) < 1000:
+                    embed.add_field(name="Profile Note:", value=note, inline=False)
+                else:
+                    note = note[1000:-1]
+                    embed.add_field(name="Profile Note:", value=note, inline=False)
             else:
                 embed.add_field(name="Profile Note:", value="Disabled in this channel.", inline=False)
 
-            # Reaction  
+            await ctx.send(embed=embed)
+            return
+            # Reaction
             view = await ctx.send(embed=embed)
             await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
             try:
