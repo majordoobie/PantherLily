@@ -336,6 +336,7 @@ async def roster(ctx):
     in_zulu = []
     async with ctx.typing():
         async for player in coc_client2.get_players(active_members):
+
             # Set player level count
             strength["total"] += 1
             strength[player.town_hall] += 1
@@ -502,9 +503,9 @@ async def roster(ctx):
 
     except asyncio.TimeoutError:
         await view.clear_reactions()
-@roster.error
-async def roster_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @roster.error
+# async def roster_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
 #####################################################################################################################
