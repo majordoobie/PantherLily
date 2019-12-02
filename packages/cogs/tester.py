@@ -1,6 +1,6 @@
 from discord.ext import commands
 from discord import Embed
-from packages.cogs.utils import embed_print
+#from packages.cogs.utils import embed_print
 
 class Tester(commands.Cog):
     def __init__(self, bot):

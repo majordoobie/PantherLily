@@ -11,7 +11,8 @@ COG_PATH = 'packages.cogs.'
 COG_TUPLE = (
     'packages.cogs.administrator',
     'packages.cogs.tester',
-    'packages.cogs.rolemanager'
+    'packages.cogs.rolemanager',
+    'packages.cogs.utils'
     )
 EMBED_COLORS = {
     'blue' : 0x000080
