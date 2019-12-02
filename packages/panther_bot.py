@@ -4,13 +4,18 @@ import logging
 import traceback
 
 # Non-built ins
+from discord import Embed
 from discord.ext import commands
 
 COG_PATH = 'packages.cogs.'
 COG_TUPLE = (
     'packages.cogs.administrator',
     'packages.cogs.tester',
+    'packages.cogs.rolemanager'
     )
+EMBED_COLORS = {
+    'blue' : 0x000080
+    }
 class PantherLily(commands.Bot):
     __slots__ = ('config', 'bot_mode', 'log')
     def __init__(self, config, bot_mode):
@@ -56,4 +61,53 @@ class PantherLily(commands.Bot):
 
     async def on_error(self, ctx, error):
         await ctx.send("```py\n{}: {}\n```".format(type(error).__name__, str(error)))
+
+
+    
+    async def embed_print(self, ctx, title=None, description=None, color='blue'):
+        '''
+        Method is used to standarize how text is displayed to discord
+        '''
+        if len(description) < 1000:
+            embed = Embed(
+                title=title,
+                description=description,
+                color=EMBED_COLORS[color]
+            )
+            embed.set_footer(text=self.config[self.bot_mode]['version'])
+            await ctx.send(embed=embed)
+        else:
+            blocks = await self.text_splitter(description)
+            embeds = []
+            embeds.append(Embed(
+                title=title,
+                description=blocks[0],
+                color=EMBED_COLORS[color]
+            ))
+            for i in blocks[1:]:
+                embeds.append(Embed(
+                    description=i,
+                    color=EMBED_COLORS[color]
+                ))
+            embeds[-1].set_footer(text=self.config[self.bot_mode]['version'])
+            for i in embeds:
+                await ctx.send(embed=i)
+
+    async def text_splitter(self, text):
+        '''
+        Method is used to split text by 1000 character increments to avoid hitting the
+        1400 character limit on discord
+        '''
+        blocks = [] 
+        block = '' 
+        for i in text.split('\n'): 
+            if (len(i) + len(block)) > 1000: 
+                block = block.rstrip('\n')
+                blocks.append(block) 
+                block = f'{i}\n'
+            else: 
+                block += f'{i}\n' 
+        if block: 
+            blocks.append(block) 
+        return blocks
 

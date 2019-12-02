@@ -1,4 +1,6 @@
 from discord.ext import commands
+from discord import Embed
+from packages.cogs.utils import embed_print
 
 class Tester(commands.Cog):
     def __init__(self, bot):
@@ -19,6 +21,8 @@ class Tester(commands.Cog):
         print(ctx.message.author.display_name)
         print(ctx.message.author.id)
         print(ctx.message.author)
+        
+
 
 def setup(bot):
     bot.add_cog(Tester(bot))
