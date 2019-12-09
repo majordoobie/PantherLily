@@ -309,6 +309,7 @@ async def roster(ctx):
                 "Unknown" : []
             }
     strength = {
+        13 : 0,
         12 : 0,
         11 : 0,
         10 : 0,
@@ -426,6 +427,7 @@ async def roster(ctx):
         
         output = ''
         output += f"`⠀{'Total members':\u00A0<13}⠀` `⠀{strength['total']:>2}⠀`\n"
+        output += f"`⠀{'Total th13':\u00A0<13}⠀` `⠀{strength[13]:>2}⠀`\n"
         output += f"`⠀{'Total th12':\u00A0<13}⠀` `⠀{strength[12]:>2}⠀`\n"
         output += f"`⠀{'Total th11':\u00A0<13}⠀` `⠀{strength[11]:>2}⠀`\n"
         output += f"`⠀{'Total th10':\u00A0<13}⠀` `⠀{strength[10]:>2}⠀`\n"
@@ -451,11 +453,13 @@ async def roster(ctx):
 
             # Sort the list
             for section in user_distribution.keys():
-                th12, th11, th10, th9 = [], [], [], []
+                th13, th12, th11, th10, th9 = [], [], [], [], []
                 user_distribution[section].sort(key=lambda x: x[0].lower())
                 for user in user_distribution[section]:
                     if user[1] == 12:
                         th12.append(user)
+                    elif user[1] == 13:
+                        th13.append(user)
                     elif user[1] == 11:
                         th11.append(user)
                     elif user[1] == 10:
@@ -463,6 +467,7 @@ async def roster(ctx):
                     else: 
                         th9.append(user)
                 order = []
+                order.extend(th13)
                 order.extend(th12)
                 order.extend(th11)
                 order.extend(th10)
@@ -503,9 +508,9 @@ async def roster(ctx):
 
     except asyncio.TimeoutError:
         await view.clear_reactions()
-# @roster.error
-# async def roster_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@roster.error
+async def roster_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 
 #####################################################################################################################
@@ -1856,11 +1861,12 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    dg = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
-    print(dg)
-    ud = dg.get_member(328247925786279940)
-    print(ud)
-
+    out = '**System Output***\n'
+    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
+    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
+    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
+    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
+    await ctx.send(out)
 
 #####################################################################################################################
                                              # Loops & Kill Command

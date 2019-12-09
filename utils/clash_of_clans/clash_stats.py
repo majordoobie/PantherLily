@@ -244,7 +244,7 @@ def stat_stitcher(player, emot_loc, _max):
 
     # Players townhall level
     if _max == True:
-        plvl = str(12)
+        plvl = str(13)
     else:
         plvl = str(player.town_hall)
 

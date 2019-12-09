@@ -245,8 +245,8 @@ class UpdateLoop():
 
     def get_th(self, thlvl):
         """Retrieves the proper role for the given TH value"""
-        levels = [9, 10, 11, 12]
-        str_roles = ['th9s', 'th10s', 'th11s', 'th12s']
+        levels = [9, 10, 11, 12, 13]
+        str_roles = ['th9s', 'th10s', 'th11s', 'th12s', 'th13s']
         for level, str_role in zip(levels, str_roles):
             if thlvl == level:
                 return self.get_role(str_role)
