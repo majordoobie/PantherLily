@@ -40,7 +40,7 @@ class UpdateLoop():
         c = g.get_channel(channel)
         if self.bot_mode == "devBot":
             print("Running in dev mode, disabling database update.")
-            #return
+            return
 
         await self.d_client.wait_until_ready()
         while not self.d_client.is_closed():

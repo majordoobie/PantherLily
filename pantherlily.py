@@ -1861,12 +1861,28 @@ async def top(ctx, arg=None):
 
 @discord_client.command()
 async def test(ctx):
-    out = '**System Output***\n'
-    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
-    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
-    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
-    out += f"`⠀{'Ouputdata:'<17.17}⠀` `⠀{'10'}⠀`\n"
-    await ctx.send(out)
+    from utils.clash_of_clans.clash_stats2 import Clash_Stats
+    player = await coc_client2.get_player('#9P9PRYQJ')
+    c_stat = Clash_Stats(player, None, emoticons)
+
+    # out = '**System Output***\n'
+    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
+    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
+    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
+    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
+    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
+    # out += f"""` {'Barbarian:'}⠀` {emoticons["tracker bot"]["plus"]}\n"""
+    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
+    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
+    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
+    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
+    #barbarian = <:barbarian:531661752757125149>
+    #await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    # await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
+    await ctx.send(embed=discord.Embed(
+        description=c_stat.payload('12'),
+        color=0x000088
+    ))
 
 #####################################################################################################################
                                              # Loops & Kill Command
