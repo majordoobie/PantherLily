@@ -28,12 +28,14 @@
         "Valkyrie" : "<:valkyrie:531661755688943627>",
         "Wall Breaker" : "<:wallbreaker:531661755815034890>",
         "Witch" : "<:witch:531661755953446922>",
-        "Wizard" : "<:wizard:531661754653212692>"
+        "Wizard" : "<:wizard:531661754653212692>",
+        "Yeti" : "<:yeti:653935238422200330>"
     },
     "heroes" : {
         "Barbarian King" : "<:barbking:531661752027447296>",
         "Archer Queen" : "<:archerqueen:531661745266098200>",
-        "Grand Warden" : "<:grandwarden:531661755022311446>"
+        "Grand Warden" : "<:grandwarden:531661755022311446>",
+        "Royal Champion" : "<:royalchampion:653935133904>"
     },
     "spells" : {
         "Bat Spell" : "<:batspell:531667965813325832>",
@@ -51,6 +53,7 @@
     "siege" : {
         "Stone Slammer" : "<:smair2:531661989504876553>",
         "Battle Blimp" : "<:smair1:531661752660787201>",
-        "Wall Wrecker" : "<:smground:531661753721815040>"
+        "Wall Wrecker" : "<:smground:531661753721815040>",
+        "Siege Barracks" : "<:barracks:653937171836698625>"
     }
 }

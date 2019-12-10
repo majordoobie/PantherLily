@@ -5,7 +5,8 @@ SIEGES = (
     "Battle Blimp",
     "Stone Slammer"
 )
-class Clash_Stats:
+class ClashStats:
+    """Build stats output"""
     def __init__(self, player, set_lvl=None):
         """
         set_lvl is going to be an int
@@ -19,11 +20,14 @@ class Clash_Stats:
             self.lvl = str(player.town_hall)
 
     def load_troop(self):
-        with open("utils/clash_of_clans/clash_troop_levels.json", "r") as trooplevels:
-            return json.load(trooplevels)
+        with open('/home/doob/Documents/Bots/beta_folder/Pantherlily_v2/PantherLily/utils/clash_of_clans/clash_troop_levels.json', "r") as trooplevels:
+            f = json.load(trooplevels)
+            return f
+
     def load_emojis(self):
         with open("/home/doob/Documents/Bots/beta_folder/Pantherlily_v2/PantherLily/utils/clash_of_clans/clash_emoji.json", "r") as emojis:
-            return json.load(emojis)
+            f = json.load(emojis)
+            return f
     
     def get_lvl(self, set_lvl):
         if isinstance(set_lvl, int):
@@ -58,6 +62,7 @@ class Clash_Stats:
     def get_heroes(self):
         frame = '**Heroes**\n'
         for hero in self.player.ordered_heroes:
+        #for hero in self.player.heroes_dict.keys():
             if hero == 'Battle Machine':
                 continue
             emoji = self.em['heroes'][hero]
@@ -69,6 +74,7 @@ class Clash_Stats:
     def get_sieges(self):
         frame = ''
         for siege in self.player.ordered_home_troops:
+        #for siege in self.player.home_troops_dict.keys():
             if siege in SIEGES:
                 emoji = self.em['siege'][siege]
                 current_lvl = self.player.home_troops_dict[siege].level
@@ -84,10 +90,14 @@ class Clash_Stats:
         frame = '**Troops**\n'
         count = 0
         for troop in self.player.ordered_home_troops:
+        #for troop in self.player.home_troops_dict.keys():
             if troop not in SIEGES:
                 emoji = self.em['troops'][troop]
                 current_lvl = self.player.home_troops_dict[troop].level
-                max_lvl = self.tr[self.lvl][troop]
+                try:
+                    max_lvl = self.tr[self.lvl][troop]
+                except:
+                    print(self.lvl, troop, self.tr)
                 frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
                 count += 1
                 if count == 4:

@@ -227,26 +227,31 @@ class BotAssist:
         member = None
         try:
             member = await discord.ext.commands.MemberConverter().convert(ctx, arg) 
-            return member.id
+            return member
         except:
             pass
 
         # Check by database
         all_users = self.dbconn.get_allUsers()
+        user_id = None
         for user in all_users:
             if arg.lower() == user[1].lower():
-                return user[4]
+                user_id = user[4]
             elif arg.lower().lstrip("#") == user[0].lstrip("#").lower():
-                return user[4]
+                user_id = user[4]
             elif arg == str(user[4]):
-                return user[4]
+                user_id = user[4]
+        if user_id:
+            member = await discord.ext.commands.MemberConverter().convert(ctx, str(user_id))
+            if member:
+                return member
 
         # Check by name
         for member in ctx.guild.members:
             if arg.lower() == member.name.lower():
-                return member.id
+                return member
             if arg.lower() == member.display_name.lower():
-                return member.id
+                return member
         return None
 
     async def await_error(self, ctx, description, title="INPUT ERROR"):
@@ -258,12 +263,61 @@ class BotAssist:
         )
         embed.set_footer(text=self.config[self.botMode]["version"])
         await ctx.send(embed=embed)
-        
 
-         
+    async def arg_parser(self, arg_dict, arg_string):
+        """Parses out string and returns a dictionry
 
-            
+        Parses the arg_string to build a dictionary payload containing
+        the switches used by the user.
 
+        Example:
+            arg_dict = {
+                'option1': {
+                    'default' : None,
+                    'flags' : ['-o','--option1']
+                }
+            }
+        Args:
+            arg_dict: Dictioary containing the name of the switch with
+                the expected switches used in the command line and a default.
+            arg_string: String to parse to build the return dictionary payload.
 
+        Returns:
+            Dictioanry containing all the registered commands and their value.
+            If the command was not used, then the default value for that command
+            is used.
+        """
+        # Empty return payload
+        parsed_args = {}
 
+        # Set default positional if empty
+        if arg_string is None:
+            for switch, dictt in arg_dict.items():
+                parsed_args[switch] = dictt['default']
+            parsed_args['positional'] = None
+            return parsed_args
 
+        # create parsed_args
+        arg_list = arg_string.split()
+
+        # parse arg_list
+        for switch, dictt in arg_dict.items():
+            if any(i in dictt['flags'] for i in arg_list):
+                if dictt['flags'][0] in arg_list:
+                    index = arg_list.index(dictt['flags'][0])
+                else:
+                    index = arg_list.index(dictt['flags'][1])
+                if (index + 1) < len(arg_list):
+                    arg = arg_list.pop(index + 1)
+                    arg_list.pop(index)
+                    parsed_args[switch] = arg
+                else:
+                    parsed_args[switch] = dictt['default']
+            else:
+                parsed_args[switch] = dictt['default']
+
+        if arg_list:
+            parsed_args['positional'] = ' '.join(arg_list)
+        else:
+            parsed_args['positional'] = None 
+        return parsed_args

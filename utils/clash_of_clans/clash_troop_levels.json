@@ -18,7 +18,8 @@
         "Lava Hound" : "5",
         "Bowler" : "5", 
         "Baby Dragon" : "6", 
-        "Miner" : "7", 
+        "Miner" : "7",
+        "Yeti" : "3", 
         "Ice Golem" : "5",
         "Electro Dragon" : "4",
         "Lightning Spell" : "7",
@@ -38,9 +39,11 @@
         "Royal Champion" : "20",
         "Wall Wrecker" : "3",
         "Battle Blimp" : "3",
-        "Stone Slammer" : "3"
+        "Stone Slammer" : "3",
+        "Siege Barracks" : "3"
     },
     "12": {
+        "Yeti" : "3",
         "Barbarian": "8",
         "Archer" : "8", 
         "Goblin" : "7",

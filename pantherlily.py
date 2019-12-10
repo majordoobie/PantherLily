@@ -12,6 +12,7 @@ from utils.apis.rolemanager import Rolemgr
 from utils.apis import user_tops
 
 from utils.clash_of_clans import clash_stats
+from utils.clash_of_clans.clash_stats2 import ClashStats
 from utils.clash_of_clans import update_donationtable as udt
 from utils.help import help_menu
 # Database
@@ -554,65 +555,62 @@ async def manual(ctx):
     await ctx.send(file=f)
 
 @discord_client.command(aliases=["s"])
-async def stats(ctx, *, user=None):
-    _max = False
-    if user:
-        for opt in ["--max", "-m"]:
-            if user.split(" ")[-1].lower() == opt:
-                if len(user.split(" ")) == 1:
-                    user = None
-                    _max = True
-                    break
-                else:
-                    user = user.split(" "+opt)[0]
-                    _max = True
-                    break
-    if user == None:
-        user = ctx.author
-        userID = user.id
-        result = dbconn.get_user_byDiscID((userID,))
+async def stats(ctx, *, args=None):
+    arg_template = {
+        'level' : {
+            'default' : None,
+            'flags' : ['--level','-l']
+        }
+    }
+    vars = await botAPI.arg_parser(arg_template, args)
+
+    if vars['positional'] == None:
+        discord_member = ctx.author
+        result = dbconn.get_user_byDiscID((discord_member.id,))
         if len(result) == 0:
-            await ctx.send(f"No data was found for: {ctx.author.display_name}")
+            await ctx.send(f'No data found for {ctx.author.display_name}')
             return
+        else:
+            coc_tag = result[0][0]
+
     else:
-        userID = await botAPI.user_converter_db(ctx, user)
-        if userID == None:
-            await ctx.send(f"No data was found for **{user}**")
+        discord_member = await botAPI.user_converter_db(ctx, vars['positional'])
+        if discord_member == None:
+            await ctx.send(f"No data found for {vars['positional']}")
             return
-        result = dbconn.get_user_byDiscID((userID,))
+        result = dbconn.get_user_byDiscID((discord_member.id,))
         if len(result) == 0:
-            await ctx.send(f"No data was found for {user.display_name}")
+            await ctx.send(f'No data found for {ctx.author.display_name}')
             return
-
-    if len(result) == 0:
-        msg = (f"Could not find {ctx.author.display_name} in Zulu's database. Make sure they have "
-        "been added.")
-        await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
-        return
-
-    elif len(result) > 1:
-        msg = (f"Found duplicate discord ID entries")
-        await ctx.send(embed = Embed(title=f"SQL ERROR", description=msg, color=0xff0000))
-        return
-
-    player = await coc_client2.get_player(result[0][0], cache=False)
-
+        else:
+            coc_tag = result[0][0]
+    
+    player = await coc_client2.get_player(coc_tag, cache=False)
     if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
-    from utils.clash_of_clans.clash_stats2 import Clash_Stats
-    c_stat = Clash_Stats(player, None)
+    c_stat = ClashStats(player, vars['level'])
 
-    frame,title = c_stat.payload()
+    frame, title = c_stat.payload()
     eb = discord.Embed(
         title=title,
         description=frame,
         color=0x000088
     )
     await ctx.send(embed=eb)
+
+    
+
+    # frame,title = c_stat.payload()
+    # eb = discord.Embed(
+    #     title=title,
+    #     description=frame,
+    #     color=0x000088
+    # )
+    # await ctx.send(embed=eb)
 
     # Get display objects
     # desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
@@ -632,9 +630,9 @@ async def stats(ctx, *, user=None):
     #     embed.set_thumbnail(url=player.league.badge.small)
     #     await ctx.send(embed=embed)
 
-@stats.error
-async def stats_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @stats.error
+# async def stats_error(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(alias=['l'])
 async def legend(ctx, *, user=None):
@@ -643,7 +641,7 @@ async def legend(ctx, *, user=None):
 
     else:
         discord_member = await botAPI.user_converter_db(ctx, user)
-        query_result = dbconn.get_user_byDiscID((discord_member,))
+        query_result = dbconn.get_user_byDiscID((discord_member.id,))
 
     async with ctx.typing():
         player_tag = query_result[0][0]
@@ -796,7 +794,7 @@ async def user_add(ctx, clash_tag, *, disc_mention, fin_override=None):
 
     # try to get the user object 
     disc_user_id = await botAPI.user_converter_db(ctx, disc_mention)
-    disc_user_obj = await botAPI.userConverter(ctx, disc_user_id)
+    disc_user_obj = await botAPI.userConverter(ctx, disc_user_id.id)
 
     # Break if the user does not exist 
     if disc_user_obj == None:
@@ -1062,7 +1060,7 @@ async def addnote(ctx, *, mem):
 
     # Get user object 
     member_id = await botAPI.user_converter_db(ctx, mem)
-
+    member_id = member_id.id
     # If user object can't re resolved then exit 
     if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
@@ -1188,7 +1186,7 @@ async def lookup(ctx, option, *, query):
     if option in ['--name', '-n']:
         # Attempt to resolve the user name
         member_id = await botAPI.user_converter_db(ctx, query)
-
+        member_id = member_id.id
         # If can't find the user
         if member_id == None:
             await ctx.send("Could not find that user in the database.")
@@ -1281,7 +1279,7 @@ async def deletenote(ctx, *, mem):
 
     # Get user object 
     member_id = await botAPI.user_converter_db(ctx, mem)
-
+    member_id = member_id.id
     # If user object can't re resolved then exit 
     if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
@@ -1341,7 +1339,7 @@ async def viewnote(ctx, *, mem):
 
     # Get user object 
     member_id = await botAPI.user_converter_db(ctx, mem)
-
+    member_id = member_id.id
     # If user object can't re resolved then exit 
     if member_id == None:
         desc = (f"Was unable to resolve {mem}. This command supports mentions, "
@@ -1870,29 +1868,23 @@ async def top(ctx, arg=None):
             _data += f"`⠀{data[0]:<17.17}⠀` `⠀{data[1]:⠀>5}⠀`\n"
         await ctx.send(_data)
 
+
+
 @discord_client.command()
 async def test(ctx, *, args=None):
-    user, get_lvl = None, None
-    if args:
-        args = args.split()
-        if '-l' in args:
-            index = args.index('-l')
-            user = [ i for i in args if i not in args[index:index+2] ]
-            user = ' '.join(user)
-            get_lvl = args[index + 1]
-        elif '--level' in args:
-            index = args.index('--level')
-            user = [ i for i in args if i not in args[index:index+2] ]
-            user = ' '.join(user)
-            get_lvl = args[index + 1]
-        else:
-            user = ' '.join(args)
+    # Command schema
+    arg_template = {
+        'level' : {
+            'default' : None,
+            'flags' : ['--level','-l']
+        }
+    }
+    parsed_args = await botAPI.arg_parser(arg_template, args)
 
-    print(user, get_lvl)
-    discord_client.close()
-    from utils.clash_of_clans.clash_stats2 import Clash_Stats
+    print(parsed_args)
+    from utils.clash_of_clans.clash_stats2 import ClashStats
     player = await coc_client2.get_player('#9P9PRYQJ')
-    c_stat = Clash_Stats(player, None)
+    c_stat = ClashStats(player, parsed_args['level'])
 
     frame,title = c_stat.payload()
     eb = discord.Embed(
