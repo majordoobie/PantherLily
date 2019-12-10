@@ -603,23 +603,34 @@ async def stats(ctx, *, user=None):
         await ctx.send(embed = Embed(title=f"HTTP", description=msg, color=0xff0000))
         return
 
+    from utils.clash_of_clans.clash_stats2 import Clash_Stats
+    c_stat = Clash_Stats(player, None)
+
+    frame,title = c_stat.payload()
+    eb = discord.Embed(
+        title=title,
+        description=frame,
+        color=0x000088
+    )
+    await ctx.send(embed=eb)
+
     # Get display objects
-    desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
-    embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
-    embed.add_field(name="**Gains**", value=gains, inline = False)
-    embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
-    embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
-    embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
-    if sieges != None:
-        embed.add_field(name = "**Sieges**", value=sieges, inline = False)
-    embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
-    if player.league == None:
-        f = discord.File(f"{WORK_DIR}/utils/images/Unranked_League.png", filename='unrank.png')
-        embed.set_thumbnail(url="attachment://unrank.png")
-        await ctx.send(embed=embed, file=f)
-    else:
-        embed.set_thumbnail(url=player.league.badge.small)
-        await ctx.send(embed=embed)
+    # desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
+    # embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
+    # embed.add_field(name="**Gains**", value=gains, inline = False)
+    # embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
+    # embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
+    # embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
+    # if sieges != None:
+    #     embed.add_field(name = "**Sieges**", value=sieges, inline = False)
+    # embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
+    # if player.league == None:
+    #     f = discord.File(f"{WORK_DIR}/utils/images/Unranked_League.png", filename='unrank.png')
+    #     embed.set_thumbnail(url="attachment://unrank.png")
+    #     await ctx.send(embed=embed, file=f)
+    # else:
+    #     embed.set_thumbnail(url=player.league.badge.small)
+    #     await ctx.send(embed=embed)
 
 @stats.error
 async def stats_error(ctx, error):
@@ -1860,29 +1871,36 @@ async def top(ctx, arg=None):
         await ctx.send(_data)
 
 @discord_client.command()
-async def test(ctx):
+async def test(ctx, *, args=None):
+    user, get_lvl = None, None
+    if args:
+        args = args.split()
+        if '-l' in args:
+            index = args.index('-l')
+            user = [ i for i in args if i not in args[index:index+2] ]
+            user = ' '.join(user)
+            get_lvl = args[index + 1]
+        elif '--level' in args:
+            index = args.index('--level')
+            user = [ i for i in args if i not in args[index:index+2] ]
+            user = ' '.join(user)
+            get_lvl = args[index + 1]
+        else:
+            user = ' '.join(args)
+
+    print(user, get_lvl)
+    discord_client.close()
     from utils.clash_of_clans.clash_stats2 import Clash_Stats
     player = await coc_client2.get_player('#9P9PRYQJ')
-    c_stat = Clash_Stats(player, None, emoticons)
+    c_stat = Clash_Stats(player, None)
 
-    # out = '**System Output***\n'
-    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
-    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
-    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
-    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
-    # out += f"`⠀{'Ouputdata:'}⠀` `⠀{'10'}⠀`\n"
-    # out += f"""` {'Barbarian:'}⠀` {emoticons["tracker bot"]["plus"]}\n"""
-    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
-    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
-    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
-    # out += f"""{emoticons['troops']['barbarian']} `{'10'}|{'15'}`"""
-    #barbarian = <:barbarian:531661752757125149>
-    #await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
-    # await view.add_reaction(emoticons["tracker bot"]["plus"].lstrip("<").rstrip(">"))
-    await ctx.send(embed=discord.Embed(
-        description=c_stat.payload('12'),
+    frame,title = c_stat.payload()
+    eb = discord.Embed(
+        title=title,
+        description=frame,
         color=0x000088
-    ))
+    )
+    await ctx.send(embed=eb)
 
 #####################################################################################################################
                                              # Loops & Kill Command
