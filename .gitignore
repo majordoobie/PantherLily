@@ -2,10 +2,8 @@ utils/configurations/emoticons.ini
 utils/configurations/*.json
 utils/database/*.db
 utils/images/
-*.log
 .DS*
 __py*
-*.txt
 *.db
 */*__py*
 */*db
@@ -24,3 +22,5 @@ panther_env/
 .pylintrc
 venv_panther/
 venv*
+discord.log
+weekly.log

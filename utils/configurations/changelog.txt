@@ -1,0 +1,168 @@
+[Version] 2.5.0 10DEV19
+[Updated] Updated p.stats to include all th13 update stuffs. Emojis could improve but it'll work for now. THank you zig for the pics!
+[Update] p.stats optional --max argument has been changed to a --level and takes a integer argument as the town hall
+
+[Version] 2.4.0 09DEC19
+[Update] Starting updating the th13 stuff. There is still a lot of stuff left to do that has to wait until more information is released 
+
+[Version] 2.3.7 29OCT19
+[Fixed] Bug identified by Zig where roles removed during `p.user_remove` would fail to remove roles. Turned out that the command failed to create a role object because it does not exist anymore. I belive it was CWL Zulu
+
+
+[Version] 2.3.6 05OCT19
+[Added] Experimental legend feature takes fucking forever so we need to add it to the postgres on the next iteration 
+
+[Version] 2.3.5 27SEP19
+[Fixed] String error with Reddit Elephino's Clash Tag preventing p.roster from displaying the clan on its own table
+
+[Version] 2.3.4 7SEP19
+[Added] Exception handler to when the API goes down. This will prevent borking the bot 
+
+[Version] 2.3.3 26AUG2019
+[Fixed] Bug evaluating the current trophy of user when using panther.stats
+[Fixed] Missing colon in panther.top
+
+[Version] 2.3.2 31JUL2019
+[Fixed] Logging with d_sync
+[FIxed] more bugs with coc.player.league not existing
+[Added] Discord message logging
+
+[Version] 2.3.1 29JUL2019
+[Fixed] Bug with coc.player.league not existing
+
+[Version] 2.3.0 22JUL2019
+[Update] Panther.top it now supports --donation and --trophies. Donations only shows the top 15
+
+
+[Verion] 2.2.1 20JUL2019
+[Fixed] P.listroles was breaking since it reached the discord send limit
+[Fixed] p.queue would break if there was nothing in the queue 
+[Fixed] Ugly legend in p.roster
+[Fixed] p.user_add hashtag would now show up on some entries 
+
+
+[Version] 2.2.0 15JUL2019
+[Updated] p.roster and p.report -d commands now have a nicer looking output
+
+[Version] 2.1.1 13JUL2019
+[Fixed] Updated troop levesl. Bug identified by Polase
+
+[Version] 2.1.0 04JUL2019
+[Fixed] Fixed extra '#' when printing the side-kick command during user_add
+[Fixed] Troop levels update
+[Updated] Updated the recursive updater. The laste version didn't update user levels or names properly
+
+[Version] 2.0.4 25JUN2019
+[Fixed] panther.lcm bug using the old configuration 
+
+[Version] 2.0.3 19JUN2019
+[Fixed] User add bug
+[Added] coc.get_player exception handling
+
+[Version] 2.0.2 13JUN2019
+[Fixed] User remove bug
+
+[Version 2.0.2] 13JUN2019
+[Fixed] panther.roster bug using the wrong keys in the config
+
+[Version 2.0.1] 13JUN2019
+[Fixed] Bug causing folks without bat spells to show their stats
+
+
+[Version 2.0.0] 12JUN2019
+[Fixed] Couple bugs with panther.stats
+[Fixed] Error bug with panther.stats
+[Added] Panther.Stats by TH levels
+[Added] coc.py to panther.stats
+[Added] Legend to panther.roster
+[Updated] coc api used in panther.roster.search it reduced the time from 9 seconds average to 4 seconds using coc.py
+[Added] New python file used to update donations table this is used to update the code in panther.donation and the loop
+[Changed] Converted config file into a json
+[Changed] Rebuilt the help menu so that it doesn't look so dang big. It now accepts arguemtns for which table you want to retreive or the --all for everything
+
+[Version 1.9.2] 05JUN2019
+[Fixed] Panther.Stats throwing an error when no arguments were used
+
+[Version 1.9.1] 04JUN2019
+[Fixed] Bunch of bug fixes. I didn't implement the splat correctly. You still need quoates when using user_add when specifying an FIN override. 
+
+
+[Version 1.9.0] 02JUN2019
+[Added] panther.top command added; gives a overview of trophy gain and loses as a team
+[Fixed] Bugs in several commands requiring quotes around names that have spaces
+
+[Version 1.8.0] 31MAY2019
+[Added] Feature to panther.roster where you can view where each member is located. This includes if they are in a FC clan or not in a clan at all. This is only querying on users who have the active flag. Keep in mind that it loads very slowly since I still haven't updated our CoC api to make asynchronous get requests 
+[Added] Versioning to donation panels
+
+[Version 1.7.2] 29MAY2019
+[Added] user_disable and disable_user aliases for Goku 
+[Fixed] user add command not giving errors 
+[Fixed] side-kick output. It now has a mention instead of just a ID since sidekick doesn't support it
+
+[Version 1.7.1] 26MAY2019
+[Fixed] Time bug with panther.donation
+
+[Version 1.7.0] 25MAY2019
+[Added] Alias to user_add and user_remove it will now take add_user and remove_user
+[Added] The add_user command will now output a copy friendly output for you to paste into #sidekick-channel to register the new user for war. --BDon idea 
+[Added] New util file used to prevent re-writing code
+[Added] Panther.queue commands used to show the latest applications that show up in the leaderchat. You can then use the Panther.lookup -g to find their discord ID
+
+[Version 1.6.2] 21MAY2019
+[Fixed] Removed time adjustment on server. Server is already running in UTF time
+[Fixed] Sorting in panther.report
+[Fixed] panther.donation and panther.report which relied on the last_sunday module that was updated
+
+[Version 1.6.1] 17MAY2019
+[Fixed] Bug preventing the user context from being used to check donations
+
+[Version 1.6.0] 16MAY2019 
+[Fixed] Lookup lookup method it was not parsing discord IDs because the discord ID from the DB returned as a int and I was comparing it to a string
+[Fixed] Lookup method for panther.donation. It can now accept @mentions, names, ids and clash tags
+[Fixed] panther.addnote; it was no properly finishing because of some logic error
+[Removed] panther.lookup -t; it is now combined with panther.lookup -n
+
+[Version 1.5.0] 15MAY2019
+[Updated] Roster command output
+[Updated] Revamped the user lookup functions it should now be able to handle case insensitive queries, IDs, and even clash tags
+[Added] devShell loop disable - sorry Goku xD
+[Added] New suppression feature in panther.user_remove you can now remove users with p.user_remove <user> -m "Message"
+[Updated] Tons of under the hood code. The script has become about 50 lines shorter
+
+[Patch 1.4.3] 11MAY2019
+[Bug] Shit logic used to update users roles
+[Bug] Found a bug trying to write the wrong data to the tables
+
+[Patch 1.4.2] 5MAY2019
+[Added] Donors roles in user_remove
+
+[Patch 1.4.1] 28APR2019
+[Fixed] error cause by not having enough data in the dataframe
+
+[Version 1.4] 24APR2019
+[Added] Sorted names when using the report command
+[Added] All lookups now give you a + emoji clicking the emoji will give you the discord ID and clash tag of ther user in a format that you can copy and paste on mobile devices
+[Added] Reaction to panther.lcm that lists the amount of members registered along with how many of each TH do we have
+[Added] HTML formatting 
+[Added] Removed roles for when the disable user command is used
+[Fixed] disable_user bug -- it was limited to only taking in discord mentions not IDs
+[Fixed] lookup -- Aggregated -n, -d and -m to just one command that handles are inputs
+[Remove] Enable user
+[Changed] user_add and disable_user to user_add and user_remove 
+
+
+[Version 1.3] 6APR2019~
+[Added] panther.manual command to view more information on how to use the bot
+
+[Version 1.2] 3APR2019~
+[Fixed] Witch levels on stats output to reflect new CoC update
+
+[Version 1.1] 2APR2019~
+
+[Fixed] How commands parse user arguments. Instead of manually parsing a @mention the discord.py
+Convert is used. It can now handle @mention, discord_IDs, usernames and display names. 
+
+[Added] Since username look ups are case sensitive I added a function that pulls all the user
+names from the DB and than manually search through it for match the string then return the
+the discord ID saved in the DB
