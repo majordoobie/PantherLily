@@ -559,7 +559,7 @@ async def stats(ctx, *, args=None):
     arg_template = {
         'level' : {
             'default' : None,
-            'flags' : ['--level','-l']
+            'flags' : ['--level', '-l']
         }
     }
     vars = await botAPI.arg_parser(arg_template, args)
@@ -572,6 +572,8 @@ async def stats(ctx, *, args=None):
             return
         else:
             coc_tag = result[0][0]
+            joined_at = result[0][5]
+            active = result[0][7]
 
     else:
         discord_member = await botAPI.user_converter_db(ctx, vars['positional'])
@@ -584,6 +586,8 @@ async def stats(ctx, *, args=None):
             return
         else:
             coc_tag = result[0][0]
+            joined_at = result[0][5]
+            active = result[0][7]
     
     player = await coc_client2.get_player(coc_tag, cache=False)
     if player == None:
@@ -593,46 +597,24 @@ async def stats(ctx, *, args=None):
         return
 
     c_stat = ClashStats(player, vars['level'])
-
-    frame, title = c_stat.payload()
+    joined_at = datetime.strptime(joined_at, '%Y-%m-%d %H:%M:%S')
+    joined_at = joined_at.strftime("%d%b%y %H:%M").upper()
+    if bool(active):
+        active = 'Active'
+    else:
+        active = 'Inactive'
+    frame, title = c_stat.payload(joined_at, active)
     eb = discord.Embed(
         title=title,
         description=frame,
         color=0x000088
     )
+    eb.set_footer(text=config[botMode]["version"])
     await ctx.send(embed=eb)
 
-    
-
-    # frame,title = c_stat.payload()
-    # eb = discord.Embed(
-    #     title=title,
-    #     description=frame,
-    #     color=0x000088
-    # )
-    # await ctx.send(embed=eb)
-
-    # Get display objects
-    # desc, troopLevels, spellLevels, heroLevels, gains, sieges = clash_stats.stat_stitcher(player, emoticonLoc, _max)
-    # embed = Embed(title = f"**__{player.name}__**", description=desc, color = 0x000080)
-    # embed.add_field(name="**Gains**", value=gains, inline = False)
-    # embed.add_field(name = "**Heroes**", value=heroLevels, inline = False)
-    # embed.add_field(name = "**Troops**", value=troopLevels, inline = False)
-    # embed.add_field(name = "**Spells**", value=spellLevels, inline = False)
-    # if sieges != None:
-    #     embed.add_field(name = "**Sieges**", value=sieges, inline = False)
-    # embed.set_footer(text=config[botMode]["version"]+" \n"+config[botMode]["panther_url"])
-    # if player.league == None:
-    #     f = discord.File(f"{WORK_DIR}/utils/images/Unranked_League.png", filename='unrank.png')
-    #     embed.set_thumbnail(url="attachment://unrank.png")
-    #     await ctx.send(embed=embed, file=f)
-    # else:
-    #     embed.set_thumbnail(url=player.league.badge.small)
-    #     await ctx.send(embed=embed)
-
-# @stats.error
-# async def stats_error(ctx, error):
-#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+@stats.error
+async def stats_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command(alias=['l'])
 async def legend(ctx, *, user=None):

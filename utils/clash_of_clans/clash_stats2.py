@@ -3,7 +3,8 @@ import json
 SIEGES = (
     "Wall Wrecker",
     "Battle Blimp",
-    "Stone Slammer"
+    "Stone Slammer",
+    "Siege Barracks"
 )
 class ClashStats:
     """Build stats output"""
@@ -15,7 +16,7 @@ class ClashStats:
         self.tr = self.load_troop()
         self.player = player
         if set_lvl:
-            self.lvl = str(self.get_lvl(set_lvl))
+            self.lvl = self.get_lvl(set_lvl)
         else:
             self.lvl = str(player.town_hall)
 
@@ -32,26 +33,38 @@ class ClashStats:
     def get_lvl(self, set_lvl):
         if isinstance(set_lvl, int):
             if set_lvl in range(8, 14):
-                return set_lvl
+                return str(set_lvl)
             else:
-                return self.player.town_hall
+                return str(self.player.town_hall)
+        elif isinstance(set_lvl, str):
+            if set_lvl.isdigit():
+                set_lvl = int(set_lvl)
+                if set_lvl in range(8, 14):
+                    return str(set_lvl)
+            else:
+                return str(self.player.town_hall)
         else:
-            return self.player.town_hall
+            return str(self.player.town_hall)
 
-    def payload(self):
+    def payload(self, joined_at, active):
         title = (f"""
 {self.em['townhalls'][str(self.player.town_hall)]} {self.player.name}
         """)
         frame = (f"""
+`{'Role:':<15}` `{self.player.role.title():<15}`
 `{'Player Tag:':<15}` `{self.player.tag:<15}`
+`{'Member Status:':<15}` `{active:<15}`
+`{'Joined Date:':<15}` `{joined_at:<15}`
 `{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`
-`{'Role:':<15}` `{self.player.role:<15}`
+
 `{'League:':<15}` `{self.player.league.name:<15.15}`
 `{'Current Trophy:':<15}` `{self.player.trophies:<15}`
 `{'Best Trophoes:':<15}` `{self.player.best_trophies:<15}`
 `{'War Stars:':<15}` `{self.player.war_stars:<15}`
 `{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`
 `{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`
+
+**__Displaying Level:__** `{self.lvl}`
 {self.get_heroes()}
 {self.get_sieges()}
 {self.get_troops()}
@@ -62,24 +75,28 @@ class ClashStats:
     def get_heroes(self):
         frame = '**Heroes**\n'
         for hero in self.player.ordered_heroes:
-        #for hero in self.player.heroes_dict.keys():
             if hero == 'Battle Machine':
                 continue
-            emoji = self.em['heroes'][hero]
-            current_lvl = self.player.heroes_dict[hero].level
-            max_lvl = self.tr[self.lvl][hero]
-            frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+            try:
+                emoji = self.em['heroes'][hero]
+                current_lvl = self.player.heroes_dict[hero].level
+                max_lvl = self.tr[self.lvl][hero]
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+            except KeyError:
+                pass
         return frame
 
     def get_sieges(self):
         frame = ''
         for siege in self.player.ordered_home_troops:
-        #for siege in self.player.home_troops_dict.keys():
             if siege in SIEGES:
-                emoji = self.em['siege'][siege]
-                current_lvl = self.player.home_troops_dict[siege].level
-                max_lvl = self.tr[self.lvl][siege]
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                try:
+                    emoji = self.em['siege'][siege]
+                    current_lvl = self.player.home_troops_dict[siege].level
+                    max_lvl = self.tr[self.lvl][siege]
+                    frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                except KeyError:
+                    pass
         if frame:
             _frame = '**Sieges**\n'
             _frame += frame
@@ -90,17 +107,16 @@ class ClashStats:
         frame = '**Troops**\n'
         count = 0
         for troop in self.player.ordered_home_troops:
-        #for troop in self.player.home_troops_dict.keys():
             if troop not in SIEGES:
-                emoji = self.em['troops'][troop]
-                current_lvl = self.player.home_troops_dict[troop].level
                 try:
+                    emoji = self.em['troops'][troop]
+                    current_lvl = self.player.home_troops_dict[troop].level
                     max_lvl = self.tr[self.lvl][troop]
-                except:
-                    print(self.lvl, troop, self.tr)
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += '\n'
-                    count = 0
+                    frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                    count += 1
+                    if count == 4:
+                        frame += '\n'
+                        count = 0
+                except KeyError:
+                    pass
         return frame
