@@ -38,7 +38,7 @@ soupsieve==1.9.2
 traitlets==4.3.3
 typed-ast==1.4.0
 typing-extensions==3.7.4.1
-urllib3==1.22
+urllib3==1.24.2
 wcwidth==0.1.7
 websockets==6.0
 wrapt==1.11.2
