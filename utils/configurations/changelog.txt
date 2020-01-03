@@ -1,3 +1,6 @@
+[Version] 2.6.1 03JAN20
+[Fixed] Bug with time calculations
+
 [Version] 2.6.0 02JAN20
 [Added] Docker file configurations. Plan is to make it easier to move to a new server
 

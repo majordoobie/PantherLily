@@ -145,15 +145,17 @@ class BotAssist:
         Method used to return the last monday or "sunday" in eastern
         """
         today = datetime.utcnow()
-        idx = (today.weekday() + 1) % 7 # MON = 0, SUN = 6 -> SUN = 0 .. SAT = 6
-        if idx == 1:
+        idx = today.weekday()  # MON = 0 -- SUN = 6
+        if idx == 0:
             if today > today.replace(hour=1, minute=0, second=0, microsecond=0):
                 last_monday = today.replace(hour=1, minute=0, second=0, microsecond=0)
+            else:
+                last_monday = today - timedelta(days=7)
+                last_monday = last_monday.replace(hour=1, minute=0, second=0, microsecond=0)
         else:
-            #last_monday = today - timedelta(7 + idx - 1)
-            last_monday = today - timedelta(days=idx - (idx - 1))
+            last_monday = today - timedelta(days=idx)
             last_monday = last_monday.replace(hour=1, minute=0, second=0, microsecond=0)
-    
+
         return last_monday
 
     def next_sunday(self):
