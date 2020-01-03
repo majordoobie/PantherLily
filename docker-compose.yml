@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  panther_bot:
+    container_name: panther_bot
+    restart: always
+    build: .
+    # Volume that Dockerfile is creating
+    volumes:
+      - .:/usr/src/app
+    networks:
+      - panther_network
+networks:
+  panther_network:
+    name: panther_network
+    driver: bridge
