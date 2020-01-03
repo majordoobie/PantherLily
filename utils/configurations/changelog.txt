@@ -1,3 +1,6 @@
+[Version] 2.6.0 02JAN20
+[Added] Docker file configurations. Plan is to make it easier to move to a new server
+
 [Version] 2.5.5 01JAN20
 [Fixed] We are no longer able to get a discord members object using a guild object. Changed it to use to bots instance to get a member globally to remove them
 [Fixed] The bot will no longer say "attempting to remove roles" if the user is no longer in the guild
