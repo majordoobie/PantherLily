@@ -70,6 +70,7 @@ class ClashStats:
 {self.get_heroes()}
 {self.get_sieges()}
 {self.get_troops()}
+{self.get_spells()}
 """)
 
         return frame, title
@@ -121,4 +122,21 @@ class ClashStats:
                         count = 0
                 except KeyError:
                     pass
+        return frame
+
+    def get_spells(self):
+        frame = '**Spells**\n'
+        count = 0
+        for spell in self.player.ordered_spells:
+            try:
+                emoji = self.em['spells'][spell]
+                current_lvl = self.player.spells_dict[spell].level
+                max_lvl = self.tr[self.lvl][spell]
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += '\n'
+                    count = 0
+            except KeyError:
+                pass
         return frame

@@ -1,3 +1,7 @@
+[Version] 2.6.2 09FEB20
+[Added] Spells to p.stats
+[Note] Database was nuked by miss configuring the database; will add db to exclusion list next time
+
 [Version] 2.6.1 03JAN20
 [Fixed] Bug with time calculations
 
