@@ -623,7 +623,7 @@ async def stats(ctx, *, args=None):
             return True
 
     try:
-        reaction, user = await ctx.bot.wait_for('reaction_add', check=check, timeout=5.0)
+        reaction, user = await ctx.bot.wait_for('reaction_add', check=check, timeout=60.0)
         await reaction.remove(user)
         await ctx.send(player.share_link)
     except asyncio.TimeoutError:

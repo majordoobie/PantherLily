@@ -58,9 +58,9 @@ class ClashStats:
 """)
         if self.player.town_hall > 11:
             frame += (f"""\
-                `{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`
+`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`
             """)
-        frame += (f"""\
+        frame += (f"""
 `{'Member Status:':<15}` `{active:<15}`
 `{'Joined Date:':<15}` `{joined_at:<15}`
 `{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`

@@ -10,6 +10,6 @@ RUN pip install -U git+https://github.com/mathsman5133/coc.py
 
 COPY . .
 # For dev only
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
-CMD [ "python", "pantherlily.py", "--live" ]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
+#CMD [ "python", "pantherlily.py", "--live" ]
 # CMD [ "python", "./your-daemon-or-script.py" ]
