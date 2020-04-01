@@ -1,5 +1,7 @@
 # TO DO: Move the loop outside the on_ready
 #Discord
+import traceback
+
 import discord
 from discord.ext import commands
 from discord import Embed, Game, Guild
@@ -587,8 +589,10 @@ async def stats(ctx, *, args=None):
             coc_tag = result[0][0]
             joined_at = result[0][5]
             active = result[0][7]
-    
+    # TODO: Remove this before deploying
     player = await coc_client2.get_player(coc_tag, cache=False)
+    #player = await coc_client2.get_player("#RR89R8RR", cache=False)
+
     if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
@@ -609,11 +613,28 @@ async def stats(ctx, *, args=None):
         color=0x000088
     )
     eb.set_footer(text=config[botMode]["version"])
-    await ctx.send(embed=eb)
+    panel = await ctx.send(embed=eb)
+    await panel.add_reaction("<:link:694750139847409695>")
+
+    def check(reaction, user):
+        if user != ctx.message.author:
+            return False
+        if reaction.emoji.id == 694750139847409695:
+            return True
+
+    try:
+        reaction, user = await ctx.bot.wait_for('reaction_add', check=check, timeout=5.0)
+        await reaction.remove(user)
+        await ctx.send(player.share_link)
+    except asyncio.TimeoutError:
+        await panel.clear_reactions()
+    finally:
+        await panel.clear_reactions()
 
 @stats.error
 async def stats_error(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+    exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+    await ctx.send(embed = discord.Embed(title="ERROR", description=exc, color=0xFF0000))
 
 @discord_client.command(alias=['l'])
 async def legend(ctx, *, user=None):

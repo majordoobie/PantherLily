@@ -1,3 +1,7 @@
+[Version] 2.7.0 31MAR20
+[Added] Profile url to panther.stats
+[Added] Townhall weapon level to panther.stats
+
 [Version] 2.6.2 09FEB20
 [Added] Spells to p.stats
 [Note] Database was nuked by miss configuring the database; will add db to exclusion list next time

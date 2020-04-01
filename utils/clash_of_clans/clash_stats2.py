@@ -53,8 +53,14 @@ class ClashStats:
 {self.em['townhalls'][str(self.player.town_hall)]} {self.player.name}
         """)
         frame = (f"""
-`{'Role:':<15}` `{self.player.role.title():<15}`
+`{'Role:':<15}` `{self.player.role:<15}`
 `{'Player Tag:':<15}` `{self.player.tag:<15}`
+""")
+        if self.player.town_hall > 11:
+            frame += (f"""\
+                `{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`
+            """)
+        frame += (f"""\
 `{'Member Status:':<15}` `{active:<15}`
 `{'Joined Date:':<15}` `{joined_at:<15}`
 `{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`
@@ -72,6 +78,7 @@ class ClashStats:
 {self.get_troops()}
 {self.get_spells()}
 """)
+        #TODO: add ashare link!
 
         return frame, title
 
