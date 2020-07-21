@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  disco_bot:
+    container_name: panther_bot3
+    build: .
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env

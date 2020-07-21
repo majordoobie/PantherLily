@@ -6,8 +6,15 @@ __pycache__
 **/logs
 packages/docs/*.json
 *.txt
+
 # Environment
 venv*
 **.vscode/
 coc_test.py
+*.env
+.idea/
+archive/
+__init__.py
 
+# Secrets
+private
