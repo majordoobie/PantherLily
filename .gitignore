@@ -16,5 +16,3 @@ coc_test.py
 archive/
 __init__.py
 
-# Secrets
-private
