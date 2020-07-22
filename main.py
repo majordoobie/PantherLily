@@ -1,7 +1,9 @@
 import argparse
 import dotenv
+import traceback
 
-
+from bot import BotClient
+from packages.discord_utilities.logging_setup import DiscordLogger
 from packages.private.settings import Settings
 
 def bot_args():
@@ -28,13 +30,23 @@ def main():
     """
     args = bot_args().parse_args()
     dotenv.load_dotenv()
+    settings = None
     if args.dev_mode:
         settings = Settings('dev_mode')
     elif args.live_mode:
         settings = Settings('live_mode')
 
-    print(args)
-
+    try:
+        DiscordLogger(settings)
+        bot = BotClient(settings)
+        bot.run()
+        
+    except Exception as error:
+        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+        print(exc)
+        
+    finally:
+        print("closing DB")
 
 
 if __name__ == '__main__':

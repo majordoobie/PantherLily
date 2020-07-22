@@ -12,7 +12,15 @@ class Settings:
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
-        
+
+        # Paths
+        self.cog_path = 'packages.cogs'
+        self.enabled_cogs = self.get_cogs()
+
+        # TODO: keep logging settings here
+        # Logging
+        self.
+
         # Server IDs
         self.zbp_server = os.environ.get('ZBP_SERVER')
         self.zulu_server = os.environ.get('ZUL_SERVER')
@@ -32,6 +40,11 @@ class Settings:
                 'bot_prefix': ['dev.', 'd.', 'D.'],
                 'version': 'Panther 3 rewrite',
                 }
+
+    def get_cogs(self):
+        return (
+            'tester',
+        )
 
 
 emoji_dict = {
