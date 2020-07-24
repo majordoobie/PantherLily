@@ -142,8 +142,8 @@ async def on_ready():
     await discord_client.change_presence(status=discord.Status.online, activity=game)
     guild = discord_client.get_guild(int(config["discord"]["zuludisc_id"]))
     role_mgr.initializer(guild)
-    update = d_sync.UpdateLoop(discord_client, dbconn, botMode, coc_client2, config)
-    discord_client.loop.create_task(update.run())
+   # update = d_sync.UpdateLoop(discord_client, dbconn, botMode, coc_client2, config)
+    #discord_client.loop.create_task(update.run())
 
 #####################################################################################################################
                                              # Help Menu
