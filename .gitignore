@@ -24,3 +24,5 @@ venv_panther/
 venv*
 discord.log
 weekly.log
+live.beforejustin
+archive/

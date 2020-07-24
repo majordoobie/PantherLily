@@ -8,6 +8,9 @@ SIEGES = (
     "Stone Slammer",
     "Siege Barracks"
 )
+
+HOME_TROOPS = ['Barbarian', 'Archer', 'Giant', 'Goblin', 'Wall Breaker', 'Balloon', 'Wizard', 'Healer', 'Dragon', 'P.E.K.K.A', 'Baby Dragon', 'Miner', 'Electro Dragon', 'Yeti', 'Sneaky Goblin', 'Super Barbarian', 'Super Wall Breaker', 'Super Giant', 'Super Archer', 'Inferno Dragon', 'Super Valkyrie', 'Super Witch', 'Minion', 'Hog Rider', 'Valkyrie', 'Golem', 'Witch', 'Lava Hound', 'Bowler', 'Ice Golem', 'Headhunter', 'Wall Wrecker', 'Battle Blimp', 'Stone Slammer', 'Siege Barracks']
+
 class ClashStats:
     """Build stats output"""
     def __init__(self, player, set_lvl=None):
@@ -31,7 +34,7 @@ class ClashStats:
         with open(WORK_DIR/"clash_emoji.json", "r") as emojis:
             f = json.load(emojis)
             return f
-    
+
     def get_lvl(self, set_lvl):
         if isinstance(set_lvl, int):
             if set_lvl in range(8, 14):
@@ -98,7 +101,8 @@ class ClashStats:
 
     def get_sieges(self):
         frame = ''
-        for siege in self.player.ordered_home_troops:
+        #for siege in self.player.ordered_home_troops:
+        for siege in HOME_TROOPS:
             if siege in SIEGES:
                 try:
                     emoji = self.em['siege'][siege]
@@ -116,7 +120,8 @@ class ClashStats:
     def get_troops(self):
         frame = '**Troops**\n'
         count = 0
-        for troop in self.player.ordered_home_troops:
+        #for troop in self.player.ordered_home_troops:
+        for troop in HOME_TROOPS:
             if troop not in SIEGES:
                 try:
                     emoji = self.em['troops'][troop]

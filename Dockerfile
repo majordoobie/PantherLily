@@ -1,12 +1,12 @@
 # Frosh build
 FROM python:3.6.9-buster
+RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY requirements.txt ./
-RUN alias ll='ls -lart'
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install -U git+https://github.com/mathsman5133/coc.py
+#RUN pip install -U git+https://github.com/mathsman5133/coc.py
 
 COPY . .
 # For dev only

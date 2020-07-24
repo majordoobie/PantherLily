@@ -13,7 +13,6 @@ from utils.apis.ClashConnect import ClashConnectAPI
 from utils.apis.rolemanager import Rolemgr
 from utils.apis import user_tops
 
-from utils.clash_of_clans import clash_stats
 from utils.clash_of_clans.clash_stats2 import ClashStats
 from utils.clash_of_clans import update_donationtable as udt
 from utils.help import help_menu
@@ -117,6 +116,10 @@ prefx = config[botMode]['bot_prefix'][0]
 role_mgr = Rolemgr(config)
 
 # coc.py
+coc.enums.SUPER_TROOP_ORDER.extend(["Super Archer","Inferno Dragon","Super Valkyrie","Super Witch"])
+coc.enums.HOME_TROOP_ORDER = coc.enums.ELIXIR_TROOP_ORDER + coc.enums.SUPER_TROOP_ORDER + coc.enums.DARK_ELIXIR_TROOP_ORDER + coc.enums.SIEGE_MACHINE_ORDER
+print(coc.enums.HOME_TROOP_ORDER)
+print(coc.enums.SUPER_TROOP_ORDER)
 coc_client2 = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
@@ -589,10 +592,8 @@ async def stats(ctx, *, args=None):
             coc_tag = result[0][0]
             joined_at = result[0][5]
             active = result[0][7]
-    # TODO: Remove this before deploying
-    player = await coc_client2.get_player(coc_tag, cache=False)
-    #player = await coc_client2.get_player("#RR89R8RR", cache=False)
 
+    player = await coc_client2.get_player(coc_tag, cache=False)
     if player == None:
         msg = (f"Bad HTTPS request, please make sure that the bots IP is in the CoC whitelist. "
         f"Our current exit node is {get('https://api.ipify.org').text}")
@@ -1785,12 +1786,10 @@ async def top(ctx, arg=None):
         await ctx.send(output)
 
     if arg == None or arg.lower() in ["-d", "--donation"]:
+        # Get the df data
         today = datetime.utcnow()
-        #lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
-        #lastSunday = (today + timedelta(days=(1 - today.isoweekday()))).replace(hour=1, minute=0, second=0, microsecond=0)
-        idx = today.weekday() % 7
-        lastSunday = today - timedelta(days=7+idx)
-        lastSunday = lastSunday.replace(hour=1, minute=0, second=0, microsecond=0)
+        lastSunday = botAPI.last_sunday()
+
         today = today.strftime('%Y-%m-%d %H:%M:%S')
         startDate = (lastSunday - timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1816,21 +1815,21 @@ async def top(ctx, arg=None):
         df['increment_date'] = pd.to_datetime(df['increment_date'], format='%Y-%m-%d %H:%M:%S')
 
         # Remove duplicate Tag column
-        df = df.loc[:,~df.columns.duplicated()]
+        df = df.loc[:, ~df.columns.duplicated()]
 
         # First make the two masks
         before_sun = df['increment_date'] <= lastSunday
-        after_sun = df['increment_date'] >= lastSunday   
+        after_sun = df['increment_date'] >= lastSunday
 
         # Calculate the diff for this week and save it to its own DF
         # Rename column, reset index
-        df_out = df.loc[after_sun].groupby(['Tag', 'Name'])['Current_Donation'].agg(['min','max']).diff(axis=1)
+        df_out = df.loc[after_sun].groupby(['Tag', 'Name'])['Current_Donation'].agg(['min', 'max']).diff(axis=1)
         # Exit if there isn't enough data
         if df_out.empty:
             await ctx.send("Please wait an hour to accurately calculate your donations. Thank you for your patience.")
             return
         df_out.drop('min', axis=1, inplace=True)
-        df_out.rename(columns={'max':'Current'}, inplace=True)
+        df_out.rename(columns={'max': 'Current'}, inplace=True)
         df_out.reset_index(inplace=True)
         df_out.set_index('Tag', inplace=True)
 
@@ -1838,15 +1837,16 @@ async def top(ctx, arg=None):
         df_out['Current_FIN'] = df.loc[after_sun].groupby(['Tag'])['Current_Donation'].max()
 
         # create last sunday column
-        df_out[f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])['Current_Donation'].max()
+        df_out[f'{(lastSunday - timedelta(days=1)).strftime("%d%b").upper()}'] = df.loc[before_sun].groupby(['Tag'])[
+            'Current_Donation'].max()
 
-        # Clean up data change NaN and Float to 
+        # Clean up data change NaN and Float to
         df_out[df_out.columns[1:]] = df_out[df_out.columns[1:]].fillna(0).astype(np.int64)
 
         # Sort names column
-        #df_out.sort_values(by='Name.Upper', inplace=True)
+        # df_out.sort_values(by='Name.Upper', inplace=True)
         df_out = df_out.iloc[df_out.Name.str.lower().argsort()]
-        
+
         df_dict = df_out.to_dict()
         user_data = []
         for name in df_dict['Name']:

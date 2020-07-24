@@ -1,0 +1,58 @@
+{
+    "liveBot" : {
+        "bot_name" : "Panther Lily",
+        "bot_token" : "NTQwMjI3NzY1NDY3NzQyMjEx.DzOGWQ.l1HYbq07lELTVYHx9lLaTpnnWjw",
+        "app_id" : "540227765467742211",
+        "bot_prefix" : ["Panther.", "panther.", "p.", "P."],
+        "bot_url" : "https://discordapp.com/api/oauth2/authorize?client_id=540227765467742211&scope=bot&permissions=8",
+        "guild_lock" : "293943534028062721",
+        "guild_name" : "Reddit Zulu",
+        "db" : "utils/database/livedatabase.db",
+        "game_msg" : "panther.help",
+        "version" : "Panther Lily Version: 2.7.1",
+        "panther_url" : "https://github.com/majordoobie/PantherLily"
+            },
+    "devBot" : {
+        "bot_name" : "Panther Lily [Dev Shell]",
+        "bot_token" : "NTE1OTc4NjU1OTc4MDk0NjAz.DzOXNA.NmVmNfaNDqkth9qp4rS0WvMafls",
+        "app_id" : "515978655978094603",
+        "bot_prefix" : "dev.",
+        "bot_url" : "https://discordapp.com/api/oauth2/authorize?client_id=515978655978094603&scope=bot&permissions=1544023153",
+        "guild_lock" : "293943534028062721",
+        "guild_name" : "DevTester",
+        "db" : "utils/database/devdatabase.db",
+        "game_msg" : "Developing [PantherLily] Bot",
+        "version" : "Panther Lily Version: 2.0.0 BETA",
+        "panther_url" : "https://github.com/majordoobie/PantherLily"
+    },
+    "discord" : {
+        "zuludisc_id" : "293943534028062721",
+        "plandisc_id" : "310460540944252939",
+        "plandisc_channel" : "310469276714926081",
+        "plandisc_url" : "https://discord.gg/wT7U2sD",
+        "killswitch" : "265368254761926667",
+        "leadernotes" : "299387037218242561",
+        "thelawn" : "515281933349945405"
+    },
+    "clash" : {
+        "zulu" : "2Y28CGP8",
+        "elephino" : "8YG0CQRY",
+        "misfits" : "P0Q8VRC8",
+        "2Y28CGP8" : "Reddit Zulu",
+        "8YGOCQRY" : "Reddit elephino",
+        "POQ8VRC8" : "Reddit Misfits",
+        "zuluclash_token" : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjgyMjgzOTViLWU1MzItNDg1My1hNmI0LTcyYWJiNzY2MjU4MSIsImlhdCI6MTU2MjczMTUwNSwic3ViIjoiZGV2ZWxvcGVyLzkwYWRhZDZiLTMzNDMtNDM3MS01ZDM1LWMxYTZiMDUzMTIwMSIsInNjb3BlcyI6WyJjbGFzaCJdLCJsaW1pdHMiOlt7InRpZXIiOiJkZXZlbG9wZXIvc2lsdmVyIiwidHlwZSI6InRocm90dGxpbmcifSx7ImNpZHJzIjpbIjI0LjIxNC42Mi40Il0sInR5cGUiOiJjbGllbnQifV19.5TjckojqNAdCLW5fYTkJQ6628mKDkfZmqh-Adm0hKp-4UNRoZ60fMD_-laR1D5pGu4Zw5hgz88Fkt6pWet_YDg"
+    },
+    "roles" : {
+        "coc_leadership" : "506988943796076544",
+        "coc_members" : "506986405512085504",
+        "th10s" : "508744014812413977",
+        "th11s" : "508744041970532352",
+        "th12s" : "508744079266283551",
+        "th9s" : "508743963264417793"
+    },
+    "CoC_API" : {
+        "Username" : "sgtmajorjay@gmail.com",
+        "Password" : "xUjpuw-jyrxe5-mydjum"
+    }
+}

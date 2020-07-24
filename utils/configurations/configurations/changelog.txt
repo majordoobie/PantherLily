@@ -1,7 +1,3 @@
-[Version] 2.7.2 23 July 20
-[Fixed] Added super troops to coc.py had to add our our list since coc.py is no longer supporting this
-[Fixed] p.t -d now showing the right information for the top donors
-
 [Version] 2.7.0 31MAR20
 [Added] Profile url to panther.stats
 [Added] Townhall weapon level to panther.stats
