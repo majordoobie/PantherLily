@@ -5,7 +5,6 @@ __pycache__
 # Logs and Settings
 **/logs
 packages/docs/*.json
-*.txt
 
 # Environment
 venv*

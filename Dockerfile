@@ -1,11 +1,14 @@
 FROM python:3.6.9-buster
 RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
-WORKDIR /app
 
+WORKDIR /app
 COPY requirements.txt ./
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+
+# COC rewrite
+RUN pip install -U git+https://github.com/mathsman5133/coc.py@rewrite
 
 COPY . .
 # For dev only
