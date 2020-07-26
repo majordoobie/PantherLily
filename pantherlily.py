@@ -567,7 +567,6 @@ async def stats(ctx, *, args=None):
         }
     }
     vars = await botAPI.arg_parser(arg_template, args)
-
     if vars['positional'] == None:
         discord_member = ctx.author
         result = dbconn.get_user_byDiscID((discord_member.id,))
@@ -586,7 +585,7 @@ async def stats(ctx, *, args=None):
             return
         result = dbconn.get_user_byDiscID((discord_member.id,))
         if len(result) == 0:
-            await ctx.send(f'No data found for {ctx.author.display_name}')
+            await ctx.send(f'No record found in the database for: {discord_member}')
             return
         else:
             coc_tag = result[0][0]
@@ -1863,43 +1862,6 @@ async def top(ctx, arg=None):
         await ctx.send(_data)
 
 
-
-@discord_client.command()
-async def test(ctx):
-    #p.user_add GQQVO8U 372697413569216512
-    # Get globally member id
-    u = await ctx.bot.fetch_user(372697413569216512)
-    u2 = await ctx.bot.fetch_user(265368254761926667)
-
-    print(u in ctx.guild.members)
-    print(u2 in ctx.guild.members)
-
-    u4 = ctx.guild.get_member(265368254761926667)
-    # fixed_tag = coc.utils.correct_tag(clan_tag)
-
-    # warlogs = await coc_client2.get_warlog(fixed_tag)
-    # for i in warlogs:
-    #     print(dir(i))
-    # return
-
-    # for n in warlogs:
-    #     if isinstance(n,coc.WarLog):
-    #         to_send +=f" {n.clan} vs {n.opponent}\n"
-    # await ctx.send(to_send)
-
-    #print(type(warlogs[0])) # <class 'coc.wars.WarLog'>
-    #return
-
-    # This gave me a new error
-    # for i in warlogs:
-    #     print(i.opponent)
-    #     """discord.ext.commands.errors.CommandInvokeError: Command raised an exception: AttributeError: 'LeagueWarLogEntry' object has no attribute 'opponent'"""
-    # return
-    # print(dir(warlogs[4]))
-    # print(warlogs[4].clan.name)
-    # to_send =""
-
-    
 
 #####################################################################################################################
                                              # Loops & Kill Command
