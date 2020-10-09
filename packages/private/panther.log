@@ -175,3 +175,23 @@ MSG: Established connection
 [Path:/app/bot.py]
 MSG: Established connection
 
+[09 Oct 22:33:24]:[DEBUG]:[root]:[Line:37][Func:on_ready]
+[Path:/app/bot.py]
+MSG: Established connection
+
+[09 Oct 22:35:07]:[DEBUG]:[root]:[Line:37][Func:on_ready]
+[Path:/app/bot.py]
+MSG: Established connection
+
+[09 Oct 22:38:05]:[DEBUG]:[root]:[Line:36][Func:on_ready]
+[Path:/app/bot.py]
+MSG: Established connection
+
+[09 Oct 22:39:39]:[DEBUG]:[root]:[Line:36][Func:on_ready]
+[Path:/app/bot.py]
+MSG: Established connection
+
+[09 Oct 22:43:47]:[DEBUG]:[root]:[Line:36][Func:on_ready]
+[Path:/app/bot.py]
+MSG: Established connection
+

@@ -8,7 +8,7 @@ class Tester(commands.Cog):
     
     @commands.command()
     async def ping(self, ctx):
-        await ctx.send('ponnnnnnng')
+        await self.bot.embed_print(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.command()
     async def test(self, ctx):

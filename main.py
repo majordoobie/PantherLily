@@ -39,7 +39,7 @@ def main():
     logger = logging.getLogger('root')
 
     try:
-        bot = BotClient(settings)
+        bot = BotClient(settings=settings, command_prefix=settings.bot_config['bot_prefix'])
         bot.run()
         
     except Exception as error:
