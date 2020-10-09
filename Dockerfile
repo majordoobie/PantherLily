@@ -7,10 +7,10 @@ COPY requirements.txt ./
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# COC rewrite
-RUN pip install -U git+https://github.com/mathsman5133/coc.py@rewrite
 
 COPY . .
 # For dev only
+
+
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 #CMD [ "python", "carla.py", "--live" ]

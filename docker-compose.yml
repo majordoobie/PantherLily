@@ -5,5 +5,14 @@ services:
     build: .
     volumes:
       - .:/app
+  db:
+    image: postgres
+    container_name: panther_db
     env_file:
-      - ./.env
+      - packages/private/database.env
+    volumes:
+    - database-volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
+
+volumes:
+  database-volume:
+
