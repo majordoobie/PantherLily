@@ -2,7 +2,6 @@ import atexit
 import logging
 from logging.handlers import QueueListener, QueueHandler
 from queue import Queue
-
 from discord import Webhook, RequestsWebhookAdapter, Embed
 
 
@@ -107,6 +106,12 @@ class DiscordWebhookHandler(logging.Handler):
             50: 0x6600CC
         }
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
-        embed = Embed(title=f'Logger: {record.name}', description=record.msg, color=colors[record.levelno])
+        print(record.exc_info)
+
+        if record.exc_info:
+            msg = f'{record.msg}\n\n{record.exc_text}'
+        else:
+            msg = record.msg
+        embed = Embed(title=f'Logger: {record.name}', description=msg, color=colors[record.levelno])
         webhook.send(embed=embed, username=self.settings.web_log_name)
 

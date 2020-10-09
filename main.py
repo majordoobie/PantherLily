@@ -35,16 +35,17 @@ def main():
     elif args.live_mode:
         settings = Settings('live_mode')
 
+    BotLogger(settings)
+    logger = logging.getLogger('root')
+
     try:
-        BotLogger(settings)
-        log = logging.getLogger(__name__)
-        log.debug("Instanciating the bot")
         bot = BotClient(settings)
         bot.run()
         
     except Exception as error:
         exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
         print(exc)
+        logger.error(error, exc_info=True)
         
     finally:
         print("closing DB")

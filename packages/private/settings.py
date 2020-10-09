@@ -4,6 +4,10 @@ from logging import DEBUG, INFO, WARNING, ERROR
 COG_LOCATION='packages.cogs'
 VERSION='3.0.0'
 
+
+ENABLED_COGS = (
+    'tester',
+)
 class Settings:
     """
     Class is used to set up the configuration for the bot
@@ -15,7 +19,7 @@ class Settings:
 
         # Paths
         self.cog_path = COG_LOCATION
-        self.enabled_cogs = self.get_cogs()
+        self._set_cogs()
 
         # Logging
         self._set_logging_settings()
@@ -36,13 +40,13 @@ class Settings:
                 'bot_name': 'Panther Lily [Dev Shell]',
                 'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
-                'version': 'Panther 3 rewrite',
+                'version': 'Panther v3 Beta',
                 }
 
-    def get_cogs(self):
-        return (
-            'tester',
-        )
+    def _set_cogs(self):
+        self.cog_path = COG_LOCATION
+        self.enabled_cogs = [ f'{self.cog_path}.{cog}' for cog in ENABLED_COGS ]
+
 
     def _set_logging_settings(self):
         self.main_log_level = DEBUG
