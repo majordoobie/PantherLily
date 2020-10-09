@@ -3,7 +3,8 @@
 __pycache__
 
 # Logs and Settings
-**/logs
+**/*.log*
+**/*.log
 packages/docs/*.json
 
 # Environment
