@@ -9,8 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 COPY . .
-# For dev only
-
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 #CMD [ "python", "carla.py", "--live" ]

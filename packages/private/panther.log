@@ -1,0 +1,24 @@
+[09 Oct 19:22:31]:[WARNING]:[discord.client]:[Line:259][Func:__init__]
+[Path:/usr/local/lib/python3.6/site-packages/discord/client.py]
+MSG: PyNaCl is not installed, voice will NOT be supported
+
+[09 Oct 19:26:08]:[WARNING]:[discord.client]:[Line:259][Func:__init__]
+[Path:/usr/local/lib/python3.6/site-packages/discord/client.py]
+MSG: PyNaCl is not installed, voice will NOT be supported
+
+[09 Oct 19:27:03]:[WARNING]:[discord.client]:[Line:259][Func:__init__]
+[Path:/usr/local/lib/python3.6/site-packages/discord/client.py]
+MSG: PyNaCl is not installed, voice will NOT be supported
+
+[09 Oct 19:30:32]:[WARNING]:[discord.client]:[Line:259][Func:__init__]
+[Path:/usr/local/lib/python3.6/site-packages/discord/client.py]
+MSG: PyNaCl is not installed, voice will NOT be supported
+
+[09 Oct 20:09:28]:[WARNING]:[root]:[Line:40][Func:__init__]
+[Path:/app/packages/discord_utilities/logging_setup.py]
+MSG: FLKJLKHJLH
+
+[09 Oct 20:14:24]:[WARNING]:[root]:[Line:40][Func:__init__]
+[Path:/app/packages/discord_utilities/logging_setup.py]
+MSG: FLKJLKHJLH
+

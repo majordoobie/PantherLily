@@ -1,4 +1,5 @@
 from packages.private.secrets import *
+from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION='packages.cogs'
 VERSION='3.0.0'
@@ -8,7 +9,6 @@ class Settings:
     Class is used to set up the configuration for the bot
     """
     def __init__(self, bot_mode):
-        self.webhook_url = WEBHOOK_URL
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
@@ -17,8 +17,8 @@ class Settings:
         self.cog_path = COG_LOCATION
         self.enabled_cogs = self.get_cogs()
 
-        # TODO: keep logging settings here
         # Logging
+        self._set_logging_settings()
 
         # Server IDs
         self.zulu_server = ZULU_SERVER
@@ -42,6 +42,20 @@ class Settings:
     def get_cogs(self):
         return (
             'tester',
+        )
+
+    def _set_logging_settings(self):
+        self.web_log_url = WEBHOOK_URL
+        self.web_log_name = 'PantherLily Log'
+        self.web_log_level = INFO
+        self.file_log = "packages/private/panther.log"
+        self.file_log_level = DEBUG
+        self.file_log_size = 10000
+        self.file_log_backups = 2
+        self.file_log_format = (
+            '[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Func:%(funcName)s]\n'
+            '[Path:%(pathname)s]\n'
+            'MSG: %(message)s\n'
         )
 
 

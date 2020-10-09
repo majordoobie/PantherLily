@@ -1,9 +1,9 @@
 import argparse
-import dotenv
+import logging
 import traceback
 
 from bot import BotClient
-from packages.discord_utilities.logging_setup import DiscordLogger
+from packages.logging_setup import BotLogger
 from packages.private.settings import Settings
 
 def bot_args():
@@ -29,7 +29,6 @@ def main():
     in the Settings class. Then uses the information to instantiate the bot.
     """
     args = bot_args().parse_args()
-    dotenv.load_dotenv()
     settings = None
     if args.dev_mode:
         settings = Settings('dev_mode')
@@ -37,7 +36,9 @@ def main():
         settings = Settings('live_mode')
 
     try:
-        DiscordLogger(settings)
+        BotLogger(settings)
+        log = logging.getLogger(__name__)
+        log.debug("Instanciating the bot")
         bot = BotClient(settings)
         bot.run()
         
