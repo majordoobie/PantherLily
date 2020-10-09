@@ -29,6 +29,7 @@ class BotLogger:
         self._set_file_logging()
 
         root = logging.getLogger('root')
+        root.setLevel(settings.main_log_level)
         root.addHandler(QueueListenerHandler(self.log_handlers))
 
     def _set_webhook_logging(self):
@@ -56,7 +57,7 @@ class QueueListenerHandler(QueueHandler):
     Since all logs must go to the Queue Listener then Queue Handler will then take them and emit them as normal
     in a new thread. So all normal handlers will go into Queue Handler instead of the root logger "logging.getLogger"
     """
-    def __init__(self, handlers, respect_handler_level=False, auto_run=True, queue=Queue(-1)):
+    def __init__(self, handlers, respect_handler_level=True, auto_run=True, queue=Queue(-1)):
         self.queue = queue
         super().__init__(self.queue)
         self._listener = QueueListener(
@@ -93,11 +94,19 @@ class DiscordWebhookHandler(logging.Handler):
     def emit(self, record):
         try:
             self.discord_log(record)
-        except Exception:
-            self.handleError(record)
+        except Exception as error:
+            logger = logging.getLogger('root')
+            logger.error('Could not initialize web logger', exc_info=error)
 
     def discord_log(self, record):
+        colors = {
+            10: 0x00FF00,
+            20: 0xFFFF00,
+            30: 0xFF8000,
+            40: 0xFF0000,
+            50: 0x6600CC
+        }
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
-        embed = Embed(title=record.name, description=record.msg)
+        embed = Embed(title=f'Logger: {record.name}', description=record.msg, color=colors[record.levelno])
         webhook.send(embed=embed, username=self.settings.web_log_name)
 

@@ -45,6 +45,7 @@ class Settings:
         )
 
     def _set_logging_settings(self):
+        self.main_log_level = DEBUG
         self.web_log_url = WEBHOOK_URL
         self.web_log_name = 'PantherLily Log'
         self.web_log_level = INFO
