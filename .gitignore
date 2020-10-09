@@ -11,6 +11,7 @@ venv*
 **.vscode/
 coc_test.py
 *.env
+secrets.py
 .idea/
 archive/
 __init__.py

@@ -1,42 +1,40 @@
-import dotenv
-import os
+from packages.private.secrets import *
 
+COG_LOCATION='packages.cogs'
+VERSION='3.0.0'
 
 class Settings:
     """
     Class is used to set up the configuration for the bot
     """
     def __init__(self, bot_mode):
-        dotenv.load_dotenv()
-        self.webhook_url = os.environ.get('WEBHOOK')
+        self.webhook_url = WEBHOOK_URL
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
 
         # Paths
-        self.cog_path = 'packages.cogs'
+        self.cog_path = COG_LOCATION
         self.enabled_cogs = self.get_cogs()
 
         # TODO: keep logging settings here
         # Logging
-        self.
 
         # Server IDs
-        self.zbp_server = os.environ.get('ZBP_SERVER')
-        self.zulu_server = os.environ.get('ZUL_SERVER')
+        self.zulu_server = ZULU_SERVER
 
     def get_config(self):
         if self.bot_mode == 'live_mode':
             return {
                 'bot_name': 'Panther Lily',
-                'bot_token': os.environ.get('LIVE_TOKEN'),
+                'bot_token': LIVE_TOKEN,
                 'bot_prefix': ['p.', 'P.', 'Panther.', 'panther.'],
-                'version': 'Panther Lily Version: 3.0.0',
+                'version': f'Panther Lily Version: {VERSION}',
                 }
         elif self.bot_mode == 'dev_mode':
             return {
                 'bot_name': 'Panther Lily [Dev Shell]',
-                'bot_token': os.environ.get('DEV_TOKEN'),
+                'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
                 'version': 'Panther 3 rewrite',
                 }
