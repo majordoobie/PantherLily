@@ -1,3 +1,5 @@
+import asyncio
+import asyncpg
 import argparse
 import logging
 import traceback
@@ -39,7 +41,10 @@ def main():
     logger = logging.getLogger('root')
 
     try:
+        loop = asyncio.get_event_loop()
+        pool = loop.run_until_complete(asyncpg.create_pool(settings.dsn))
         bot = BotClient(settings=settings, command_prefix=settings.bot_config['bot_prefix'])
+        bot.pool = pool
         bot.run()
         
     except Exception as error:
@@ -48,6 +53,7 @@ def main():
         logger.error(error, exc_info=True)
         
     finally:
+        pool.close()
         print("closing DB")
 
 

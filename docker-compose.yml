@@ -13,6 +13,8 @@ services:
       - packages/private/database.env
     volumes:
     - database-volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
+    ports:
+      - 5432:5432
 
 volumes:
   database-volume:

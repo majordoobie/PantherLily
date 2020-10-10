@@ -7,6 +7,7 @@ VERSION='3.0.0'
 
 ENABLED_COGS = (
     'tester',
+    'administrator',
 )
 class Settings:
     """
@@ -16,6 +17,8 @@ class Settings:
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
+        self.owner = OWNER
+        self.dsn = DSN
 
         # Paths
         self.cog_path = COG_LOCATION

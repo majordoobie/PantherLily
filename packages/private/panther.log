@@ -1,197 +1,36 @@
-[09 Oct 21:48:09]:[ERROR]:[root]:[Line:24][Func:run]
+[09 Oct 23:11:16]:[ERROR]:[root]:[Line:29][Func:run]
 [Path:/app/bot.py]
-MSG: Unable to load cog
+MSG: Extension 'packages.cogs.administrator' raised an error: NameError: name 'bot' is not defined
 Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:48:09]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
+  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 607, in _load_from_module_spec
+    spec.loader.exec_module(lib)
+  File "<frozen importlib._bootstrap_external>", line 678, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/app/packages/cogs/administrator.py", line 4, in <module>
+    class Administrator(commands.Cog):
+  File "/app/packages/cogs/administrator.py", line 11, in Administrator
+    @commands.check(bot.is_owner)
+NameError: name 'bot' is not defined
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
+  File "/app/bot.py", line 27, in run
     self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.s' could not be loaded.
-[09 Oct 21:48:09]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.t' could not be loaded.
-[09 Oct 21:48:09]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:48:09]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.r' could not be loaded.
-[09 Oct 21:48:13]:[DEBUG]:[root]:[Line:31][Func:on_ready]
+  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 664, in load_extension
+    self._load_from_module_spec(spec, name)
+  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 610, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'packages.cogs.administrator' raised an error: NameError: name 'bot' is not defined
+[09 Oct 23:11:18]:[DEBUG]:[root]:[Line:36][Func:on_ready]
 [Path:/app/bot.py]
 MSG: Established connection
 
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.t' could not be loaded.
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.s' could not be loaded.
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.t' could not be loaded.
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:51:51]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Unable to load cog
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.r' could not be loaded.
-[09 Oct 21:51:54]:[DEBUG]:[root]:[Line:31][Func:on_ready]
+[09 Oct 23:21:24]:[DEBUG]:[root]:[Line:36][Func:on_ready]
 [Path:/app/bot.py]
 MSG: Established connection
 
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.t' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.t' could not be loaded.
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.e' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.s' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.s' could not be loaded.
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.t' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.t' could not be loaded.
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.e' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.e' could not be loaded.
-[09 Oct 21:57:35]:[ERROR]:[root]:[Line:24][Func:run]
-[Path:/app/bot.py]
-MSG: Extension 'packages.cogs.r' could not be loaded.
-Traceback (most recent call last):
-  File "/app/bot.py", line 22, in run
-    self.load_extension(cog)
-  File "/usr/local/lib/python3.6/site-packages/discord/ext/commands/bot.py", line 662, in load_extension
-    raise errors.ExtensionNotFound(name)
-discord.ext.commands.errors.ExtensionNotFound: Extension 'packages.cogs.r' could not be loaded.
-[09 Oct 21:57:39]:[DEBUG]:[root]:[Line:31][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 21:59:14]:[DEBUG]:[root]:[Line:31][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:04:42]:[DEBUG]:[root]:[Line:32][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:07:18]:[DEBUG]:[root]:[Line:32][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:33:24]:[DEBUG]:[root]:[Line:37][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:35:07]:[DEBUG]:[root]:[Line:37][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:38:05]:[DEBUG]:[root]:[Line:36][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:39:39]:[DEBUG]:[root]:[Line:36][Func:on_ready]
-[Path:/app/bot.py]
-MSG: Established connection
-
-[09 Oct 22:43:47]:[DEBUG]:[root]:[Line:36][Func:on_ready]
+[09 Oct 23:22:13]:[DEBUG]:[root]:[Line:36][Func:on_ready]
 [Path:/app/bot.py]
 MSG: Established connection
 

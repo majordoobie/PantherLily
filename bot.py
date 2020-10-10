@@ -5,7 +5,6 @@ from discord import Embed, Status, Game, InvalidData
 from discord.errors import Forbidden
 from discord.ext import commands
 
-from packages.private.settings import Settings
 from packages.bot_ext import BotExt
 
 
@@ -14,7 +13,7 @@ class BotClient(commands.Bot, BotExt):
         super(BotClient, self).__init__(*args, **kwargs) # command_prefix
 
         self.settings = settings
-        # TODO: Set up the db connection here
+
         self.log = logging.getLogger('root')
 
         # Set debugging mode

@@ -1,4 +1,6 @@
 from discord import Embed
+from discord.ext.commands import MemberConverter, UserConverter, NotOwner
+
 
 EMBED_COLORS = {
     'info': 0x000080,       # blue
@@ -72,3 +74,9 @@ class BotExt:
             else:
                 blocks.append(block)
         return blocks
+
+    def is_owner(self, ctx):
+        if ctx.author.id == self.settings.owner:
+            return True
+        else:
+            raise NotOwner("Please ask a developer to run this command")
