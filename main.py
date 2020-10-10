@@ -1,8 +1,6 @@
 import asyncio
 import asyncpg
 import argparse
-import logging
-import traceback
 
 from bot import BotClient
 from packages.logging_setup import BotLogger
@@ -24,6 +22,16 @@ def bot_args():
 
     return parser
 
+async def run(settings):
+    pool = await asyncpg.create_pool(settings.dsn)
+    bot = BotClient(settings=settings, pool=pool, command_prefix=settings.bot_config['bot_prefix'])
+    try:
+        await bot.start(settings.bot_config['bot_token'])
+
+    except KeyboardInterrupt:
+        await pool.close()
+        await bot.logout()
+
 
 def main():
     """
@@ -38,23 +46,8 @@ def main():
         settings = Settings('live_mode')
 
     BotLogger(settings)
-    logger = logging.getLogger('root')
-
-    try:
-        loop = asyncio.get_event_loop()
-        pool = loop.run_until_complete(asyncpg.create_pool(settings.dsn))
-        bot = BotClient(settings=settings, command_prefix=settings.bot_config['bot_prefix'])
-        bot.pool = pool
-        bot.run()
-        
-    except Exception as error:
-        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-        print(exc)
-        logger.error(error, exc_info=True)
-        
-    finally:
-        pool.close()
-        print("closing DB")
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run(settings))
 
 
 if __name__ == '__main__':

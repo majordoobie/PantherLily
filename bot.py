@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 
 from discord import Embed, Status, Game, InvalidData
@@ -9,26 +10,27 @@ from packages.bot_ext import BotExt
 
 
 class BotClient(commands.Bot, BotExt):
-    def __init__(self, settings, *args, **kwargs):
+    def __init__(self, settings, pool,  *args, **kwargs):
         super(BotClient, self).__init__(*args, **kwargs) # command_prefix
 
         self.settings = settings
+        self.pool = pool
 
         self.log = logging.getLogger('root')
 
         # Set debugging mode
         self.debug = False
 
-    def run(self):
+        # load cogs
         print('Loading cogs...')
         for cog in self.settings.enabled_cogs:
             try:
+                print(f'Loading {cog}')
                 self.load_extension(cog)
-            except Exception as error:
-                self.log.error(error, exc_info=True)
-
-        print('Cogs loaded, establishing connection')
-        super().run(self.settings.bot_config['bot_token'], reconnect=True)
+            except Exception as e:
+                print(f'Failed to load cog {cog}', file=sys.stderr)
+                traceback.print_exc()
+                self.log.critical(f'Failed to load cog {cog}')
 
     async def on_ready(self):
         print("Connected")
