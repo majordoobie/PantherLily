@@ -27,6 +27,10 @@ class Settings:
         # Logging
         self._set_logging_settings()
 
+        # COC creds
+        self.coc_user = COC_USER
+        self.coc_pass = COC_PASS
+
         # Server IDs
         self.zulu_server = ZULU_SERVER
 

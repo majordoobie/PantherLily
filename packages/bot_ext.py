@@ -1,5 +1,6 @@
 from discord import Embed
-from discord.ext.commands import MemberConverter, UserConverter, NotOwner
+from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
+
 
 
 EMBED_COLORS = {
@@ -13,7 +14,10 @@ class BotExt:
     def __init__(self, settings):
         self.settings = settings
 
-    async def embed_print(self, ctx, title='', description=None, color='info', codeblock=False, _return=False):
+    async def embed_print(self, ctx, description, title='', color='info', codeblock=False, _return=False):
+        if not description:
+            raise BadArgument("No value to encapsulate in a embed")
+
         if len(description) < 1900:
             if codeblock:
                 description = f'```{description}```'
@@ -24,7 +28,7 @@ class BotExt:
                 color=EMBED_COLORS[color]
             )
             #TODO think it looks ugly having this here come back later to decide
-            #embed.set_footer(text=self.settings.bot_config['version'])
+            embed.set_footer(text=self.settings.bot_config['version'])
 
             if _return:
                 return embed

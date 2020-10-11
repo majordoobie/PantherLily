@@ -10,11 +10,12 @@ from packages.bot_ext import BotExt
 
 
 class BotClient(commands.Bot, BotExt):
-    def __init__(self, settings, pool,  *args, **kwargs):
+    def __init__(self, settings, pool, coc_client,  *args, **kwargs):
         super(BotClient, self).__init__(*args, **kwargs) # command_prefix
 
         self.settings = settings
         self.pool = pool
+        self.coc_client = coc_client
 
         self.log = logging.getLogger('root')
 
@@ -31,6 +32,7 @@ class BotClient(commands.Bot, BotExt):
                 print(f'Failed to load cog {cog}', file=sys.stderr)
                 traceback.print_exc()
                 self.log.critical(f'Failed to load cog {cog}')
+        print("cogs loaded")
 
     async def on_ready(self):
         print("Connected")
@@ -41,8 +43,8 @@ class BotClient(commands.Bot, BotExt):
         self.log.info('Resuming connection...')
 
     async def on_command(self, ctx):
-        await ctx.message.channel.trigger_typing()
-
+        await ctx.trigger_typing()
+        #await ctx.message.channel.trigger_typing()
 
     async def on_command_error(self, ctx, error):
         if self.debug:
@@ -82,5 +84,7 @@ class BotClient(commands.Bot, BotExt):
             return
 
         # Catch all
+        err = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+
         await self.embed_print(ctx, title='COMMAND ERROR',
-                               description=str(error), color='error')
+                               description=err, color='error')

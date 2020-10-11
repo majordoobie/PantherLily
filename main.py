@@ -1,10 +1,14 @@
 import asyncio
+import coc
+import logging
+
 import asyncpg
 import argparse
 
 from bot import BotClient
 from packages.logging_setup import BotLogger
 from packages.private.settings import Settings
+
 
 def bot_args():
     """
@@ -22,15 +26,23 @@ def bot_args():
 
     return parser
 
-async def run(settings):
+async def run(settings, coc_client):
     pool = await asyncpg.create_pool(settings.dsn)
-    bot = BotClient(settings=settings, pool=pool, command_prefix=settings.bot_config['bot_prefix'])
+    bot = BotClient(settings=settings, pool=pool, coc_client=coc_client, command_prefix=settings.bot_config['bot_prefix'])
+    log = logging.getLogger('root')
+
     try:
         await bot.start(settings.bot_config['bot_token'])
 
     except KeyboardInterrupt:
+        log.info("Attempting to close connections")
+        print("keyboard interrupt")
         await pool.close()
         await bot.logout()
+
+    finally:
+        await pool.close()
+        await bot.close()
 
 
 def main():
@@ -46,8 +58,12 @@ def main():
         settings = Settings('live_mode')
 
     BotLogger(settings)
+    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(settings))
+    try:
+        loop.run_until_complete(run(settings, coc_client))
+    finally:
+        loop.close()
 
 
 if __name__ == '__main__':
