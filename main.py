@@ -21,6 +21,7 @@ def bot_args():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--live', help='Run bot with Panther shell', action='store_true', dest='live_mode', default=False)
     group.add_argument('--dev', help='Run in dev shell', action='store_true', dest='dev_mode', default=False)
+    # Testing update
     return parser
 
 async def run(settings, coc_client):

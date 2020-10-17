@@ -1,11 +1,11 @@
-version: '3.8'
+version: '3.7'
 services:
   disco_bot:
     build: .                                    # Specify to use to Dockerfile
     container_name: panther_bot3
     build: .
     volumes:
-      - .:/app
+      - .:/code
   db:
     image: postgres
     container_name: panther_db
