@@ -19,11 +19,8 @@ def bot_args():
     """
     parser = argparse.ArgumentParser("Process arguments for discord bot")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--live', help='Run bot with Panther shell',
-                       action='store_true', dest='live_mode')
-    group.add_argument('--dev', help='Run in dev shell',
-                       action='store_true', dest='dev_mode')
-
+    group.add_argument('--live', help='Run bot with Panther shell', action='store_true', dest='live_mode', default=False)
+    group.add_argument('--dev', help='Run in dev shell', action='store_true', dest='dev_mode', default=False)
     return parser
 
 async def run(settings, coc_client):
@@ -35,12 +32,11 @@ async def run(settings, coc_client):
         await bot.start(settings.bot_config['bot_token'])
 
     except KeyboardInterrupt:
-        log.info("Attempting to close connections")
-        print("keyboard interrupt")
-        await pool.close()
-        await bot.logout()
+        log.info("Interrupt detected")
+        pass
 
     finally:
+        await coc_client.close()
         await pool.close()
         await bot.close()
 
@@ -58,8 +54,9 @@ def main():
         settings = Settings('live_mode')
 
     BotLogger(settings)
-    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient)
+    #coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient)
     loop = asyncio.get_event_loop()
+    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop)
     try:
         loop.run_until_complete(run(settings, coc_client))
     finally:

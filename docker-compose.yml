@@ -1,7 +1,7 @@
-version: '3.7'
+version: '3.8'
 services:
   disco_bot:
-    image: ubuntu
+    build: .                                    # Specify to use to Dockerfile
     container_name: panther_bot3
     build: .
     volumes:

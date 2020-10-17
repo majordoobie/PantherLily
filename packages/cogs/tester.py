@@ -27,16 +27,18 @@ class Tester(commands.Cog):
     @commands.command()
     async def get_user(self, ctx, player_tag):
         if not utils.is_valid_tag(player_tag):
-            self.bot.embed_print(ctx, title="Invalid Tag", description="Please provide a valid player tag", color='warning')
+            await self.bot.embed_print(ctx, title="Invalid Tag", description="Please provide a valid player tag", color='warning')
+            return
 
         try:
             player = await self.bot.coc_client.get_player(player_tag)
         except NotFound:
             await self.bot.embed_print(ctx, title="Invalid Tag", description="Player using tag provided does not exist.",
                                        color='warning')
+            return
 
 
-        self.bot.embed_print(ctx, player.name)
+        await self.bot.embed_print(ctx, player.name)
 
 
 def setup(bot):

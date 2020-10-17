@@ -93,6 +93,15 @@ def is_owner(ctx):
     else:
         raise NotOwner("Not owner")
 
+def is_leader(ctx):
+    if is_owner(ctx):
+        return True
+
+    for role in ctx.author.roles:
+        if role.id == LEADERS:
+            return True
+    return False
+
 
 async def update_user(ctx, guild_member, update_dict):
     """
