@@ -1,6 +1,13 @@
 FROM python:3.7-buster
 WORKDIR /code
 RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
+RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.1/zsh-in-docker.sh)" -- \
+    -a 'SPACESHIP_PROMPT_ADD_NEWLINE="false"' \
+    -a 'SPACESHIP_PROMPT_SEPARATE_LINE="false"' \
+    -p git \
+    -p ssh-agent \
+    -p https://github.com/zsh-users/zsh-autosuggestions \
+    -p https://github.com/zsh-users/zsh-completions
 
 COPY requirements.txt requirements.txt
 

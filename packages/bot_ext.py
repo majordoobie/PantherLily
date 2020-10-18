@@ -1,14 +1,13 @@
 from discord import Embed
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
 
-
-
 EMBED_COLORS = {
-    'info': 0x000080,       # blue
-    'error': 0xff0010,      # red
-    'success': 0x00ff00,    # green
-    'warning': 0xFFFF00     # yellow
+    'info': 0x000080,  # blue
+    'error': 0xff0010,  # red
+    'success': 0x00ff00,  # green
+    'warning': 0xFFFF00  # yellow
 }
+
 
 class BotExt:
     def __init__(self, settings):
@@ -27,7 +26,7 @@ class BotExt:
                 description=description,
                 color=EMBED_COLORS[color]
             )
-            #TODO think it looks ugly having this here come back later to decide
+            # TODO think it looks ugly having this here come back later to decide
             embed.set_footer(text=self.settings.bot_config['version'])
 
             if _return:

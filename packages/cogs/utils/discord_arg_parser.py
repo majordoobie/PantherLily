@@ -1,7 +1,7 @@
 class DiscoArgParseException(Exception):
     def __init__(self, msg):
         self.msg = msg
-        self.base_name = 'Disco Arg Parse Error'
+        self.base_name = 'Discord Argument Parser Error'
         super().__init__(msg)
 
 
@@ -106,6 +106,7 @@ class DiscordArgParse:
     def __init__(self, arg_dict: dict, arg_string: str):
         # Parameters
         self.arg_dict = _clean_dict(arg_dict)
+        print(self.arg_dict)
         self.arg_string = arg_string
         if arg_string:
             self.arg_list = arg_string.split()
@@ -220,7 +221,13 @@ class DiscordArgParse:
         # set unused flags to default
         for flag, used in self.used_flags.items():
             if used is False:
-                self.parsed_args[flag] = self.arg_dict[flag]['default']
+                if self.arg_dict[flag]['switch']:
+                    if self.arg_dict[flag]['switch_action']:
+                        self.parsed_args[flag] = False
+                    else:
+                        self.parsed_args[flag] = True
+                else:
+                    self.parsed_args[flag] = self.arg_dict[flag]['default']
 
         # Concat remaining args
         if self.arg_list:
@@ -262,10 +269,14 @@ def _clean_dict(arg_dict: dict) -> dict:
     for key, _dict in arg_dict.items():
         if 'default' not in _dict.keys():
             _dict['default'] = None
-        elif 'required' not in _dict.keys():
+
+        if 'required' not in _dict.keys():
             _dict['required'] = False
-        elif 'switch' not in _dict.keys():
+
+        if 'switch' not in _dict.keys():
             _dict['switch'] = False
-        elif 'switch_action' not in _dict.keys():
+
+        if 'switch_action' not in _dict.keys():
             _dict['switch_action'] = True
+
     return arg_dict

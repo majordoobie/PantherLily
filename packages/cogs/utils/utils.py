@@ -1,7 +1,10 @@
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner
+from discord.ext.commands import Context
 import discord
 
 from packages.private.settings import *
+from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
+from packages.bot_ext import BotExt
 
 async def get_discord_member(ctx, obj):
     """
@@ -183,3 +186,32 @@ def role_list(ctx, guild_member, new_roles):
             member_roles.append(role)
 
     return list(set(member_roles))  # Remove potential duplicates
+
+
+async def parse_args(ctx: Context, settings: Settings, arg_dict: dict, arg_string: str) -> DiscordArgParse:
+    """
+    Quick way to parse arguments for all bot commands instead of repeating code
+    Parameters
+    ----------
+    ctx: Context
+        Discord context from the command
+
+    settings: Settings
+        Settings class
+
+    arg_dict: dict
+        Dictionary containing the DiscordArgParse specific arguments
+
+    arg_string: str
+        String of the users specified arguments
+
+    Returns
+    -------
+    DiscordArgParse
+    """
+    try:
+        parsed_args = DiscordArgParse(arg_dict, arg_string)
+        return parsed_args
+    except DiscoArgParseException as error:
+        bot_ext = BotExt(settings)
+        await bot_ext.embed_print(ctx=ctx, title=error.base_name, description=error.msg, color='error')
