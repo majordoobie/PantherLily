@@ -6,6 +6,7 @@ from packages.private.settings import *
 from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
 from packages.bot_ext import BotExt
 
+
 async def get_discord_member(ctx, obj):
     """
     Function used to get a member string if possible, if not a user string is returned. Otherwise it returns none.
@@ -60,6 +61,10 @@ async def get_discord_member(ctx, obj):
         return None, False
 
     # TODO: Add what to do with the db obj
+
+async def get_coc_player():
+    # TODO: Add get player for leaders.py
+    pass
 
 def is_admin(ctx):
     """
