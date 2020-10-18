@@ -1,3 +1,6 @@
+"""
+91 % @ 2030
+"""
 import asyncio
 import coc
 import logging
@@ -10,24 +13,44 @@ from packages.logging_setup import BotLogger
 from packages.private.settings import Settings
 
 
-def bot_args():
+def bot_args() -> argparse.ArgumentParser:
     """
-    Creates the argument parse and returns it to the caller
+    Sets up the arguments to run the bot.
+
     Returns
     -------
-    parser
+    parser: argparser.ArgumentParser
+        Parser object
     """
-    parser = argparse.ArgumentParser("Process arguments for discord bot")
+    parser = argparse.ArgumentParser(description="Process arguments for discord bot")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--live', help='Run bot with Panther shell', action='store_true', dest='live_mode', default=False)
+    group.add_argument('--live', help='Run bot with Panther shell', action='store_true', dest='live_mode',
+                       default=False)
     group.add_argument('--dev', help='Run in dev shell', action='store_true', dest='dev_mode', default=False)
-    # Testing update
     return parser
 
-async def run(settings, coc_client):
+
+async def run(settings: Settings, coc_client: coc):
+    """
+    Uses the event loop created in main to run the async libraries that need it
+<class 'asyncpg.pool.Pool'>
+<class 'coc.events.EventsClient'>
+
+    Parameters
+    ----------
+    settings: Settings
+        Configuration for the mode given
+    coc_client: coc.events.EventsClient
+        Clash of Clans client of interacting with the Clash of Clans API
+    """
     pool = await asyncpg.create_pool(settings.dsn)
-    bot = BotClient(settings=settings, pool=pool, coc_client=coc_client, command_prefix=settings.bot_config['bot_prefix'])
+    bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
+                    command_prefix=settings.bot_config['bot_prefix'])
     log = logging.getLogger('root')
+
+    print(type(pool))
+    print(type(coc_client))
+    exit()
 
     try:
         await bot.start(settings.bot_config['bot_token'])
@@ -47,7 +70,9 @@ def main():
     Sets up the environment for the bot. Uses .env for any sensitive information and puts them
     in the Settings class. Then uses the information to instantiate the bot.
     """
-    args = bot_args().parse_args()
+    parser = bot_args()
+    args = parser.parse_args()
+
     settings = None
     if args.dev_mode:
         settings = Settings('dev_mode')
@@ -55,9 +80,9 @@ def main():
         settings = Settings('live_mode')
 
     BotLogger(settings)
-    #coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient)
     loop = asyncio.get_event_loop()
-    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop)
+    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
+                           key_names=settings.bot_config['key_name'])
     try:
         loop.run_until_complete(run(settings, coc_client))
     finally:

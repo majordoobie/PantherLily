@@ -41,6 +41,7 @@ class Settings:
                 'bot_token': LIVE_TOKEN,
                 'bot_prefix': ['p.', 'P.', 'Panther.', 'panther.'],
                 'version': f'Panther Lily Version: {VERSION}',
+                'key_name': 'Panther_Bot3 Keys',
                 }
         elif self.bot_mode == 'dev_mode':
             return {
@@ -48,6 +49,7 @@ class Settings:
                 'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
                 'version': 'Panther v3 Beta',
+                'key_name': 'DevShell Keys',
                 }
 
     def _set_cogs(self):
