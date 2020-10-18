@@ -44,10 +44,10 @@ class BotClient(commands.Bot, BotExt):
             try:
                 print(f'Loading {cog}')
                 self.load_extension(cog)
-            except Exception as e:
-                print(f'Failed to load cog {cog}', file=sys.stderr)
-                traceback.print_exc()
-                self.log.critical(f'Failed to load cog {cog}')
+            except Exception as error:
+                print(f'Failed to load cog {cog}\n{error}')
+                self.log.critical(f'Failed to load cog {cog}', exc_info=True)
+
         print("cogs loaded")
 
     async def on_ready(self):
@@ -60,7 +60,6 @@ class BotClient(commands.Bot, BotExt):
 
     async def on_command(self, ctx):
         await ctx.trigger_typing()
-        #await ctx.message.channel.trigger_typing()
 
     async def on_command_error(self, ctx, error):
         if self.debug:

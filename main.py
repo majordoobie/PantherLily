@@ -48,10 +48,6 @@ async def run(settings: Settings, coc_client: coc):
                     command_prefix=settings.bot_config['bot_prefix'])
     log = logging.getLogger('root')
 
-    print(type(pool))
-    print(type(coc_client))
-    exit()
-
     try:
         await bot.start(settings.bot_config['bot_token'])
 

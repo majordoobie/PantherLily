@@ -1,3 +1,6 @@
+"""
+Settings for all libraries especially the Bot
+"""
 from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
@@ -7,12 +10,11 @@ VERSION='3.0.0'
 
 ENABLED_COGS = (
     'tester',
-    'administrator',
+    'admin',
+    'leaders',
 )
+
 class Settings:
-    """
-    Class is used to set up the configuration for the bot
-    """
     def __init__(self, bot_mode):
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
