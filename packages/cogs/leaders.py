@@ -13,24 +13,39 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(aliases=['user_add'])
-    async def add_user(self, ctx, *, args=None):
+    async def add_user(self, ctx, *, arg_string=None):
         # Set up arguments
         arg_dict = {
             'coc_tag': {
                 'flags': ['--clash', '-c'],
+                'required': True
             },
             'discord_id': {
                 'flags': ['--discord', '-d'],
+                'required': True
             },
         }
-        parsed_args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
 
-        # Get player coc_client
-        if not is_valid_tag(parsed_args['coc_tag']):
-            await self.bot.embed_print(ctx, title='Invalid Tag', description='Please provide a valid player tag',
-                                       color='error')
+        parsed_args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        if not parsed_args:
             return
-        1
+
+
+
+        print(ctx.guild.members)
+        for m in ctx.guild.members:
+            print(m)
+
+        return
+
+        player = await get_coc_player(ctx, parsed_args.coc_tag, self.bot.coc_client, self.bot.embed_print)
+        k_member = await get_discord_member(ctx, parsed_args.discord_id, self.bot.embed_print)
+
+
+        if k_member:
+            print(k_member)
+
+
 
         return
 

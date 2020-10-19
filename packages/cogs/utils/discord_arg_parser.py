@@ -106,7 +106,6 @@ class DiscordArgParse:
     def __init__(self, arg_dict: dict, arg_string: str):
         # Parameters
         self.arg_dict = _clean_dict(arg_dict)
-        print(self.arg_dict)
         self.arg_string = arg_string
         if arg_string:
             self.arg_list = arg_string.split()
@@ -121,6 +120,9 @@ class DiscordArgParse:
             self._empty_string_parse()
         else:
             self._arg_parse()
+
+        for key, value in self.parsed_args.items():
+            setattr(self, key, value)
 
     def __getitem__(self, key):
         return self.parsed_args[key]
