@@ -13,68 +13,39 @@ from packages.bot_ext import BotExt
 
 
 async def get_discord_member(ctx: Context, disco_id: str, print_prt) -> Optional[Member]:
-    print(disco_id)
+    """
+    Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
+
+    Parameters
+    ----------
+    ctx: Context
+        Discord command context
+
+    disco_id: str
+        Any information about the user
+
+    print_prt: Method
+        Pointer to the global embed function of the bot
+
+    Returns
+    -------
+    Optional[Member]
+    """
     member = None
     for guild_member in ctx.guild.members:
-        print(guild_member)
-
         if str(guild_member.id) == disco_id:
-            print("Here")
             member = guild_member
         elif guild_member.name.lower() == disco_id.lower():
-            print("Here2")
             member = guild_member
         elif guild_member.display_name.lower() == disco_id.lower():
-            print("Here3")
             member = guild_member
         elif f"{guild_member.name}#{guild_member.discriminator}".lower() == disco_id.lower():
-            print("Here4")
             member = guild_member
-
     if member:
         return member
-
-    print("in here")
-
-    # This sucks and doesn't work; doing it my own way
-
-    converter = MemberConverter()
-    try:
-        global_user = await converter.convert(ctx, disco_id)
-    except MemberNotFound:
-        await print_prt(ctx, f'User `{disco_id}` not found', color='warning')
+    else:
+        await print_prt(ctx, f'Discord member: {disco_id} was not found', color='warning')
         return None
-    return global_user
-
-
-
-
-    return
-    # Attempting guild manual check
-
-    # Try a global fetch
-    try:
-        global_member = await ctx.bot.fetch_user(obj)
-        if isinstance(global_member, discord.User):
-            for guild_member in ctx.guild.members:
-                if guild_member.id == global_member.id:
-                    return guild_member, True
-            return global_member, False
-    except:
-        pass
-
-    # Attempting global converter
-    try:
-        global_member = await UserConverter().convert(ctx, obj)
-        if isinstance(global_member, discord.User):
-            for guild_member in ctx.guild.members:
-                if guild_member.id == global_member.id:
-                    return guild_member, True
-            return global_member, False
-    except:
-        return None, False
-
-    # TODO: Add what to do with the db obj
 
 
 async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient, print_ptr) -> Optional[Player]:
@@ -96,8 +67,7 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
 
     Returns
     -------
-    player : Player
-        Player object from the coc wrapper
+    Optional[Player]
     """
     if not is_valid_tag(player_tag):
         await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",

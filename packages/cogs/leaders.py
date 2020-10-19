@@ -25,29 +25,21 @@ class Leaders(commands.Cog):
                 'required': True
             },
         }
-
-        parsed_args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        if not parsed_args:
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        if not args:
             return
 
-        print(dir(ctx.guild.members))
-        print(ctx.guild.members)
-        print("----")
-        for m in ctx.guild.members:
-            print(m)
+        # Get user objects
+        player = await get_coc_player(ctx, args.coc_tag, self.bot.coc_client, self.bot.embed_print)
+        member = await get_discord_member(ctx, args.discord_id, self.bot.embed_print)
+        if not player or not member:
+            return
 
-        return
-
-        player = await get_coc_player(ctx, parsed_args.coc_tag, self.bot.coc_client, self.bot.embed_print)
-        k_member = await get_discord_member(ctx, parsed_args.discord_id, self.bot.embed_print)
-
-
-        if k_member:
-            print(k_member)
+        print(member)
 
 
 
-        return
+
 
 
 
