@@ -30,9 +30,9 @@ class Leaders(commands.Cog):
         if not parsed_args:
             return
 
-
-
+        print(dir(ctx.guild.members))
         print(ctx.guild.members)
+        print("----")
         for m in ctx.guild.members:
             print(m)
 

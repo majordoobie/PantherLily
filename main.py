@@ -2,11 +2,12 @@
 100 % @ 1734
 """
 import asyncio
-import coc
 import logging
-
 import asyncpg
 import argparse
+
+import coc
+from discord import Intents
 
 from bot import BotClient
 from packages.logging_setup import BotLogger
@@ -44,8 +45,10 @@ async def run(settings: Settings, coc_client: coc):
         Clash of Clans client of interacting with the Clash of Clans API
     """
     pool = await asyncpg.create_pool(settings.dsn)
+    intents = Intents.default()
+    intents.members = True
     bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
-                    command_prefix=settings.bot_config['bot_prefix'])
+                    command_prefix=settings.bot_config['bot_prefix'], intents=intents)
     log = logging.getLogger('root')
 
     try:
