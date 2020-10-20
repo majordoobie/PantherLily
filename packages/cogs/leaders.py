@@ -35,7 +35,24 @@ class Leaders(commands.Cog):
         if not player or not member:
             return
 
-        print(member)
+        user_record = (
+            member.id,
+            member.name,
+            member.display_name,
+            member.discriminator,
+            member.joined_at,
+            member.created_at,
+            False,
+            True,
+            True,
+        )
+
+        sql = ('''INSERT INTO discord_user(
+                        discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
+                        global_join_date, db_join_date, in_zulu_base_planning, in_zulu_server, is_active) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)''')
+        async with self.bot.pool.acquire() as con:
+            await con.execute(sql, user_record)
 
 
 
