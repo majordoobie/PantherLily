@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from discord.ext import commands
 import logging
 
@@ -35,25 +37,31 @@ class Leaders(commands.Cog):
         if not player or not member:
             return
 
-        user_record = (
+        discord_record = (
             member.id,
             member.name,
             member.display_name,
             member.discriminator,
             member.joined_at,
             member.created_at,
-            False,
-            True,
-            True,
+            datetime.utcnow(),
         )
-
-        sql = ('''INSERT INTO discord_user(
-                        discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
-                        global_join_date, db_join_date, in_zulu_base_planning, in_zulu_server, is_active) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)''')
+        coc_record = (
+            player.tag,
+            member.id,
+        )
+        discord_record_sql = '''INSERT INTO discord_user(
+                        discord_id, discord_name, discord_nickname, discord_discriminator, 
+                        guild_join_date, global_join_date, db_join_date, in_zulu_base_planning, 
+                        in_zulu_server, is_active) 
+                        VALUES (
+                        $1, $2, $3, $4, $5, $6, $7, false, true, true)'''
+        coc_record_sql = '''INSERT INTO clash_account(
+                        clash_tag, discord_id, is_primary_account) VALUES (
+                        $1, $2, true)'''
         async with self.bot.pool.acquire() as con:
-            await con.execute(sql, user_record)
-
+            await con.execute(discord_record_sql, *discord_record)
+            await con.execute(coc_record_sql, *coc_record)
 
 
 
