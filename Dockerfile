@@ -11,6 +11,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -p https://github.com/zsh-users/zsh-completions
 
 RUN chsh -s $(which zsh)
+RUN apt install vim
 
 COPY requirements.txt requirements.txt
 
