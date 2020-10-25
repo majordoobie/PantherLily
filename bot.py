@@ -10,6 +10,7 @@ from discord.ext import commands
 
 
 from packages.bot_ext import BotExt
+from packages.cogs.utils.bot_sql import sql_create_tables
 from packages.private.settings import Settings
 
 
@@ -54,6 +55,13 @@ class BotClient(commands.Bot, BotExt):
         print("Connected")
         self.log.debug('Established connection')
         await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
+        # create tables if they do no exit
+        async with self.pool.acquire() as con:
+            for sql_table in sql_create_tables():
+                await con.execute(sql_table)
+
+
+
 
     async def on_resume(self):
         self.log.info('Resuming connection...')

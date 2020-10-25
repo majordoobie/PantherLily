@@ -1,12 +1,20 @@
-/*
+"""
  File should only be used once and it is placed in the Docker-compose
  of the database in order to stand it up.
- */
-DROP TABLE discord_user CASCADE ;
-DROP TABLE clash_account CASCADE;
-DROP TABLE clash_update CASCADE;
-DROP TABLE user_note CASCADE;
+"""
+from typing import List
 
+
+def drop_tables() -> List[str]:
+    sqls = [
+        "DROP TABLE discord_user CASCADE ;",
+        "DROP TABLE clash_account CASCADE;",
+        "DROP TABLE clash_update CASCADE;",
+        "DROP TABLE user_note CASCADE;"
+    ]
+
+def create_discord_users() -> str:
+    sql = ('''\
 CREATE TABLE IF NOT EXISTS discord_user (
     discord_id BIGINT PRIMARY KEY,
     discord_name TEXT NOT NULL,
@@ -21,14 +29,23 @@ CREATE TABLE IF NOT EXISTS discord_user (
     in_zulu_server BOOLEAN DEFAULT false,
     is_active BOOLEAN NOT NULL
 );
+''')
+    return sql
 
+def create_clash_account() -> str:
+    sql = ('''\
 CREATE TABLE IF NOT EXISTS clash_account (
     clash_tag TEXT PRIMARY KEY,
-    discord_id INTEGER NOT NULL,
+    discord_id BIGINT NOT NULL,
     is_primary_account BOOLEAN NOT NULL DEFAULT true,
     FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id)
 );
+''')
+    return sql
 
+
+def create_user_note() -> str:
+    sql = ('''\
 CREATE TABLE IF NOT EXISTS user_note (
     note_id SERIAL NOT NULL PRIMARY KEY,
     discord_id INTEGER NOT NULL,
@@ -39,7 +56,11 @@ CREATE TABLE IF NOT EXISTS user_note (
     FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id),
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag)
 );
+''')
+    return sql
 
+def create_clash_update() -> str:
+    sql = ('''\
 CREATE TABLE IF NOT EXISTS clash_update (
     record_id BIGSERIAL PRIMARY KEY,
     update_time TIMESTAMP NOT NULL,
@@ -155,3 +176,5 @@ CREATE TABLE IF NOT EXISTS clash_update (
 
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag)
 );
+''')
+    return sql

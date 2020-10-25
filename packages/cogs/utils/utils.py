@@ -71,13 +71,13 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
     """
     if not is_valid_tag(player_tag):
         await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",
-                        color="error")
+                        color="warning")
         return None
     try:
         player = await coc_client.get_player(player_tag)
     except NotFound:
         await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided: `{player_tag}` tag does "
-                                                               f"not exist"), color='error')
+                                                               f"not exist"), color='warning')
         return None
 
     return player

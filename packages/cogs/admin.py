@@ -3,6 +3,7 @@ import logging
 
 from packages.cogs.utils.utils import *
 from bot import BotClient
+from packages.database_schema import drop_tables
 
 
 class Administrator(commands.Cog):
@@ -71,6 +72,7 @@ class Administrator(commands.Cog):
         for i in self.bot.settings.enabled_cogs:
             output += i.split('.')[-1] + '\n'
         await ctx.send(output)
+
 
 
 def setup(bot):

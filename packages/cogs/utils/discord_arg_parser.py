@@ -58,6 +58,9 @@ class DiscordArgParse:
         List of strings used to indicate a specific flag is chosen. By convention these
         are prefixed with - or -- for example -e --example
 
+    arg_type: str [optional][defaul=str]
+        Set a data type for the parameter. By default it will be a string
+
     arg_dict.switch: bool [optional][default=False]
         When set to True, the flag will act as a boolean with the value of "switch_action".
 
@@ -203,9 +206,16 @@ class DiscordArgParse:
                             argument = self.arg_list.pop(arg_index + 1)
                             ### If argument is found in the flag list - throw error
                             if argument in self.all_flags:
-                                argument_error = self.arg_list[arg_index]
-                                msg = f'`{argument_error}` positioned behind a registered flag `{argument}`'
+                                msg = f'`{argument}` positioned behind a registered flag `{argument}`'
                                 raise DiscordCommandError(msg)
+
+                            if _dict['type'] == 'int':
+                                try:
+                                    argument = int(argument)
+                                except ValueError:
+                                    argument_error = self.arg_list[arg_index]
+                                    msg = f'`{argument_error}` was expected to be an integer, got a string instead'
+                                    raise DiscordCommandError(msg)
 
                             self.arg_list.pop(arg_index)
                             self.parsed_args[flag] = argument
@@ -280,5 +290,8 @@ def _clean_dict(arg_dict: dict) -> dict:
 
         if 'switch_action' not in _dict.keys():
             _dict['switch_action'] = True
+
+        if 'type' not in _dict.keys():
+            _dict['type'] = 'str'
 
     return arg_dict

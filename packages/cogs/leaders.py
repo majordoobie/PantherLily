@@ -4,8 +4,13 @@ from discord.ext import commands
 import logging
 
 from bot import BotClient
-from coc.utils import is_valid_tag
+
+from packages.cogs.utils.bot_sql import *
 from packages.cogs.utils.utils import *
+
+
+def get_inser_clash_account():
+    pass
 
 
 class Leaders(commands.Cog):
@@ -16,7 +21,7 @@ class Leaders(commands.Cog):
     @commands.check(is_leader)
     @commands.command(aliases=['user_add'])
     async def add_user(self, ctx, *, arg_string=None):
-        # Set up arguments
+        # Set up arguments 9P9PRYQJ 265368254761926667
         arg_dict = {
             'coc_tag': {
                 'flags': ['--clash', '-c'],
@@ -24,12 +29,14 @@ class Leaders(commands.Cog):
             },
             'discord_id': {
                 'flags': ['--discord', '-d'],
-                'required': True
+                'required': True,
+                'type': 'int'
             },
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
         if not args:
             return
+        args.coc_tag = args.coc_tag.upper()
 
         # Get user objects
         player = await get_coc_player(ctx, args.coc_tag, self.bot.coc_client, self.bot.embed_print)
@@ -50,18 +57,14 @@ class Leaders(commands.Cog):
             player.tag,
             member.id,
         )
-        discord_record_sql = '''INSERT INTO discord_user(
-                        discord_id, discord_name, discord_nickname, discord_discriminator, 
-                        guild_join_date, global_join_date, db_join_date, in_zulu_base_planning, 
-                        in_zulu_server, is_active) 
-                        VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, false, true, true)'''
-        coc_record_sql = '''INSERT INTO clash_account(
-                        clash_tag, discord_id, is_primary_account) VALUES (
-                        $1, $2, true)'''
+
+
         async with self.bot.pool.acquire() as con:
-            await con.execute(discord_record_sql, *discord_record)
-            await con.execute(coc_record_sql, *coc_record)
+            discord_member = con.execute(sql_select_discord_user_id(), args.discord_id)
+            clash_member = con.execute(sql_select_clash_account_tag(), args.coc_tag)
+            if discord_member is None and clash_member is None:
+                await con.execute(sql_insert_discord_user(), *discord_record)
+                await con.execute(sql_insert_clash_account(), *coc_record)
 
 
 

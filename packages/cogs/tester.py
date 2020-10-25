@@ -2,6 +2,8 @@ from discord.ext import commands
 from coc import utils, NotFound
 from discord import Embed
 #from packages.cogs.utils import embed_print
+from packages.cogs.utils.utils import parse_args
+
 
 class Tester(commands.Cog):
     def __init__(self, bot):
@@ -25,20 +27,26 @@ class Tester(commands.Cog):
 
 
     @commands.command()
-    async def get_user(self, ctx, player_tag):
-        if not utils.is_valid_tag(player_tag):
-            await self.bot.embed_print(ctx, title="Invalid Tag", description="Please provide a valid player tag", color='warning')
+    async def get_user(self, ctx, *, arg_string):
+        arg_dict = {
+            'coc_tag': {
+                'flags': ['--clash', '-c'],
+                'required': True
+            },
+            'discord_id': {
+                'flags': ['--discord', '-d'],
+                'required': True,
+                'type': 'int'
+            },
+        }
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        if not args:
             return
 
-        try:
-            player = await self.bot.coc_client.get_player(player_tag)
-        except NotFound:
-            await self.bot.embed_print(ctx, title="Invalid Tag", description="Player using tag provided does not exist.",
-                                       color='warning')
-            return
+        async with self.bot.pool.acquire() as con:
+            row = await con.fetchrow('select * from discord_user where discord_id = $1', args.discord_id)
 
-
-        await self.bot.embed_print(ctx, player.name)
+        print(row)
 
 
 def setup(bot):
