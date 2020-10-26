@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
@@ -12,7 +12,7 @@ from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgPars
 from packages.bot_ext import BotExt
 
 
-async def get_discord_member(ctx: Context, disco_id: str, print_prt) -> Optional[Member]:
+async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt) -> Optional[Member]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 
@@ -32,15 +32,20 @@ async def get_discord_member(ctx: Context, disco_id: str, print_prt) -> Optional
     Optional[Member]
     """
     member = None
-    for guild_member in ctx.guild.members:
-        if str(guild_member.id) == disco_id:
-            member = guild_member
-        elif guild_member.name.lower() == disco_id.lower():
-            member = guild_member
-        elif guild_member.display_name.lower() == disco_id.lower():
-            member = guild_member
-        elif f"{guild_member.name}#{guild_member.discriminator}".lower() == disco_id.lower():
-            member = guild_member
+    if isinstance(disco_id, int):
+        for guild_member in ctx.guild.members:
+            if guild_member.id == disco_id:
+                member = guild_member
+    else:
+        for guild_member in ctx.guild.members:
+            if str(guild_member.id) == disco_id:
+                member = guild_member
+            elif guild_member.name.lower() == disco_id.lower():
+                member = guild_member
+            elif guild_member.display_name.lower() == disco_id.lower():
+                member = guild_member
+            elif f"{guild_member.name}#{guild_member.discriminator}".lower() == disco_id.lower():
+                member = guild_member
     if member:
         return member
     else:
@@ -69,6 +74,11 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
     -------
     Optional[Player]
     """
+    # Clean up the tag a bit
+    if not player_tag[0] == '#':
+        player_tag = '#'+player_tag
+    player_tag = player_tag.upper()
+
     if not is_valid_tag(player_tag):
         await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",
                         color="warning")

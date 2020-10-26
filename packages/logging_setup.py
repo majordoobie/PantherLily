@@ -99,8 +99,8 @@ class DiscordWebhookHandler(logging.Handler):
 
     def discord_log(self, record):
         colors = {
-            10: 0x00FF00,
-            20: 0xFFFF00,
+            10: 0xFFFF99,
+            20: 0xCCFFFF,
             30: 0xFF8000,
             40: 0xFF0000,
             50: 0x6600CC

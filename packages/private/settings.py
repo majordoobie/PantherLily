@@ -63,7 +63,7 @@ class Settings:
         self.main_log_level = DEBUG
         self.web_log_url = WEBHOOK_URL
         self.web_log_name = 'PantherLily Log'
-        self.web_log_level = INFO
+        self.web_log_level = DEBUG
         self.file_log = "packages/private/panther.log"
         self.file_log_level = DEBUG
         self.file_log_size = 10000
