@@ -5,7 +5,8 @@ EMBED_COLORS = {
     'info': 0x000080,  # blue
     'error': 0xff0010,  # red
     'success': 0x00ff00,  # green
-    'warning': 0xFFFF00  # yellow
+    'warning':  0xFF8000 # orange
+
 }
 
 
