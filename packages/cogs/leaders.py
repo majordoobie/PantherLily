@@ -85,6 +85,49 @@ class Leaders(commands.Cog):
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg)
 
+                elif len(clash_members) == 1:
+                    if clash_members[0]['clash_tag'] == player.tag:
+                        await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                        await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
+                        clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                        msg = f'Set discord user {member.name}:{member.id} `is_active` attribute to `True` with clash account ' \
+                              f'`{player.tag}` as the primary account\n{account_panel(discord_member, clash_accounts)}'
+                        self.log.info(msg)
+                        await self.bot.embed_print(ctx, msg)
+                        return
+
+                    else:
+                        if not args['coc_alternate']:
+                            msg = f'Discord member `{member.name}:{member.id}` already has a clash account of ' \
+                                  f'`{player.tag}` if you would like to add another clash account please use the following ' \
+                                  f'command:\n\n `{arg_string} --set-alternate`'
+                            self.log.warning(msg)
+                            await self.bot.embed_print(ctx, msg, color='warning')
+                            return
+                        else:
+                            await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_all_false(), False, member.id)
+                            await con.execute(sql_insert_clash_account(), *coc_record)
+                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                            msg = f'Set discord user {member.name}:{member.id} `is_active` attribute to `True` with clash account ' \
+                                  f'`{player.tag}` as the primary account\n{account_panel(discord_member, clash_accounts)}'
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg)
+                            return
+
+                else:
+                    for clash_account in clash_members:
+                        if clash_account['clash_tag'] == player.tag:
+                            await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_all_false(), False, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
+                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                            msg = f'Set discord user {member.name}:{member.id} `is_active` attribute to `True` with clash account ' \
+                                  f'`{player.tag}` as the primary account\n{account_panel(discord_member, clash_accounts)}'
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg)
+                            return
+
             elif discord_member['is_active']:
                 if len(clash_members) == 0:
                     await con.execute(sql_insert_clash_account(), *coc_record)
@@ -96,11 +139,18 @@ class Leaders(commands.Cog):
 
                 elif len(clash_members) == 1:
                     if clash_members[0]['clash_tag'] == player.tag:
-                        msg = f'Discord member `{member.name}:{member.id}` is already active with the clash account ' \
-                              f'of `{player.tag}`; skipping...'
-                        self.log.info(msg)
-                        await self.bot.embed_print(ctx, msg)
-                        return
+                        if clash_members[0]['is_primary_account']:
+                            msg = f'Discord member `{member.name}:{member.id}` is already active with the clash account ' \
+                                  f'of `{player.tag}`; skipping...'
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg)
+                            return
+                        else:
+                            await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
+                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                            msg = f'Modified user coc primary account\n{account_panel(discord_member, clash_accounts)}'
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg)
 
                     else:
                         if not args['coc_alternate']:
@@ -137,7 +187,7 @@ class Leaders(commands.Cog):
                                 else:
                                     await con.execute(sql_update_clash_account_coc_alt_all_false(), False, member.id)
                                     await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
-                                    clash_members = await con.fetch(sql_select_clash_account_discordid(), member.idd)
+                                    clash_members = await con.fetch(sql_select_clash_account_discordid(), member.id)
                                     msg = f'`{player.tag}` is now the primary account for {member.name}\n{account_panel(discord_member, clash_members)}'
                                     self.log.info(msg)
                                     await self.bot.embed_print(ctx, msg)
@@ -174,13 +224,12 @@ class Leaders(commands.Cog):
             for clash_account in clash_accounts:
                 if clash_account['clash_tag'] == player.tag:
                     await con.execute(sql_delete_clash_account_record(), player.tag, member.id)
-                    msg = f'Removed `{player.tag} from `{member.name}:{member.id}`'
+                    clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                    msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg)
-                    await self.bot.embed_print(ctx, account_panel(discord_member, clash_accounts))
                     return
-            acc_panel = account_panel(discord_member, clash_accounts)
-            await self.bot.embed_print(ctx, acc_panel)
+            await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
 
 def account_panel(discord_member, coc_accounts: list) -> str:
     coc_panel = f'`{"Clash Tag":<15}` `{"Primary":<15}`\n'
