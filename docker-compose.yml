@@ -1,21 +1,21 @@
 version: '3.7'
 services:
   disco_bot:
-    build: .                                    # Specify to use to Dockerfile
-    container_name: panther_bot3
     build: .
+    image: pantherlily:v3.0
+    container_name: panther_bot3
     volumes:
       - .:/code
-  db:
-    image: postgres
-    container_name: panther_db
-    env_file:
-      - packages/private/database.env
-    volumes:
-    - database-volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
-    ports:
-      - 5432:5432
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    networks:
+      - panther_network
 
-volumes:
-  database-volume:
+networks:
+  panther_network:
+    external: true
+    name: panther_network
+
+
 

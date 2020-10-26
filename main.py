@@ -44,7 +44,10 @@ async def run(settings: Settings, coc_client: coc):
     coc_client: coc.events.EventsClient
         Clash of Clans client of interacting with the Clash of Clans API
     """
-    pool = await asyncpg.create_pool(settings.dsn)
+    try:
+        pool = await asyncpg.create_pool(settings.dsn)
+    except Exception as error:
+        exit(error)
     intents = Intents.default()
     intents.members = True
     bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
@@ -82,6 +85,7 @@ def main():
     loop = asyncio.get_event_loop()
     coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
                            key_names=settings.bot_config['key_name'])
+
     try:
         loop.run_until_complete(run(settings, coc_client))
     finally:

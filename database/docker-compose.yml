@@ -1,0 +1,21 @@
+version: '3.7'
+services:
+  panther_db:
+    image: postgres
+    container_name: panther_db
+    env_file:
+      - database.env
+    volumes:
+    - database-volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
+    ports:
+      - 5432:5432
+    networks:
+      - panther_network
+
+volumes:
+  database-volume:
+
+networks:
+  panther_network:
+    name: panther_network
+    external: false
