@@ -48,7 +48,7 @@ def create_user_note() -> str:
     sql = ('''\
 CREATE TABLE IF NOT EXISTS user_note (
     note_id SERIAL NOT NULL PRIMARY KEY,
-    discord_id INTEGER NOT NULL,
+    discord_id BIGINT NOT NULL,
     clash_tag TEXT NOT NULL,
     note_date timestamp NOT NULL,
     commit_by INTEGER NOT NULL,

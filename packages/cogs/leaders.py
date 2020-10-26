@@ -12,12 +12,11 @@ from packages.cogs.utils.utils import *
 class Leaders(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('root.Leaders')
+        self.log = logging.getLogger('root.leaders')
 
     @commands.check(is_leader)
     @commands.command(aliases=['user_add'])
     async def add_user(self, ctx, *, arg_string=None):
-        # Set up arguments 9P9PRYQJ 265368254761926667
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
 
         arg_dict = {
@@ -59,7 +58,6 @@ class Leaders(commands.Cog):
             member.id,
         )
 
-
         async with self.bot.pool.acquire() as con:
             self.log.debug(f'Attempting to add user `{member.name}:{member.id}`')
 
@@ -71,6 +69,13 @@ class Leaders(commands.Cog):
                 self.log.info(f'Adding new user {member.name} with clash of {player.tag}')
                 await con.execute(sql_insert_discord_user(), *discord_record)
                 await con.execute(sql_insert_clash_account(), *coc_record)
+                discord_member = await con.fetchrow(sql_select_discord_user_id(), member.id)
+                clash_members = await con.fetch(sql_select_clash_account_discordid(), member.id)
+
+                msg = f'Added new user\n{account_panel(discord_member, clash_members)}'
+                self.log.info(msg)
+                await self.bot.embed_print(ctx, msg)
+                await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), msg)
 
             # If member activity is set to false
             elif not discord_member['is_active']:
@@ -84,6 +89,7 @@ class Leaders(commands.Cog):
                           f'`{player.tag}`'
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg)
+                    await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.name, msg)
 
                 elif len(clash_members) == 1:
                     if clash_members[0]['clash_tag'] == player.tag:
@@ -94,6 +100,8 @@ class Leaders(commands.Cog):
                               f'`{player.tag}` as the primary account\n{account_panel(discord_member, clash_accounts)}'
                         self.log.info(msg)
                         await self.bot.embed_print(ctx, msg)
+                        await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                          ctx.author.name, msg)
                         return
 
                     else:
@@ -113,6 +121,8 @@ class Leaders(commands.Cog):
                                   f'`{player.tag}` as the primary account\n{account_panel(discord_member, clash_accounts)}'
                             self.log.info(msg)
                             await self.bot.embed_print(ctx, msg)
+                            await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                              ctx.author.name, msg)
                             return
 
                 else:
@@ -232,7 +242,7 @@ class Leaders(commands.Cog):
             await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
 
 def account_panel(discord_member, coc_accounts: list) -> str:
-    coc_panel = f'`{"Clash Tag":<15}` `{"Primary":<15}`\n'
+    coc_panel = f'`{"Clash Tag":<15}` `{"Primary Acc":<15}`\n'
     for coc_account in coc_accounts:
         coc_bool = "True" if coc_account['is_primary_account'] else "False"
         coc_panel += f'`{coc_account["clash_tag"]:<15}` `{coc_bool:<15}`\n'

@@ -49,3 +49,10 @@ def sql_update_clash_account_coc_alt_primary() -> str:
 
 def sql_delete_clash_account_record() -> str:
     return '''DELETE FROM clash_account WHERE clash_tag = $1 AND discord_id = $2'''
+
+#
+# Manipulate user_note
+#
+def sql_insert_user_note() -> str:
+    return ('''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES(
+              $1, $2, $3, $4)''')
