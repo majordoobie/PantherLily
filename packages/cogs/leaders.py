@@ -112,7 +112,7 @@ class Leaders(commands.Cog):
                             return
 
                         else:
-                            await con.execute(sql_update_clash_account_coc_alt(), False, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_all_false(), False, member.id)
                             await con.execute(sql_insert_clash_account(), *coc_record)
                             clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
                             acc_panel = account_panel(discord_member, clash_accounts)
@@ -120,6 +120,27 @@ class Leaders(commands.Cog):
                                   f'\nSet `{player.tag} -> Primary`\n\n{acc_panel}'
                             self.log.info(msg)
                             await self.bot.embed_print(ctx, msg)
+
+                else:
+                    for coc_account in clash_members:
+                        if coc_account["clash_tag"] == player.tag:
+                            if coc_account["is_primary_account"]:
+                                await self.bot.embed_print(ctx, f"Clash account is already primary\n{account_panel(discord_member, clash_members)}")
+                            else:
+                                if not args['coc_alternate']:
+                                    msg = f'Discord member `{member.name}:{member.id}` already has a clash account of ' \
+                                          f'`{player.tag}` if you would like to add another clash account please use the following ' \
+                                          f'command:\n\n `{arg_string} --set-alternate`'
+                                    self.log.warning(msg)
+                                    await self.bot.embed_print(ctx, msg, color='warning')
+                                    return
+                                else:
+                                    await con.execute(sql_update_clash_account_coc_alt_all_false(), False, member.id)
+                                    await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
+                                    clash_members = await con.fetch(sql_select_clash_account_discordid(), member.idd)
+                                    msg = f'`{player.tag}` is now the primary account for {member.name}\n{account_panel(discord_member, clash_members)}'
+                                    self.log.info(msg)
+                                    await self.bot.embed_print(ctx, msg)
 
 
 
@@ -166,12 +187,11 @@ def account_panel(discord_member, coc_accounts: list) -> str:
     for coc_account in coc_accounts:
         coc_bool = "True" if coc_account['is_primary_account'] else "False"
         coc_panel += f'`{coc_account["clash_tag"]:<15}` `{coc_bool:<15}`\n'
-        #coc_panel += f'`{"Clash Account:":<15}` `{coc_account["clash_tag"]}` `{"Is Primary:":<15}` `{coc_account["is_primary_account"]}`\n'
 
     if coc_panel == '':
         coc_panel = "No CoC Accounts Bound"
 
-    return f'**Player Account**\n\n' \
+    return f'\n\n**Player Account**\n' \
            f'`{"Discord Name:":<14}` `{discord_member["discord_nickname"]}`\n' \
            f'`{"Is Active:":<14}` `{discord_member["is_active"]}`\n' \
            f'\n**Clash Accounts**:\n' \

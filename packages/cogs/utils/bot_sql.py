@@ -41,8 +41,11 @@ def sql_select_clash_account_tag() -> str:
 def sql_select_clash_account_discordid() -> str:
     return '''SELECT * FROM clash_account WHERE discord_id = $1'''
 
-def sql_update_clash_account_coc_alt() -> str:
+def sql_update_clash_account_coc_alt_all_false() -> str:
     return '''UPDATE clash_account SET is_primary_account = $1 WHERE discord_id = $2'''
+
+def sql_update_clash_account_coc_alt_primary() -> str:
+    return '''UPDATE clash_account SET is_primary_account = $1 WHERE discord_id = $2 AND clash_tag = $3'''
 
 def sql_delete_clash_account_record() -> str:
     return '''DELETE FROM clash_account WHERE clash_tag = $1 AND discord_id = $2'''
