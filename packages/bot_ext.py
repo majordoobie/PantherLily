@@ -1,20 +1,29 @@
 from discord import Embed
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
 
-EMBED_COLORS = {
-    'info': 0x000080,  # blue
-    'error': 0xff0010,  # red
-    'success': 0x00ff00,  # green
-    'warning':  0xFF8000 # orange
-
-}
+# EMBED_COLORS = {
+#     'info': 0x000080,  # blue
+#     'error': 0xff0010,  # red
+#     'success': 0x00ff00,  # green
+#     'warning':  0xFF8000 # orange
+#
+# }
 
 
 class BotExt:
+    INFO = 0x000080         # blued
+    ERROR = 0xff0010        # red
+    SUCCESS = 0x00ff00      # green
+    WARNING = 0xff8000      # orange
+
     def __init__(self, settings):
         self.settings = settings
+        self.info = 0x000080            # blued
+        self.error = 0xff0010           # red
+        self.success = 0x00ff00         # green
+        self.warning = 0xff8000         # orange
 
-    async def embed_print(self, ctx, description, title='', color='info', codeblock=False, _return=False):
+    async def embed_print(self, ctx, description, title='', color=INFO, codeblock=False, _return=False):
         if not description:
             raise BadArgument("No value to encapsulate in a embed")
 
@@ -25,7 +34,7 @@ class BotExt:
             embed = Embed(
                 title=title,
                 description=description,
-                color=EMBED_COLORS[color]
+                color=color
             )
             # TODO think it looks ugly having this here come back later to decide
             embed.set_footer(text=self.settings.bot_config['version'])
@@ -41,12 +50,12 @@ class BotExt:
             embed_list.append(Embed(
                 title=f'{title}',
                 description=blocks[0],
-                color=EMBED_COLORS[color]
+                color=color
             ))
             for i in blocks[1:]:
                 embed_list.append(Embed(
                     description=i,
-                    color=EMBED_COLORS[color]
+                    color=color
                 ))
             embed_list[-1].set_footer(text=self.settings.bot_config['version'])
             if _return:

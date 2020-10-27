@@ -75,20 +75,20 @@ class BotClient(commands.Bot, BotExt):
                 traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
             await self.embed_print(ctx, title='DEBUG ENABLED', description=f'{exc}',
-                                   codeblock=True, color='warning')
+                                   codeblock=True, color=self.WARNING)
 
         # Catch all errors within command logic
         if isinstance(error, commands.CommandInvokeError):
             original = error.original
             # Catch errors such as roles not found
             if isinstance(original, InvalidData):
-                await self.embed_print(ctx, title='INVALID OPERATION', color='error',
+                await self.embed_print(ctx, title='INVALID OPERATION', color=self.ERROR,
                                        description=original.args[0])
                 return
 
             # Catch permission issues
             elif isinstance(original, Forbidden):
-                await self.embed_print(ctx, title='FORBIDDEN', color='error',
+                await self.embed_print(ctx, title='FORBIDDEN', color=self.ERROR,
                                        description='Even with proper permissions, the target user must be lower in the '
                                                    'role hierarchy of this bot.')
                 return
@@ -97,12 +97,12 @@ class BotClient(commands.Bot, BotExt):
         if isinstance(error, commands.CheckFailure):
             try:
                 if error.args[0] == 'Not owner':
-                    await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='error',
+                    await self.embed_print(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
                                            description='Only Doobie can run this command')
                     return
             except:
                 pass
-            await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='error',
+            await self.embed_print(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
                                    description='Only `CoC Leadership` are permitted to use this command')
             return
 
@@ -110,4 +110,4 @@ class BotClient(commands.Bot, BotExt):
         err = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
         await self.embed_print(ctx, title='COMMAND ERROR',
-                               description=err, color='error')
+                               description=err, color=self.ERROR)

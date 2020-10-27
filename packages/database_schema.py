@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS clash_account (
     discord_id BIGINT NOT NULL,
     is_primary_account BOOLEAN NOT NULL DEFAULT true,
     FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id)
+    ON DELETE CASCADE
 );
 ''')
     return sql
@@ -51,10 +52,12 @@ CREATE TABLE IF NOT EXISTS user_note (
     discord_id BIGINT NOT NULL,
     clash_tag TEXT NOT NULL,
     note_date timestamp NOT NULL,
-    commit_by INTEGER NOT NULL,
+    commit_by BIGINT NOT NULL,
     note TEXT NOT NULL,
     FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id),
-    FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag)
+    FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag), 
+    FOREIGN KEY (commit_by) REFERENCES discord_user (discord_id)
+    ON DELETE CASCADE
 );
 ''')
     return sql
@@ -175,6 +178,7 @@ CREATE TABLE IF NOT EXISTS clash_update (
     SIEGE_siege_barracks INTEGER DEFAULT 0,
 
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag)
+    ON DELETE CASCADE 
 );
 ''')
     return sql

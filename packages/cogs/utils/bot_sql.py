@@ -41,7 +41,7 @@ def sql_select_clash_account_tag() -> str:
 def sql_select_clash_account_discordid() -> str:
     return '''SELECT * FROM clash_account WHERE discord_id = $1'''
 
-def sql_update_clash_account_coc_alt_all_false() -> str:
+def sql_update_clash_account_coc_alt_cascade() -> str:
     return '''UPDATE clash_account SET is_primary_account = $1 WHERE discord_id = $2'''
 
 def sql_update_clash_account_coc_alt_primary() -> str:
@@ -54,5 +54,4 @@ def sql_delete_clash_account_record() -> str:
 # Manipulate user_note
 #
 def sql_insert_user_note() -> str:
-    return ('''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES(
-              $1, $2, $3, $4)''')
+    return ('''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES($1, $2, $3, $4, $5)''')
