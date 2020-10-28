@@ -21,6 +21,25 @@ class Leaders(commands.Cog):
             db_clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member_id)
         return db_discord_member, db_clash_accounts
 
+    async def _multi_account_logic(self, ctx, coc_record, member, player, args):
+        """Repeated code in add_user"""
+        async with self.bot.pool.acquire() as con:
+            db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+            if not args['coc_alternate']:
+                msg = alternate_account(db_discord_member, db_clash_accounts, args)
+                self.log.warning(msg)
+                await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
+                # if the user added the flag then add the new clash account and set it to primary
+            else:
+                await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
+                await con.execute(sql_insert_clash_account(), *coc_record)
+                db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
+                self.log.info(msg)
+                await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                              ctx.author.id, msg)
 
     @commands.check(is_leader)
     @commands.command(aliases=['user_add'])
@@ -113,21 +132,7 @@ class Leaders(commands.Cog):
                     # If the clash arg that they are using does not match then look for the coc_alternate flag in the
                     # command if it's not there then fail out and tell them
                     else:
-                        if not args['coc_alternate']:
-                            msg = alternate_account(db_discord_member, db_clash_accounts, args)
-                            self.log.warning(msg)
-                            await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
-                        # if the user added the flag then add the new clash account and set it to primary
-                        else:
-                            await con.execute(sql_update_discord_user_is_active(), True, member.id)
-                            await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
-                            await con.execute(sql_insert_clash_account(), *coc_record)
-                            db_discord_member, db_clash_accounts = await self._get_updates(member.id)
-                            msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
-                            self.log.info(msg)
-                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
-                            await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
-                                              ctx.author.id, msg)
+                        await self._multi_account_logic(ctx, coc_record, member, player, args)
 
                 elif len(db_clash_accounts) > 1:
                     for clash_account in db_clash_accounts:
@@ -143,85 +148,55 @@ class Leaders(commands.Cog):
                                               ctx.author.id, msg)
                             return
 
-                    if not args['coc_alternate']:
-                        msg = alternate_account(db_discord_member, db_clash_accounts, args)
-                        self.log.warning(msg)
-                        await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
-                    # if the user added the flag then add the new clash account and set it to primary
-                    else:
-                        await con.execute(sql_update_discord_user_is_active(), True, member.id)
-                        await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
-                        await con.execute(sql_insert_clash_account(), *coc_record)
-                        db_discord_member, db_clash_accounts = await self._get_updates(member.id)
-                        msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
-                        self.log.info(msg)
-                        await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
-                        await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
-                                          ctx.author.id, msg)
+                    await self._multi_account_logic(ctx, coc_record, member, player, args)
 
 
             elif db_discord_member['is_active']:
                 if len(db_clash_accounts) == 0:
                     await con.execute(sql_insert_clash_account(), *coc_record)
-                    msg = f'Discord user `{member.name}:{member.id}` already exits and `is_active` attribute is set ' \
-                          f'to `True`. Adding clash account `{player.tag}`'
+                    db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                    msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account assigned')
                     self.log.info(msg)
-                    await self.bot.embed_print(ctx, msg)
-                    return
+                    await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                    await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                  ctx.author.id, msg)
 
                 elif len(db_clash_accounts) == 1:
                     if db_clash_accounts[0]['clash_tag'] == player.tag:
                         if db_clash_accounts[0]['is_primary_account']:
-                            msg = f'Discord member `{member.name}:{member.id}` is already active with the clash account ' \
-                                  f'of `{player.tag}`; skipping...'
+                            msg = account_panel(db_discord_member, db_clash_accounts, 'No action taken')
                             self.log.info(msg)
                             await self.bot.embed_print(ctx, msg)
-                            return
+
                         else:
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
-                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
-                            msg = f'Modified user coc primary account\n{account_panel(db_discord_member, clash_accounts)}'
+                            db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                            msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
                             self.log.info(msg)
-                            await self.bot.embed_print(ctx, msg)
-
+                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                      ctx.author.id, msg)
                     else:
-                        if not args['coc_alternate']:
-                            msg = alternate_account(db_discord_member, db_clash_accounts, args)
-                            self.log.warning(msg)
-                            await self.bot.embed_print(ctx, msg, color=self.bot.WARNING)
+                        await self._multi_account_logic(ctx, coc_record, member, player, args)
+
+                elif len(db_clash_accounts) > 1:
+                    for clash_account in db_clash_accounts:
+                        if clash_account['clash_tag'] == player.tag:
+                            await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
+                            await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
+                            db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                            msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                              ctx.author.id, msg)
                             return
 
-                        else:
-                            await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
-                            await con.execute(sql_insert_clash_account(), *coc_record)
-                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
-                            acc_panel = account_panel(db_discord_member, clash_accounts)
-                            msg = f'Added alternate account to `{member.name}`\n' \
-                                  f'\nSet `{player.tag} -> Primary`\n\n{acc_panel}'
-                            self.log.info(msg)
-                            await self.bot.embed_print(ctx, msg)
+                    await self._multi_account_logic(ctx, coc_record, member, player, args)
 
                 else:
-                    for coc_account in db_clash_accounts:
-                        if coc_account["clash_tag"] == player.tag:
-                            if coc_account["is_primary_account"]:
-                                await self.bot.embed_print(ctx, f"Clash account is already primary\n{account_panel(db_discord_member, db_clash_accounts)}")
-                            else:
-                                if not args['coc_alternate']:
-                                    msg = f'Discord member `{member.name}:{member.id}` already has a clash account of ' \
-                                          f'`{player.tag}` if you would like to add another clash account please use the following ' \
-                                          f'command:\n\n `{arg_string} --set-alternate`'
-                                    self.log.warning(msg)
-                                    await self.bot.embed_print(ctx, msg, color=self.bot.WARNING)
-                                    return
-                                else:
-                                    await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
-                                    await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
-                                    db_clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
-                                    msg = f'`{player.tag}` is now the primary account for {member.name}\n{account_panel(db_discord_member, db_clash_accounts)}'
-                                    self.log.info(msg)
-                                    await self.bot.embed_print(ctx, msg)
-
+                    self.log.error(f'Invalid condition met with args {arg_string}')
 
 
     @commands.check(is_leader)
