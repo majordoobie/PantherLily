@@ -42,6 +42,8 @@ class Leaders(commands.Cog):
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                               ctx.author.id, msg)
 
+                await self._set_defaults(ctx, member, player.town_hall, player.name)
+
     async def _set_defaults(self, ctx, member, clash_level: int, in_game_name: str):
         """Set default roles and name change"""
         if clash_level == 11:
@@ -143,7 +145,7 @@ class Leaders(commands.Cog):
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
                 self.log.info(msg)
                 await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
-
+                await self._set_defaults(ctx, member, player.town_hall, player.name)
 
             # If user HAS a discord account BUT their active state is set to false
             elif db_discord_member['is_active'] == False:
@@ -159,6 +161,7 @@ class Leaders(commands.Cog):
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
+                    await self._set_defaults(ctx, member, player.town_hall, player.name)
 
                 # If they have one account - then we need to see if the clash tag they are adding is the same
                 elif len(db_clash_accounts) == 1:
@@ -172,6 +175,7 @@ class Leaders(commands.Cog):
                         await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                         await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                           ctx.author.id, msg)
+                        await self._set_defaults(ctx, member, player.town_hall, player.name)
 
                     # If the clash arg that they are using does not match then look for the coc_alternate flag in the
                     # command if it's not there then fail out and tell them
@@ -205,6 +209,7 @@ class Leaders(commands.Cog):
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                   ctx.author.id, msg)
+                    await self._set_defaults(ctx, member, player.town_hall, player.name)
 
                 elif len(db_clash_accounts) == 1:
                     if db_clash_accounts[0]['clash_tag'] == player.tag:
@@ -221,6 +226,7 @@ class Leaders(commands.Cog):
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                       ctx.author.id, msg)
+                            await self._set_defaults(ctx, member, player.town_hall, player.name)
                     else:
                         await self._multi_account_logic(ctx, coc_record, member, player, args)
 
@@ -244,7 +250,6 @@ class Leaders(commands.Cog):
                 else:
                     self.log.error(f'Invalid condition met with args {arg_string}')
 
-        await self._set_defaults(ctx, member, player.town_hall, player.name)
 
     @commands.check(is_leader)
     @commands.command(aliases=['delete-coc-link', 'delete_coc_link'])
