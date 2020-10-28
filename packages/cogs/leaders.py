@@ -84,8 +84,20 @@ class Leaders(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
-    async def _remove_defaults(self, ctx, member):
-        all_roles = []
+    async def _remove_defaults(self, member):
+        keep_roles = []
+        remove_roles = []
+        for role in member.roles[1:]: #skip the first role @everyone
+            if role.name not in self.bot.settings.default_roles:
+                keep_roles.append(role)
+            else:
+                remove_roles.append(role)
+
+        await member.edit(roles=keep_roles)
+        for role in remove_roles:
+            self.bot.log_role_change(member, role, removed=True)
+
+
 
     async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
         async with self.bot.pool.acquire() as con:
@@ -115,6 +127,9 @@ class Leaders(commands.Cog):
             return
 
         member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
+        if member is None:
+            return
+
         clash_tag = None
         async with self.bot.pool.acquire() as con:
             clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
@@ -128,6 +143,7 @@ class Leaders(commands.Cog):
 
         if args['kick_message']:
             await self._remove_user(ctx, member.id, clash_tag, kick_message=args['kick_message'])
+            await self._remove_defaults(member)
         else:
             def check(reaction, user):
                 if user == ctx.author:
@@ -155,6 +171,7 @@ class Leaders(commands.Cog):
 
             else:
                 await self._remove_user(ctx, member.id, clash_tag)
+                await self._remove_defaults(member)
 
 
 

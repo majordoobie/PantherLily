@@ -15,6 +15,16 @@ class Administrator(commands.Cog):
     async def panther_roles(self, ctx):
         roles_required = {
             'manage_roles': 'Needed to add roles to users',
+            'manage_nicknames': 'Needed to update user nicknames to match their clash accounts',
+            'create_invite': 'Needed to create secure invite links that expire',
+            'manage_webhooks': 'Needed to establish a logging channel',
+            'read text channels': 'To see channel contents',
+            'manage_massages': 'Ability to remove own messages and add reactions',
+            'embed_links': 'Ability to create embeds',
+            'attach_files': 'Ability to display rosters in other file formats',
+            'read_message_history': 'See far back into a channels text messages',
+            'use_external_emojis': 'Use own stored emojis',
+            'add_reaction': 'Ability to add reaction to messages'
         }
 
     @commands.check(is_owner)
