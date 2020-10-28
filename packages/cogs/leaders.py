@@ -83,12 +83,24 @@ class Leaders(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
+    @commands.check(is_leader)
+    @commands.command(aliases=['remove', 'user_remove'])
+    async def remove_user(self, ctx, *, arg_string=None):
+        self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
+        arg_dict = {
+            'kick_message': {
+                'flags': ['-m', '--message'],
+            }
+        }
+
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        print(args)
 
 
 
 
     @commands.check(is_leader)
-    @commands.command(aliases=['user_add'])
+    @commands.command(aliases=['user_add', 'add'])
     async def add_user(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
 

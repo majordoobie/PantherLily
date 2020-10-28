@@ -1,3 +1,6 @@
+import shlex
+
+
 class DiscoArgParseException(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -111,7 +114,7 @@ class DiscordArgParse:
         self.arg_dict = _clean_dict(arg_dict)
         self.arg_string = arg_string
         if arg_string:
-            self.arg_list = arg_string.split()
+            self.arg_list = shlex.split(arg_string)
 
         self.used_flags = {}
         self.parsed_args = {}  # Final product
