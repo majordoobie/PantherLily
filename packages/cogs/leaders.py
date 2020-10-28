@@ -1,3 +1,4 @@
+from asyncio import TimeoutError
 import traceback
 from datetime import datetime
 
@@ -83,6 +84,21 @@ class Leaders(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
+    async def _remove_defaults(self, ctx, member):
+        all_roles = []
+
+    async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
+        async with self.bot.pool.acquire() as con:
+            await con.execute(sql_update_discord_user_is_active(), False, member_id)
+            db_discord_member, db_clash_accounts = await self._get_updates(member_id)
+            if kick_message:
+                msg = account_panel(db_discord_member, db_clash_accounts, f'Kick Message:\n{kick_message}')
+            else:
+                msg = account_panel(db_discord_member, db_clash_accounts, 'User set to inactive')
+            self.log.info(msg)
+            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+            await con.execute(sql_insert_user_note(), member_id, clash_tag, datetime.now(), ctx.author.id, msg)
+
     @commands.check(is_leader)
     @commands.command(aliases=['remove', 'user_remove'])
     async def remove_user(self, ctx, *, arg_string=None):
@@ -94,7 +110,55 @@ class Leaders(commands.Cog):
         }
 
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        print(args)
+        if not args['positional']:
+            await self.bot.embed_print(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
+            return
+
+        member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
+        clash_tag = None
+        async with self.bot.pool.acquire() as con:
+            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+
+        for clash_account in clash_accounts:
+            if clash_account['is_primary_account']:
+                clash_tag = clash_account['clash_tag']
+        if not clash_tag:
+            clash_tag = clash_accounts[0]['clash_tag']
+
+
+        if args['kick_message']:
+            await self._remove_user(ctx, member.id, clash_tag, kick_message=args['kick_message'])
+        else:
+            def check(reaction, user):
+                if user == ctx.author:
+                    if reaction.emoji.name in ['check', 'delete']:
+                        return True
+
+            msg = 'You are about to remove user without a reason message. Click the check box to continue otherwise ' \
+                  f'use the following:\n\n `<command> {arg_string}`\n`-m "User note message"`'
+            raw_embed = await self.bot.embed_print(ctx, msg, _return=True)
+            embed_object = await ctx.send(embed=raw_embed)
+            await embed_object.add_reaction(self.bot.settings.emojis['check'])
+            await embed_object.add_reaction(self.bot.settings.emojis['delete'])
+
+            reaction, user = None, None
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=30, check=check)
+            except TimeoutError:
+                pass
+            finally:
+                await embed_object.clear_reactions()
+
+
+            if reaction.emoji.name == 'delete':
+                return
+
+            else:
+                await self._remove_user(ctx, member.id, clash_tag)
+
+
+
+
 
 
 

@@ -50,6 +50,8 @@ async def run(settings: Settings, coc_client: coc):
         exit(error)
     intents = Intents.default()
     intents.members = True
+    intents.messages = True
+    intents.reactions = True
     bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
                     command_prefix=settings.bot_config['bot_prefix'], intents=intents)
     log = logging.getLogger('root')

@@ -49,7 +49,7 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt)
     if member:
         return member
     else:
-        await print_prt(ctx, f'Discord member: {disco_id} was not found', color='warning')
+        await print_prt(ctx, f'Discord member: {disco_id} was not found', color=BotExt.WARNING)
         return None
 
 
@@ -81,13 +81,13 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
 
     if not is_valid_tag(player_tag):
         await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",
-                        color="warning")
+                        color=BotExt.WARNING)
         return None
     try:
         player = await coc_client.get_player(player_tag)
     except NotFound:
         await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided: `{player_tag}` tag does "
-                                                               f"not exist"), color='warning')
+                                                               f"not exist"), color=BotExt.WARNING)
         return None
 
     return player
@@ -247,5 +247,5 @@ async def parse_args(ctx: Context, settings: Settings, arg_dict: dict, arg_strin
         return parsed_args
     except DiscoArgParseException as error:
         bot_ext = BotExt(settings)
-        await bot_ext.embed_print(ctx=ctx, title=error.base_name, description=error.msg, color='error')
+        await bot_ext.embed_print(ctx=ctx, title=error.base_name, description=error.msg, color=BotExt.ERROR)
         return None

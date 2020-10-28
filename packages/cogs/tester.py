@@ -15,8 +15,13 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        for role in ctx.guild.roles:
-            print(role.name, role.id)
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['add'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['delete'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['complete'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['check'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['reset'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['approved'])
+        await self.bot.embed_print(ctx, self.bot.settings.emojis['cancel'])
 
 
     @commands.command()
