@@ -95,7 +95,7 @@ class Leaders(commands.Cog):
                     msg = account_panel(db_discord_member, db_clash_accounts, "User enabled")
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
-                    await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.name, msg)
+                    await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
 
                 # If they have one account - then we need to see if the clash tag they are adding is the same
                 elif len(db_clash_accounts) == 1:
@@ -108,44 +108,57 @@ class Leaders(commands.Cog):
                         self.log.info(msg)
                         await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                         await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
-                                          ctx.author.name, msg)
+                                          ctx.author.id, msg)
 
                     # If the clash arg that they are using does not match then look for the coc_alternate flag in the
                     # command if it's not there then fail out and tell them
                     else:
-                        #TODO: finish combining set-alternate
                         if not args['coc_alternate']:
-                            title = f'User already has a clash account. If you would like to add another please use' \
-                                    f'the following command\n\n{arg_string} --set-alternate'
-                            msg = account_panel(db_discord_member, db_clash_accounts, title)
+                            msg = alternate_account(db_discord_member, db_clash_accounts, args)
                             self.log.warning(msg)
                             await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
-                            return
                         # if the user added the flag then add the new clash account and set it to primary
                         else:
                             await con.execute(sql_update_discord_user_is_active(), True, member.id)
                             await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
                             await con.execute(sql_insert_clash_account(), *coc_record)
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
-                            msg = account_panel(db_discord_member, db_clash_accounts)
-                            self.log.info('New clash account added\n'+msg)
-                            await self.bot.embed_print(ctx, msg, title='New clash account added', color=self.bot.SUCCESS)
+                            msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
+                            self.log.info(msg)
+                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
-                                              ctx.author.name, msg)
-                            return
+                                              ctx.author.id, msg)
 
-                else:
+                elif len(db_clash_accounts) > 1:
                     for clash_account in db_clash_accounts:
                         if clash_account['clash_tag'] == player.tag:
                             await con.execute(sql_update_discord_user_is_active(), True, member.id)
                             await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
-                            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
-                            msg = f'Set discord user {member.name}:{member.id} `is_active` attribute to `True` with clash account ' \
-                                  f'`{player.tag}` as the primary account\n{account_panel(db_discord_member, clash_accounts)}'
+                            db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                            msg = account_panel(db_discord_member, db_clash_accounts, 'User enabled')
                             self.log.info(msg)
-                            await self.bot.embed_print(ctx, msg)
+                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                              ctx.author.id, msg)
                             return
+
+                    if not args['coc_alternate']:
+                        msg = alternate_account(db_discord_member, db_clash_accounts, args)
+                        self.log.warning(msg)
+                        await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
+                    # if the user added the flag then add the new clash account and set it to primary
+                    else:
+                        await con.execute(sql_update_discord_user_is_active(), True, member.id)
+                        await con.execute(sql_update_clash_account_coc_alt_cascade(), False, member.id)
+                        await con.execute(sql_insert_clash_account(), *coc_record)
+                        db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+                        msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
+                        self.log.info(msg)
+                        await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                        await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
+                                          ctx.author.id, msg)
+
 
             elif db_discord_member['is_active']:
                 if len(db_clash_accounts) == 0:
