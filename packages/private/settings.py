@@ -38,7 +38,7 @@ class Settings:
 
         # TODO: move this to a discord configuration during setup
         # Static Roles
-        if self.bot_mode == 'live_mode':
+        if self.bot_mode == 'dev_mode':
             self.default_roles = {
                 'th11s': 303965664375472128,
                 'th12s': 455572149277687809,
