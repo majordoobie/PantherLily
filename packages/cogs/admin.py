@@ -11,6 +11,12 @@ class Administrator(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('root.Administrator')
 
+    @commands.command(alias='bot_roles')
+    async def panther_roles(self, ctx):
+        roles_required = {
+            'manage_roles': 'Needed to add roles to users',
+        }
+
     @commands.check(is_owner)
     @commands.command(aliases=['kill', 'k'])
     async def _logout(self, ctx):

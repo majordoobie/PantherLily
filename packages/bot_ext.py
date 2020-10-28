@@ -1,14 +1,7 @@
+import logging
+
 from discord import Embed
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
-
-# EMBED_COLORS = {
-#     'info': 0x000080,  # blue
-#     'error': 0xff0010,  # red
-#     'success': 0x00ff00,  # green
-#     'warning':  0xFF8000 # orange
-#
-# }
-
 
 class BotExt:
     INFO = 0x000080         # blued
@@ -18,10 +11,7 @@ class BotExt:
 
     def __init__(self, settings):
         self.settings = settings
-        self.info = 0x000080            # blued
-        self.error = 0xff0010           # red
-        self.success = 0x00ff00         # green
-        self.warning = 0xff8000         # orange
+        self.log = logging.getLogger('root.bot_ext')
 
     async def embed_print(self, ctx, description, title='', color=INFO, codeblock=False, _return=False):
         if not description:
@@ -94,3 +84,10 @@ class BotExt:
         else:
             raise NotOwner("Please ask a developer to run this command")
 
+
+    def log_role_change(self, member, role, removed=False):
+        """Log roles gained and lost"""
+        if removed:
+            self.log.debug(f'`{member.name}` lost role `{role.name}`')
+        else:
+            self.log.debug(f'`{member.name}` received role `{role.name}`')

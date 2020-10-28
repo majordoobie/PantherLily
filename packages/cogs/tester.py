@@ -15,15 +15,8 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        print(dir(ctx.message.author))
-        print(ctx.message.author.joined_at)
-        print(ctx.message.author.name)
-        print(ctx.message.author.nick)
-        print(ctx.message.author.roles)
-        print(ctx.message.author.created_at)
-        print(ctx.message.author.display_name)
-        print(ctx.message.author.id)
-        print(ctx.message.author)
+        for role in ctx.guild.roles:
+            print(role.name, role.id)
 
 
     @commands.command()

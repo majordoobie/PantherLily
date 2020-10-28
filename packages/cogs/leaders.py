@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 
 from discord.ext import commands
@@ -40,6 +41,49 @@ class Leaders(commands.Cog):
                 await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                               ctx.author.id, msg)
+
+    async def _set_defaults(self, ctx, member, clash_level: int, in_game_name: str):
+        """Set default roles and name change"""
+        if clash_level == 11:
+            clash_level_role = self.bot.settings.default_roles['th11s']
+        elif clash_level == 12:
+            clash_level_role = self.bot.settings.default_roles['th12s']
+        elif clash_level == 13:
+            clash_level_role = self.bot.settings.default_roles['th13s']
+        else:
+            raise IndexError(f"No TH role found for level {clash_level}")
+
+        clash_level_role = ctx.guild.get_role(clash_level_role)
+        coc_member_role = self.bot.settings.default_roles['CoC Members']
+        coc_member_role = ctx.guild.get_role(coc_member_role)
+
+        if clash_level_role is None or coc_member_role is None:
+            if clash_level_role:
+                raise discord.InvalidData(f'Unable to retrieve role for Town Hall {clash_level}')
+            else:
+                raise discord.InvalidData(f'Unable to retrieve role for CoC Members')
+
+        try:
+            await member.add_roles(coc_member_role)
+            self.bot.log_role_change(member, coc_member_role)
+            await member.add_roles(clash_level_role)
+            self.bot.log_role_change(member, clash_level_role)
+        except Exception as error:
+            self.bot.log.error(error, exc_info=True)
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+            await self.bot.embed_print(ctx, exc, title='User role change error', color=self.bot.ERROR)
+
+        try:
+            await member.edit(nick=in_game_name, reason='Panther Bot')
+            self.log.debug(f'Changed {member.name} name to {member.nick}')
+        except Exception as error:
+            self.bot.log.error(error, exc_info=True)
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+            await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
+
+
+
+
 
     @commands.check(is_leader)
     @commands.command(aliases=['user_add'])
@@ -146,6 +190,7 @@ class Leaders(commands.Cog):
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
+                            await self._set_defaults(ctx, member, player.town_hall, player.name)
                             return
 
                     await self._multi_account_logic(ctx, coc_record, member, player, args)
@@ -191,6 +236,7 @@ class Leaders(commands.Cog):
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
+                            await self._set_defaults(ctx, member, player.town_hall, player.name)
                             return
 
                     await self._multi_account_logic(ctx, coc_record, member, player, args)
@@ -198,6 +244,7 @@ class Leaders(commands.Cog):
                 else:
                     self.log.error(f'Invalid condition met with args {arg_string}')
 
+        await self._set_defaults(ctx, member, player.town_hall, player.name)
 
     @commands.check(is_leader)
     @commands.command(aliases=['delete-coc-link', 'delete_coc_link'])
@@ -232,9 +279,10 @@ class Leaders(commands.Cog):
                     clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
                     msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
                     self.log.info(msg)
-                    await self.bot.embed_print(ctx, msg)
+                    await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     return
             await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
+
 
 def account_panel(discord_member: dict, coc_accounts: list, title: str='') -> str:
     coc_panel = f'`{"Clash Tag":<15}` `{"Primary Acc":<15}`\n'
