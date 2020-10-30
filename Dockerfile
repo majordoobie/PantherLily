@@ -10,6 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 # For dev only
-ENTRYPOINT ["tail", "-f", "/dev/null"]
-#CMD [ "python", "pantherlily.py", "--live" ]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+CMD [ "python", "pantherlily.py", "--live" ]
 # CMD [ "python", "./your-daemon-or-script.py" ]
