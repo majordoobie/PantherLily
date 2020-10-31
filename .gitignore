@@ -17,4 +17,4 @@ secrets.py
 .idea/
 archive/
 __init__.py
-
+*.db
