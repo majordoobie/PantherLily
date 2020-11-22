@@ -45,27 +45,21 @@ def sepearate_notes(record):
     ranges = {}
     last = 0
     notes = []
+
+    # Iterate over the matches and fill in the dict with the ranges in the string to get the note from
     for index, match in enumerate(re.finditer(RE_STRING, record)):
-        ranges[index] = [0, 0]
+        ranges[index] = [match.start(), 0]
+        if (index - 1) == -1:
+            continue
+        ranges[index - 1][1] = (match.start() - 1)
         last = index
+    ranges[last][1] = -1
 
-    for index, match in enumerate(re.finditer(RE_STRING, record)):
-        ranges[index][0] = match.start()
-        if index-1 not in ranges.keys():
-            pass
-        else:
-            ranges[index-1][1] = match.start() - 1
+    # Use the ranges created to slice the note string
+    for note in range(0, (last + 1)):
+        notes.append(record[ranges[note][0]:ranges[note][1]])
+        print(notes[note])
 
-        if index == last:
-            ranges[index][1] = len(record)
-
-        for rec in range(0, last + 1):
-            span = ranges[rec]
-            note = record[span[0]:span[1]]
-            if note:
-                notes.append(note)
-
-    return notes
 
 def get_users(all_data):
     users = {}
@@ -92,8 +86,10 @@ def main():
     db_objects = []
     for record in all_data:
         db_objects.append(RecordObject(record))
+        break
 
-    print(len(db_objects))
+
+
 
 
 

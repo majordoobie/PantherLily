@@ -1,5 +1,5 @@
 FROM python:3.7-buster
-WORKDIR /code
+WORKDIR /opt/project
 
 RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
 COPY requirements.txt requirements.txt
