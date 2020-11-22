@@ -1,6 +1,9 @@
 import sqlite3
 import re
+from datetime import datetime
+
 import psycopg2
+from packages.private.secrets import *
 
 var = {
        'Goku': 344958710885515264,
@@ -37,11 +40,29 @@ class RecordObject:
         self.is_active = self.record[7]
         self.notes = sepearate_notes(self.record[8])
 
+class NoteObject:
+    def __init__(self, note, record_obj: RecordObject):
+        self.note = note
+        self.record = record_obj
+        self.objectfy()
+
+    def objectfy(self):
+        self.date = datetime.strptime(self.note[1:18], '%d-%b-%Y %H:%M')
+        self.commit_by = self.note.split('\n')[1].split(' ')[2]
+        self.raw_note = self.note.split('\n')[2]
+
+    def get_author(self):
+        user = self.note.split('\n')[1].split(' ')[2]
+        return var[user]
+
 
 
 
 def sepearate_notes(record):
     """Break down the notes string into a list of notes"""
+    if record == '':
+        return
+
     ranges = {}
     last = 0
     notes = []
@@ -53,12 +74,14 @@ def sepearate_notes(record):
             continue
         ranges[index - 1][1] = (match.start() - 1)
         last = index
+
     ranges[last][1] = -1
 
     # Use the ranges created to slice the note string
     for note in range(0, (last + 1)):
         notes.append(record[ranges[note][0]:ranges[note][1]])
-        print(notes[note])
+
+    return notes
 
 
 def get_users(all_data):
@@ -74,6 +97,24 @@ def get_users(all_data):
 
     print(users)
 
+def migrate_note(db_obj: RecordObject):
+    conn = psycopg2.connect(
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+    )
+
+    sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
+    with conn.cursor() as cur:
+        for note in db_obj.notes:
+            date = datetime.strptime(note[1:18], '%d-%b-%Y %H:%M')
+
+
+
+
+
+
 def main():
     db_file = 'livedatabase.db'
     db = sqlite3.connect(db_file)
@@ -85,8 +126,29 @@ def main():
     db.close()
     db_objects = []
     for record in all_data:
-        db_objects.append(RecordObject(record))
-        break
+            db_objects.append(RecordObject(record))
+
+    subject = db_objects[0]
+    migrate_note(subject)
+
+
+    conn = psycopg2.connect(
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+        )
+
+    sql = "SELECT * FROM discord_user"
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        print(cur.fetchall())
+
+
+    conn.close()
+
+
+
 
 
 
