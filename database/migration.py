@@ -1,6 +1,7 @@
 import sqlite3
 import re
 from datetime import datetime
+from discord import member
 
 import psycopg2
 from packages.private.secrets import *
@@ -91,13 +92,7 @@ def get_users(all_data):
 
     print(users)
 
-def migrate_note(db_obj: RecordObject):
-    conn = psycopg2.connect(
-        dbname=POSTGRES_DB,
-        user=POSTGRES_USER,
-        password=POSTGRES_PASSWORD,
-        host=POSTGRES_HOST,
-    )
+def migrate_note(db_obj: RecordObject, conn):
 
     sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
     with conn.cursor() as cur:
@@ -110,20 +105,46 @@ def migrate_note(db_obj: RecordObject):
                 note.commit_by,
                 note.raw_note
             )
-            print(insert_tuple)
             cur.execute(sql, insert_tuple)
-        conn.commit()
-    conn.close()
 
-def migrate_user(record: RecordObject):
-    sql = """INSERT INTO discord_user (discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
+def migrate_user(record: RecordObject, member: member):
+    sql1 = """INSERT INTO discord_user (discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
     global_join_date, db_join_date, in_zulu_base_planning, in_zulu_server, is_active) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
-    insert_tuple = (
-        record.discordid,
-        record.name,
+    sql2 = """INSERT INTO clash_account (clash_tag, discord_id) VALUES (%s, %s)"""
 
+    insert_tuple = (
+        member.id if member else record.discordid,
+        member.name if member else record.name,
+        member.display_name if member else None,
+        member.discriminator if member else None,
+        member.joined_at if member else record.discord_joinedate,
+        member.created_at if member else None,
+        None,
+        False,
+        False,
+        record.is_active
     )
+    clash_insert = (
+        record.tag,
+        member.id if member else record.discordid
+    )
+
+    conn = psycopg2.connect(
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+    )
+
+    with conn.cursor() as cur:
+        cur.execute(sql1, insert_tuple)
+        cur.execute(sql2, clash_insert)
+        migrate_note(record, conn)
+        conn.commit()
+
+    conn.close()
+
 
 
 def main():
