@@ -47,8 +47,8 @@ class NoteObject:
 
     def objectfy(self):
         self.date = datetime.strptime(self.note[1:18], '%d-%b-%Y %H:%M')
-        self.commit_by = self.note.split('\n')[1].split(' ')[2]
-        self.raw_note = self.note.split('\n')[2]
+        self.commit_by = var[self.note.split('\n')[1].split(' ')[2]]
+        self.raw_note = 'Migrated from PantherLily2:\n\n' + self.note.split('\n')[2]
 
 
 def sepearate_notes(record):
@@ -111,7 +111,13 @@ def migrate_note(db_obj: RecordObject):
                 note.raw_note
             )
             print(insert_tuple)
+            cur.execute(sql, insert_tuple)
+        conn.commit()
+    conn.close()
 
+def migrate_user(record: RecordObject):
+    sql = """INSERT INTO discord_user (discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
+    global_join_date, db_join_date, in_zulu_base_planning, in_zulu_server, is_active) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
 
 def main():
@@ -127,9 +133,6 @@ def main():
     for record in all_data:
             db_objects.append(RecordObject(record))
 
-    subject = db_objects[0]
-    migrate_note(subject)
-    exit()
 
     conn = psycopg2.connect(
         dbname=POSTGRES_DB,
