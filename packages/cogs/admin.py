@@ -104,8 +104,11 @@ class Administrator(commands.Cog):
         db_objects = []
         for record in all_data:
             user_id = record[4]
-            member = await get_discord_member(ctx, user_id)
-            print(member.name)
+            try:
+                member = await get_discord_member(ctx, user_id)
+                print(member.name)
+            except:
+                print("was not able to find " + record[1])
             #migrate_user(RecordObject(record))
             db_objects.append(RecordObject(record))
 
