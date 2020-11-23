@@ -89,6 +89,28 @@ class Administrator(commands.Cog):
             output += i.split('.')[-1] + '\n'
         await ctx.send(output)
 
+    @commands.check(is_owner)
+    @commands.command()
+    async def migrate_db(self, ctx):
+        from database.migration import RecordObject, NoteObject, migrate_user
+        import sqlite3
+        db_file = 'database/livedatabase.db'
+        db = sqlite3.connect(db_file)
+        cur = db.cursor()
+        cur.execute('select * from MembersTable;')
+        all_data = cur.fetchall()
+        cur.close()
+        db.close()
+        db_objects = []
+        for record in all_data:
+            user_id = record[4]
+            member = await get_discord_member(ctx, user_id)
+            print(member.name)
+            #migrate_user(RecordObject(record))
+            db_objects.append(RecordObject(record))
+
+        print(db_objects)
+
 
 
 def setup(bot):

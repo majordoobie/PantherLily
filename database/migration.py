@@ -119,9 +119,15 @@ def migrate_user(record: RecordObject):
     sql = """INSERT INTO discord_user (discord_id, discord_name, discord_nickname, discord_discriminator, guild_join_date, 
     global_join_date, db_join_date, in_zulu_base_planning, in_zulu_server, is_active) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
+    insert_tuple = (
+        record.discordid,
+        record.name,
+
+    )
+
 
 def main():
-    db_file = 'livedatabase.db'
+    db_file = 'database/livedatabase.db'
     db = sqlite3.connect(db_file)
     cur = db.cursor()
     cur.execute('select * from MembersTable;')
@@ -131,22 +137,13 @@ def main():
     db.close()
     db_objects = []
     for record in all_data:
-            db_objects.append(RecordObject(record))
+        #migrate_user(RecordObject(record))
+        db_objects.append(RecordObject(record))
+
+    print(db_objects)
 
 
-    conn = psycopg2.connect(
-        dbname=POSTGRES_DB,
-        user=POSTGRES_USER,
-        password=POSTGRES_PASSWORD,
-        host=POSTGRES_HOST,
-        )
 
-    sql = "SELECT * FROM discord_user"
-    with conn.cursor() as cur:
-        cur.execute(sql)
-        print(cur.fetchall())
-
-    conn.close()
 
 
 

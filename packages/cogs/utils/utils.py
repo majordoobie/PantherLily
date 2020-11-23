@@ -12,7 +12,7 @@ from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgPars
 from packages.bot_ext import BotExt
 
 
-async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt) -> Optional[Member]:
+async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None) -> Optional[Member]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 
@@ -49,8 +49,11 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt)
     if member:
         return member
     else:
-        await print_prt(ctx, f'Discord member: {disco_id} was not found', color=BotExt.WARNING)
-        return None
+        if print_prt:
+            await print_prt(ctx, f'Discord member: {disco_id} was not found', color=BotExt.WARNING)
+            return None
+        else:
+            print(f'Discord member: {disco_id} was not found')
 
 
 async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient, print_ptr) -> Optional[Player]:
