@@ -41,21 +41,14 @@ class RecordObject:
         self.notes = sepearate_notes(self.record[8])
 
 class NoteObject:
-    def __init__(self, note, record_obj: RecordObject):
+    def __init__(self, note):
         self.note = note
-        self.record = record_obj
         self.objectfy()
 
     def objectfy(self):
         self.date = datetime.strptime(self.note[1:18], '%d-%b-%Y %H:%M')
         self.commit_by = self.note.split('\n')[1].split(' ')[2]
         self.raw_note = self.note.split('\n')[2]
-
-    def get_author(self):
-        user = self.note.split('\n')[1].split(' ')[2]
-        return var[user]
-
-
 
 
 def sepearate_notes(record):
@@ -79,7 +72,8 @@ def sepearate_notes(record):
 
     # Use the ranges created to slice the note string
     for note in range(0, (last + 1)):
-        notes.append(record[ranges[note][0]:ranges[note][1]])
+        note = NoteObject(record[ranges[note][0]:ranges[note][1]])
+        notes.append(note)
 
     return notes
 
@@ -108,10 +102,15 @@ def migrate_note(db_obj: RecordObject):
     sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
     with conn.cursor() as cur:
         for note in db_obj.notes:
-            date = datetime.strptime(note[1:18], '%d-%b-%Y %H:%M')
-
-
-
+            note: NoteObject
+            insert_tuple = (
+                db_obj.discordid,
+                db_obj.tag,
+                note.date,
+                note.commit_by,
+                note.raw_note
+            )
+            print(insert_tuple)
 
 
 
@@ -130,7 +129,7 @@ def main():
 
     subject = db_objects[0]
     migrate_note(subject)
-
+    exit()
 
     conn = psycopg2.connect(
         dbname=POSTGRES_DB,
@@ -143,7 +142,6 @@ def main():
     with conn.cursor() as cur:
         cur.execute(sql)
         print(cur.fetchall())
-
 
     conn.close()
 
