@@ -18,12 +18,12 @@ def create_discord_users() -> str:
 CREATE TABLE IF NOT EXISTS discord_user (
     discord_id BIGINT PRIMARY KEY,
     discord_name TEXT NOT NULL,
-    discord_nickname TEXT NOT NULL,
-    discord_discriminator TEXT NOT NULL,
+    discord_nickname TEXT,
+    discord_discriminator TEXT,
 
     guild_join_date TIMESTAMP NOT NULL,
-    global_join_date TIMESTAMP NOT NULL,
-    db_join_date TIMESTAMP NOT NULL,
+    global_join_date TIMESTAMP,
+    db_join_date TIMESTAMP,
 
     in_zulu_base_planning BOOLEAN DEFAULT false,
     in_zulu_server BOOLEAN DEFAULT false,

@@ -54,7 +54,7 @@ class NoteObject:
 
 def sepearate_notes(record):
     """Break down the notes string into a list of notes"""
-    if record == '':
+    if record == '' or None:
         return
 
     ranges = {}
@@ -138,9 +138,23 @@ def migrate_user(record: RecordObject, member: member):
     )
 
     with conn.cursor() as cur:
-        cur.execute(sql1, insert_tuple)
-        cur.execute(sql2, clash_insert)
-        migrate_note(record, conn)
+        try:
+            cur.execute(sql1, insert_tuple)
+        except psycopg2.IntegrityError:
+            conn.rollback()
+
+        try:
+            cur.execute(sql2, clash_insert)
+        except psycopg2.IntegrityError as error:
+            conn.rollback()
+            print(error)
+        try:
+            if record.notes:
+                migrate_note(record, conn)
+        except psycopg2.IntegrityError as error:
+            conn.rollback()
+            print(error)
+
         conn.commit()
 
     conn.close()
@@ -151,7 +165,7 @@ def main():
     db_file = 'database/livedatabase.db'
     db = sqlite3.connect(db_file)
     cur = db.cursor()
-    cur.execute('select * from MembersTable;')
+    cur.execute("select * from MembersTable;")
     global all_data
     all_data = cur.fetchall()
     cur.close()
