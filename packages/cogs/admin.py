@@ -98,6 +98,7 @@ class Administrator(commands.Cog):
         db = sqlite3.connect(db_file)
         cur = db.cursor()
         cur.execute('select * from MembersTable;')
+        #cur.execute('SELECT *  FROM MembersTable WHERE Name = "SgtMajorDoobie";')
         all_data = cur.fetchall()
         cur.close()
         db.close()

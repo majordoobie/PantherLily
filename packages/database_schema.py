@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS user_note (
     note_date timestamp NOT NULL,
     commit_by BIGINT NOT NULL,
     note TEXT NOT NULL,
-    FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id),
+    FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id) ON DELETE CASCADE,
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag), 
     FOREIGN KEY (commit_by) REFERENCES discord_user (discord_id)
 );

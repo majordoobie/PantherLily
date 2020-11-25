@@ -49,7 +49,11 @@ class NoteObject:
     def objectfy(self):
         self.date = datetime.strptime(self.note[1:18], '%d-%b-%Y %H:%M')
         self.commit_by = var[self.note.split('\n')[1].split(' ')[2]]
-        self.raw_note = 'Migrated from PantherLily2:\n\n' + self.note.split('\n')[2]
+        self.raw_note = 'Migrated from PantherLily2:\n' + '\n'.join(self.note.split('\n')[2:])
+        if '"Failed donations with 298' in self.note:
+            print('\n\n----- here is what we found ----\n\n')
+            print(self.note)
+            print(self.raw_note)
 
 
 def sepearate_notes(record):
@@ -73,7 +77,12 @@ def sepearate_notes(record):
 
     # Use the ranges created to slice the note string
     for note in range(0, (last + 1)):
-        note = NoteObject(record[ranges[note][0]:ranges[note][1]])
+        range_set = ranges[note]
+        if range_set[1] == -1:
+            note = NoteObject(record[range_set[0]:])
+        else:
+            note = NoteObject(record[range_set[0]:range_set[1]])
+
         notes.append(note)
 
     return notes
@@ -190,3 +199,90 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+"""
+[09-MAR-2019 22:31]
+Deleted by Goku
+
+[09-MAR-2019 22:37]
+Note by Goku
+Testing <:gmshrug:298592811769659402>
+
+[09-MAR-2019 22:38]
+Note by Goku
+Still test <:gmshrug:298592811769659402>
+
+[01-APR-2019 20:01]
+Note by SgtMajorDoobie
+Donation reminded
+msgID: 562053906557960203
+
+[08-MAY-2019 17:38]
+Note by Goku
+Missed cwl day 6 attack
+
+[15-MAY-2019 04:15]
+Note by SgtMajorDoobie
+Testing
+
+[04-JUN-2019 22:03]
+Note by Sgt Major Doobie
+"Testing producion"
+
+[14-AUG-2019 22:19]
+Note by Goku
+"Missed optional war attacks"
+
+[29-OCT-2019 22:33]
+Note by SgtMajorDoobie
+Testing
+
+[29-OCT-2019 22:36]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:39]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:40]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:41]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:42]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:42]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:43]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:43]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:44]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-OCT-2019 22:52]
+Note by SgtMajorDoobie
+"Testing"
+
+[29-NOV-2019 19:25]
+Note by Goku
+"War attack without any hero"
+
+[31-JUL-2020 23:37]
+Note by Goku⁹⁰⁰⁰
+"Missed both attacks in civil war"
+"""
+
