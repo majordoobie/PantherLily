@@ -79,7 +79,8 @@ class Administrator(commands.Cog):
         except Exception as e:
             await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
             return
-        await ctx.send(f'Reloaded {cog} successfully')
+        msg = f"""```python\nReloaded '{cog}' successfully```"""
+        await ctx.send(msg)
 
     @commands.check(is_owner)
     @commands.command()

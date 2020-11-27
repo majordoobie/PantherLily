@@ -12,6 +12,7 @@ ENABLED_COGS = (
     'tester',
     'admin',
     'leaders',
+    'group_stats',
 )
 
 class Settings:
@@ -93,6 +94,12 @@ class Settings:
 
 
 emoji_dict = {
+    "database": "<:database:541417513842507806>",
+    "zulu_server": "<:zuluServer:541405829484642314>",
+    "reddit_zulu": "<:redditzulu:541434973153001482>",
+    "true": "<:true:541430894792015872>",
+    "false": "<:false:541430879285674005>",
+    "zulu": "<:redditzulu:541434973153001482>",
     "one": "<:one:531449976891637770>",
     "two": "<:two:531450019711025162>",
     "three": "<:three:531450035422887936>",
