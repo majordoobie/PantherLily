@@ -16,7 +16,7 @@ ENABLED_COGS = (
 )
 
 class Settings:
-    def __init__(self, bot_mode=None):
+    def __init__(self, bot_mode=None, daemon=False):
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
@@ -28,7 +28,7 @@ class Settings:
         self._set_cogs()
 
         # Logging
-        self._set_logging_settings()
+        self._set_logging_settings(daemon)
 
         # COC creds
         self.coc_user = COC_USER
@@ -79,13 +79,7 @@ class Settings:
         self.enabled_cogs = [ f'{self.cog_path}.{cog}' for cog in ENABLED_COGS ]
 
 
-    def _set_logging_settings(self):
-        self.main_log_level = DEBUG
-        self.web_log_url = WEBHOOK_URL
-        self.web_log_name = 'PantherLily Log'
-        self.web_log_level = DEBUG
-        self.file_log = "/opt/project/packages/private/panther.log"
-        self.file_log_level = DEBUG
+    def _set_logging_settings(self, daemon):
         self.file_log_size = 10000
         self.file_log_backups = 2
         self.file_log_format = (
@@ -93,6 +87,22 @@ class Settings:
             '[Path:%(pathname)s]\n'
             'MSG: %(message)s\n'
         )
+        if not daemon:
+            self.main_log_level = DEBUG
+            self.web_log_url = WEBHOOK_URL
+            self.web_log_name = 'PantherLily Log'
+            self.web_log_level = DEBUG
+            self.file_log = "/opt/project/packages/private/panther.log"
+            self.file_log_level = DEBUG
+
+        if daemon:
+            self.main_log_level = DEBUG
+            self.web_log_url = WEBHOOK_URL
+            self.web_log_name = 'Panther Daemon'
+            self.web_log_level = DEBUG
+            self.file_log = "/opt/project/packages/private/panther_daemon.log"
+            self.file_log_level = DEBUG
+
 
 
 emoji_dict = {

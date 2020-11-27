@@ -25,7 +25,7 @@ async def update_active_users(sleep_time: int, coc_client: coc, log: logging.Log
 
 
 def main():
-    settings = Settings()
+    settings = Settings(daemon=True)
     BotLogger(settings)
     log = logging.getLogger('daemon.update')
     loop = asyncio.get_event_loop()
