@@ -16,7 +16,7 @@ ENABLED_COGS = (
 )
 
 class Settings:
-    def __init__(self, bot_mode):
+    def __init__(self, bot_mode=None):
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
@@ -71,6 +71,8 @@ class Settings:
                 'version': 'Panther v3 Beta',
                 'key_name': 'DevShell Keys',
                 }
+        else:
+            self.bot_mode = None
 
     def _set_cogs(self):
         self.cog_path = COG_LOCATION
@@ -82,7 +84,7 @@ class Settings:
         self.web_log_url = WEBHOOK_URL
         self.web_log_name = 'PantherLily Log'
         self.web_log_level = DEBUG
-        self.file_log = "packages/private/panther.log"
+        self.file_log = "/opt/project/packages/private/panther.log"
         self.file_log_level = DEBUG
         self.file_log_size = 10000
         self.file_log_backups = 2
