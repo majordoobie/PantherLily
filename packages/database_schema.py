@@ -61,6 +61,19 @@ CREATE TABLE IF NOT EXISTS user_note (
 ''')
     return sql
 
+def create_clash_classic_update() -> str:
+    sql = ('''\
+CREATE TABLE IF NOT EXISTS clash_classic_update (
+    increment_date TIMESTAMP NOT NULL,
+    tag TEXT NOT NULL,
+    current_donations INTEGER NOT NULL,
+    PRIMARY KEY (increment_date, tag),
+    FOREIGN KEY (tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE
+);    
+    ''')
+    return sql
+
+
 def create_clash_update() -> str:
     sql = ('''\
 CREATE TABLE IF NOT EXISTS clash_update (
