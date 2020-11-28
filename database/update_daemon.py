@@ -8,33 +8,38 @@ import coc
 import logging
 
 from packages.private.settings import Settings
-from packages.logging_setup import BotLogger
+from packages.logging_setup import BotLogger as LoggerSetup
 
-async def update_active_users(sleep_time: int, coc_client: coc, log: logging.Logger, dsn: str):
-    # TODO: can't be creating multiple connections it's counter intuitive I need to pass the pool in
-    try:
-        pool = await asyncpg.create_pool(dsn)
-    except Exception as error:
-        log.error(error, stack_info=True)
-
-
-    # Sleep to re-run code
-    pool.close()
-    await asyncio.sleep(sleep_time)
-
-
+async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool, log: logging.Logger):
+    while True:
+        async with pool.acquire() as conn:
+            print(len(await conn.fetch("SELECT * FROM discord_user")))
+        await asyncio.sleep(sleep_time)
 
 def main():
     settings = Settings(daemon=True)
-    BotLogger(settings)
-    log = logging.getLogger('daemon.update')
-    loop = asyncio.get_event_loop()
-    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
-                           key_names=settings.bot_config['key_name'])
+    loop = None
+    try:
+        LoggerSetup(settings)
+        log = logging.getLogger('daemon.update')
+        loop = asyncio.get_event_loop()
 
-    loop.create_task(update_active_users(60, coc_client, log, settings.dsn))
-    loop.run_forever()
+        # get pool and coc objects
+        pool: asyncpg.pool.Pool = loop.run_until_complete(asyncpg.create_pool(settings.dsn))
+        coc_client: coc.client.Client = coc.login(settings.coc_user, settings.coc_pass, loop=loop, key_names="Panther Daemon")
 
+        loop.create_task(update_active_users(
+            15,
+            coc_client,
+            pool,
+            log
+        ))
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if loop:
+            loop.close()
 
 if __name__ == '__main__':
     main()
