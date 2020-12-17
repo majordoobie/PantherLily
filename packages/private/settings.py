@@ -81,7 +81,7 @@ class Settings:
 
     def _set_logging_settings(self, daemon):
         self.file_log_size = 10000
-        self.file_log_backups = 2
+        self.file_log_backups = 1
         self.file_log_format = (
             '[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Func:%(funcName)s]\n'
             '[Path:%(pathname)s]\n'

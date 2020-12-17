@@ -18,7 +18,7 @@ WHERE is_active = 'true'
   and discord_user.discord_id = clash_account.discord_id
   and clash_account.is_primary_account = 'true'"""
 
-SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES (?, ?, ?);"""
+SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES ($1, $2, $3);"""
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     LOG.debug("Running classic update daemon")
@@ -29,11 +29,19 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                 active_members = await conn.fetch(SQL_GET_ACTIVE)
 
                 async for player in coc_client.get_players((member['clash_tag'] for member in active_members)):
-                    await conn.execute(SQL_UPDATE_CLASSIC, (
-                        datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-                        player.tag,
-                        player.get_achievement("Friend in Need").value
-                    ))
+                    try:
+                        await conn.execute(SQL_UPDATE_CLASSIC,
+                                datetime.utcnow(),
+                                player.tag,
+                                player.get_achievement("Friend in Need").value
+                        )
+                    except asyncpg.ForeignKeyViolationError as error:
+                        print(error)
+                    except Exception as error:
+                        import traceback
+                        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+
+
             await asyncio.sleep(sleep_time)
 
     except KeyboardInterrupt:
@@ -46,17 +54,12 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
 
 
 async def main(coc_client_):
+    """Async start point will for all background tasks"""
     pool : asyncpg.pool.Pool = await asyncpg.create_pool(SETTINGS.dsn)
     loop = asyncio.get_running_loop()
 
-    __coc_client_: coc.client.Client = coc.login(
-        SETTINGS.coc_user,
-        SETTINGS.coc_pass,
-        key_names="Panther Daemon",
-    )
-
     tasks = [
-        loop.create_task(update_active_users(10, coc_client_, pool))
+        loop.create_task(update_active_users(60, coc_client_, pool))
     ]
     await asyncio.wait(tasks)
 
@@ -66,10 +69,12 @@ if __name__ == '__main__':
     LoggerSetup(SETTINGS)
     LOG = logging.getLogger('daemon.update')
 
+    # Nest patches asyncio to allow for nested loops to allow logging into coc
     nest_asyncio.apply()
     _coc_client: coc.client.Client = coc.login(
         SETTINGS.coc_user,
         SETTINGS.coc_pass,
         key_names="Panther Daemon",
     )
+
     asyncio.run(main(_coc_client))
