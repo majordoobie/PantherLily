@@ -16,7 +16,7 @@ class BotLogger:
     Basically the discord thread will just log into the queue and the listener will pick up any records
     and log them into i/o and web if needed.
     """
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, logger_name: str):
         self.settings = settings
         self.log_queue = Queue(-1)
         self.log_handlers = []
@@ -27,7 +27,7 @@ class BotLogger:
         # Set up file logging
         self._set_file_logging()
 
-        root = logging.getLogger('root')
+        root = logging.getLogger(logger_name)
         root.setLevel(settings.main_log_level)
         root.addHandler(QueueListenerHandler(self.log_handlers))
 
@@ -106,12 +106,11 @@ class DiscordWebhookHandler(logging.Handler):
             50: 0x6600CC
         }
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
-        print(record.exc_info)
 
         if record.exc_info:
             msg = f'{record.msg}\n\n{record.exc_text}'
         else:
             msg = record.msg
-        embed = Embed(title=f'Logger: {record.name}', description=msg, color=colors[record.levelno])
+        embed = Embed(title=f'{record.name}', description=msg, color=colors[record.levelno])
         webhook.send(embed=embed, username=self.settings.web_log_name)
 
