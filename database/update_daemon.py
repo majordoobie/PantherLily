@@ -2,6 +2,10 @@
 This service will be used to automatically update the database with fresh information away from the bot to avoid
 any slowdowns from I/O.
 """
+# Little hack to get the parent packages for the bot working in here
+import sys
+sys.path.append('/opt/project')
+
 import asyncio
 import nest_asyncio
 import asyncpg
