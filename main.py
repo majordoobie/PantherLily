@@ -83,7 +83,7 @@ def main():
     elif args.live_mode:
         settings = Settings('live_mode')
 
-    BotLogger(settings)
+    BotLogger(settings, "PantherBot")
     loop = asyncio.get_event_loop()
     coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
                            key_names=settings.bot_config['key_name'])

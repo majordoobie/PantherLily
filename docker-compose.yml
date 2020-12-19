@@ -1,16 +1,46 @@
 version: '3.7'
 services:
-  disco_image:
-    build: .
+  panther_bot:
+    build:
+      context: .
+      dockerfile: panther_bot_dockerfile
     image: pantherlily:v3.0
     container_name: panther_bot3
     volumes:
-      - .:/code
+      - .:/opt/project
     dns:
       - 1.1.1.1
       - 1.0.0.1
     networks:
       - panther_network
+
+  panther_db:
+    image: postgres
+    container_name: panther_db
+    env_file:
+      - database/database.env
+    volumes:
+      - panther_volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
+    ports:
+      - 5432:5432
+    networks:
+      - panther_network
+
+  panther_daemon:
+    build:
+      context: .
+      dockerfile: panther_daemon_dockerfile
+    image: panther_daemon:v1.0
+    container_name: panther_daemon
+    volumes:
+      - .:/opt/project
+    networks:
+      - panther_network
+
+volumes:
+  panther_volume:
+    external: true
+    name: panther_volume
 
 networks:
   panther_network:

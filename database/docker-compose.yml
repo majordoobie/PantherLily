@@ -12,6 +12,16 @@ services:
     networks:
       - panther_network
 
+  panther_daemon:
+    build:
+      context: ../
+      dockerfile: panther_daemon_dockerfile
+    image: panther_daemon
+    container_name: panther_daemon
+    networks:
+      - panther_network
+
+
 # docker volume create --name=panther_volume
 volumes:
   panther_volume:

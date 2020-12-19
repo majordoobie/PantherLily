@@ -10,6 +10,7 @@ packages/docs/*.json
 
 # Environment
 venv*
+*.DS_Store
 **.vscode/
 coc_test.py
 *.env

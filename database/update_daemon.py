@@ -64,7 +64,7 @@ async def main(coc_client_):
     loop = asyncio.get_running_loop()
 
     tasks = [
-        loop.create_task(update_active_users(60, coc_client_, pool))
+        loop.create_task(update_active_users(300, coc_client_, pool))
     ]
     await asyncio.wait(tasks)
 

@@ -1,0 +1,14 @@
+FROM python:3.9-buster
+WORKDIR /opt/project
+
+RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
+COPY requirements.txt requirements.txt
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+WORKDIR database
+#CMD ["python", "update_daemon.py"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
+
