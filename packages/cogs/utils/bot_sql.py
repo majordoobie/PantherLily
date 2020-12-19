@@ -55,4 +55,7 @@ def sql_delete_clash_account_record() -> str:
 # Manipulate user_note
 #
 def sql_insert_user_note() -> str:
-    return ('''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES($1, $2, $3, $4, $5)''')
+    return '''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES($1, $2, $3, $4, $5)'''
+
+def sql_select_user_donation() -> str:
+    return '''SELECT '''

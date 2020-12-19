@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
+from datetime import datetime, timedelta
 from discord import Member
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner
 from discord.ext.commands import Context, UserNotFound, MemberNotFound
@@ -252,3 +253,20 @@ async def parse_args(ctx: Context, settings: Settings, arg_dict: dict, arg_strin
         bot_ext = BotExt(settings)
         await bot_ext.embed_print(ctx=ctx, title=error.base_name, description=error.msg, color=BotExt.ERROR)
         return None
+
+
+def get_utc_monday() -> datetime:
+    """Get the last monday for that week in eastern time as the "start of week" """
+    today = datetime.utcnow()
+    idx = today.weekday()  # MON = 0 -- SUN = 6
+    if idx == 0:
+        if today > today.replace(hour=1, minute=0, second=0, microsecond=0):
+            last_monday = today.replace(hour=1, minute=0, second=0, microsecond=0)
+        else:
+            last_monday = today - timedelta(days=7)
+            last_monday = last_monday.replace(hour=1, minute=0, second=0, microsecond=0)
+    else:
+        last_monday = today - timedelta(days=idx)
+        last_monday = last_monday.replace(hour=1, minute=0, second=0, microsecond=0)
+
+    return last_monday

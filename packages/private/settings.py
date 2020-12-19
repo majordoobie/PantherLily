@@ -13,6 +13,7 @@ ENABLED_COGS = (
     'admin',
     'leaders',
     'group_stats',
+    'user_stats',
 )
 
 class Settings:

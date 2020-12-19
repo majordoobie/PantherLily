@@ -6,7 +6,7 @@ from bot import BotClient
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('root.GroupStats')
+        self.log = logging.getLogger('PantherBot.GroupStats')
 
     @commands.command()
     async def roster(self, ctx, *, arg_string=None):

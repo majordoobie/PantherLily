@@ -18,7 +18,7 @@ services:
     image: postgres
     container_name: panther_db
     env_file:
-      - database/database.env
+      - packages/private/database.env
     volumes:
       - panther_volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
     ports:

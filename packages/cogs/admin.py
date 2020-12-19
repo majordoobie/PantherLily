@@ -9,7 +9,7 @@ from packages.database_schema import drop_tables
 class Administrator(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('root.Administrator')
+        self.log = logging.getLogger('PantherBot.Administrator')
 
     @commands.command(alias='bot_roles')
     async def panther_roles(self, ctx):
