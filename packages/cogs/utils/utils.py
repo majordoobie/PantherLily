@@ -13,7 +13,7 @@ from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgPars
 from packages.bot_ext import BotExt
 
 
-async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None) -> Optional[Member]:
+async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None) -> Union[Member, None]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 

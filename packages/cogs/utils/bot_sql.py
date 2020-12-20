@@ -57,5 +57,23 @@ def sql_delete_clash_account_record() -> str:
 def sql_insert_user_note() -> str:
     return '''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES($1, $2, $3, $4, $5)'''
 
+#
+# Donation queries
+#
+def sql_select_user_active_clash_account() -> str:
+    return '''SELECT * FROM clash_account WHERE discord_id = $1 AND is_primary_account = 'true';'''
+
 def sql_select_user_donation() -> str:
-    return '''SELECT '''
+    return '''\
+    SELECT * FROM 
+    clash_classic_update
+    WHERE
+    TAG = '{}'
+    AND
+    increment_date
+    between
+    '{}' and timezone('utc', now())
+    ORDER
+    BY
+    increment_date
+    ASC;'''
