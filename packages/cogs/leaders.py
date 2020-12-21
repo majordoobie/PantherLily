@@ -20,7 +20,7 @@ class Leaders(commands.Cog):
         """Method gets the most up to date user information - this code is repeated a lot in this class"""
         async with self.bot.pool.acquire() as con:
             db_discord_member = await con.fetchrow(sql_select_discord_user_id(), member_id)
-            db_clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member_id)
+            db_clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member_id)
         return db_discord_member, db_clash_accounts
 
     async def _multi_account_logic(self, ctx, coc_record, member, player, args):
@@ -140,7 +140,7 @@ class Leaders(commands.Cog):
 
         clash_tag = None
         async with self.bot.pool.acquire() as con:
-            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
 
         for clash_account in clash_accounts:
             if clash_account['is_primary_account']:
@@ -211,6 +211,7 @@ class Leaders(commands.Cog):
         if not player or not member:
             return
 
+        member: Member
         discord_record = (
             member.id,
             member.name,
@@ -371,16 +372,35 @@ class Leaders(commands.Cog):
 
         async with self.bot.pool.acquire() as con:
             discord_member = await con.fetchrow(sql_select_discord_user_id(), member.id)
-            clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
             for clash_account in clash_accounts:
                 if clash_account['clash_tag'] == player.tag:
                     await con.execute(sql_delete_clash_account_record(), player.tag, member.id)
-                    clash_accounts = await con.fetch(sql_select_clash_account_discordid(), member.id)
+                    clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
                     msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
                     self.log.info(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     return
             await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
+
+
+    @commands.check(is_leader)
+    @commands.command()
+    async def view_account(self, ctx, *, arg_string=None):
+        self.log.debug(f'User: `{ctx.author}` is running `view_acount` with `{arg_string}`')
+        arg_dict = {}
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+
+        if args['positional']:
+            member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
+            if not member:
+                return
+        else:
+            member = ctx.author
+
+        db_discord_member, db_clash_accounts = await self._get_updates(member.id)
+        msg = account_panel(db_discord_member, db_clash_accounts)
+        await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
 
 
 def account_panel(discord_member: dict, coc_accounts: list, title: str='') -> str:

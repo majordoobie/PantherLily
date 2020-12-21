@@ -39,7 +39,7 @@ def sql_insert_clash_account() -> str:
 def sql_select_clash_account_tag() -> str:
     return '''SELECT * FROM clash_account WHERE clash_tag = $1'''
 
-def sql_select_clash_account_discordid() -> str:
+def sql_select_clash_account_discord_id() -> str:
     return '''SELECT * FROM clash_account WHERE discord_id = $1'''
 
 def sql_update_clash_account_coc_alt_cascade() -> str:
@@ -77,3 +77,11 @@ def sql_select_user_donation() -> str:
     BY
     increment_date
     ASC;'''
+
+
+def sql_select_active_account() -> str:
+    return '''SELECT * FROM discord_user, clash_account 
+    WHERE discord_user.discord_id = clash_account.discord_id
+    AND discord_user.is_active = 'true'
+    AND clash_account.is_primary_account = 'true' 
+    AND discord_user.discord_id = '{}';'''

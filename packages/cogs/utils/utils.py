@@ -3,7 +3,7 @@ from typing import Optional, Union
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
 from datetime import datetime, timedelta
-from discord import Member
+from discord.member import Member
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner
 from discord.ext.commands import Context, UserNotFound, MemberNotFound
 import discord
