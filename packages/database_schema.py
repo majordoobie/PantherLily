@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS clash_classic_update (
     increment_date TIMESTAMP NOT NULL,
     tag TEXT NOT NULL,
     current_donations INTEGER NOT NULL,
+    current_clan TEXT,
     PRIMARY KEY (increment_date, tag),
     FOREIGN KEY (tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE
 );    

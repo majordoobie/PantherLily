@@ -2,6 +2,7 @@ from discord.ext import commands
 import logging
 
 from bot import BotClient
+from .utils.bot_sql import sql_select_all_active_users
 
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
@@ -36,6 +37,20 @@ class GroupStats(commands.Cog):
 
         # Populate the roster dictionary
         roster = {"total": 0}
+        sister_clans = {
+            "#P0Q8VRC8": [],
+            "#2Y28CGP8": [],
+            "#8YG0CQRY": [],
+            "Unknown": []
+        }
+        async with self.bot.pool.acquire() as con:
+            members_db = await con.fetch(sql_select_all_active_users())
+
+        members_db.sort(key=lambda x: x['discord_name'].lower())
+        for i in members_db:print(i['discord_name'])
+
+
+
 
         #TODO: Stop for now we need to populate clash_account for this to work
 

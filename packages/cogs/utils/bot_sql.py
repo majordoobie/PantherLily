@@ -60,7 +60,7 @@ def sql_insert_user_note() -> str:
 #
 # Donation queries
 #
-def sql_select_user_active_clash_account() -> str:
+def sql_select_user_active_clash_account() -> object:
     return '''SELECT * FROM clash_account WHERE discord_id = $1 AND is_primary_account = 'true';'''
 
 def sql_select_user_donation() -> str:
@@ -85,3 +85,14 @@ def sql_select_active_account() -> str:
     AND discord_user.is_active = 'true'
     AND clash_account.is_primary_account = 'true' 
     AND discord_user.discord_id = '{}';'''
+
+
+#
+# Group stat queries
+#
+def sql_select_all_active_users() -> str:
+    return '''SELECT * FROM discord_user, clash_account
+    WHERE discord_user.discord_id = clash_account.discord_id
+    AND discord_user.is_active = 'true'
+    AND clash_account.is_primary_account = 'true' 
+    '''
