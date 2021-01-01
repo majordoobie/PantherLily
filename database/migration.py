@@ -4,7 +4,8 @@ from datetime import datetime
 from discord import member
 
 import psycopg2
-from packages.private.secrets import *
+#from packages.private.secrets import *
+from secrets import *
 
 var = {
        'Goku': 344958710885515264,
@@ -163,23 +164,68 @@ def migrate_user(record: RecordObject, member: member):
 
     conn.close()
 
+def migrate_donation(record_tuple):
+    # Commit to new db would go here
 
+    conn = psycopg2.connect(
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+    )
 
+    with conn.cursor() as cur:
+        # sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
+        sql = '''INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES (%s, %s, %s)'''
+        try:
+            cur.executemany(sql, record_tuple)
+            conn.commit()
+        except psycopg2.IntegrityError:
+            conn.rollback()
+def
 def main():
-    db_file = 'database/livedatabase.db'
+    """main for testing, run it in the bot for discord access"""
+    db_file = 'livedatabase.db'
     db = sqlite3.connect(db_file)
     cur = db.cursor()
-    cur.execute("select * from MembersTable;")
-    global all_data
-    all_data = cur.fetchall()
-    cur.close()
-    db.close()
-    db_objects = []
-    for record in all_data:
-        #migrate_user(RecordObject(record))
-        db_objects.append(RecordObject(record))
 
-    print(db_objects)
+    count = 0
+    while True:
+        offset = count * 3000000
+        print(offset)
+
+        cur.execute(f'''SELECT DonationsTable.increment_date, MembersTable.tag, DonationsTable.Current_Donation
+            FROM MembersTable, DonationsTable WHERE MembersTable.is_Active = 'True'
+            ORDER BY DonationsTable.increment_date ASC
+            LIMIT 3000000 OFFSET {offset}
+            ;''')
+
+        donation_data = cur.fetchall()
+
+        if donation_data:
+            migrate_donation(donation_data)
+            count += 1
+        else:
+            cur.close()
+            break
+
+    db.close()
+
+
+
+
+
+    # cur.execute("select * from MembersTable;")
+    # global all_data
+    # all_data = cur.fetchall()
+    # cur.close()
+    # db.close()
+    # db_objects = []
+    # for record in all_data:
+    #     #migrate_user(RecordObject(record))
+    #     db_objects.append(RecordObject(record))
+    #
+    # print(db_objects)
 
 
 

@@ -41,7 +41,9 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                         await conn.execute(SQL_UPDATE_CLASSIC,
                                 datetime.utcnow(),
                                 player.tag,
-                                player.get_achievement("Friend in Need").value
+                                player.get_achievement("Friend in Need").value,
+                                player.clan.tag,
+                                player.clan.name,
                         )
                         updates +=1
                     except asyncpg.ForeignKeyViolationError as error:

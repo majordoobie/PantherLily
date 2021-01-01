@@ -95,22 +95,28 @@ class Administrator(commands.Cog):
     async def migrate_db(self, ctx):
         from database.migration import RecordObject, NoteObject, migrate_user
         import sqlite3
+
+        do_all = True
+
         db_file = 'database/livedatabase.db'
         db = sqlite3.connect(db_file)
         cur = db.cursor()
         cur.execute('select * from MembersTable;')
-        #cur.execute('SELECT *  FROM MembersTable WHERE Name = "SgtMajorDoobie";')
         all_data = cur.fetchall()
         cur.close()
         db.close()
         db_objects = []
-        for record in all_data:
-            record_obj = RecordObject(record)
-            try:
-                member = await get_discord_member(ctx, record_obj.discordid)
-            except:
-                member = None
-            migrate_user(record_obj, member)
+        if do_all:
+            for record in all_data:
+                record_obj = RecordObject(record)
+                try:
+                    member = await get_discord_member(ctx, record_obj.discordid)
+                except:
+                    member = None
+                migrate_user(record_obj, member)
+
+
+        print("done")
 
 
 
