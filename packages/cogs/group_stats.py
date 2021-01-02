@@ -46,8 +46,13 @@ class GroupStats(commands.Cog):
         async with self.bot.pool.acquire() as con:
             members_db = await con.fetch(sql_select_all_active_users())
 
-        members_db.sort(key=lambda x: x['discord_name'].lower())
-        for i in members_db:print(i['discord_name'])
+        members_db.sort(key=lambda x: x['discord_nickname'].lower())
+
+
+        print(len(members_db))
+        for i in members_db:print(i['discord_nickname'])
+
+        print(len(coc_members))
 
 
 

@@ -14,6 +14,7 @@ ENABLED_COGS = (
     'leaders',
     'group_stats',
     'user_stats',
+    'database_migration'
 )
 
 class Settings:

@@ -1,6 +1,7 @@
 from discord.ext import commands
 import logging
 
+from database.migration import migrate_donation
 from packages.cogs.utils.utils import *
 from bot import BotClient
 from packages.database_schema import drop_tables
@@ -89,39 +90,6 @@ class Administrator(commands.Cog):
         for i in self.bot.settings.enabled_cogs:
             output += i.split('.')[-1] + '\n'
         await ctx.send(output)
-
-    @commands.check(is_owner)
-    @commands.command()
-    async def migrate_db(self, ctx):
-        from database.migration import RecordObject, NoteObject, migrate_user
-        import sqlite3
-
-        do_all = True
-
-        db_file = 'database/livedatabase.db'
-        db = sqlite3.connect(db_file)
-        cur = db.cursor()
-        cur.execute('select * from MembersTable;')
-        all_data = cur.fetchall()
-        cur.close()
-        db.close()
-        db_objects = []
-        if do_all:
-            for record in all_data:
-                record_obj = RecordObject(record)
-                try:
-                    member = await get_discord_member(ctx, record_obj.discordid)
-                except:
-                    member = None
-                migrate_user(record_obj, member)
-
-
-        print("done")
-
-
-
-
-
 
 def setup(bot):
     bot.add_cog(Administrator(bot))

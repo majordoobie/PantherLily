@@ -23,7 +23,8 @@ WHERE is_active = 'true'
   and discord_user.discord_id = clash_account.discord_id
   and clash_account.is_primary_account = 'true'"""
 
-SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES ($1, $2, $3);"""
+SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_clan_tag, 
+                        current_clan_name) VALUES ($1, $2, $3, $4, $5);"""
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.classic_update')

@@ -18,7 +18,8 @@ var = {
        'Felicia': 430922732658753559,
        'Superman': 324681930807181335,
        'JosiahDH': 463684368452419584,
-       'fra': 409465779965263882
+       'fra': 409465779965263882,
+       'President': 153732762896039936,
        }
 
 RE_STRING = r'\[(\d+)-(\w+)-(\d+)(\W)(\d+):(\d+)\]'
@@ -177,12 +178,22 @@ def migrate_donation(record_tuple):
     with conn.cursor() as cur:
         # sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
         sql = '''INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES (%s, %s, %s)'''
+        print(record_tuple[0])
         try:
             cur.executemany(sql, record_tuple)
-            conn.commit()
         except psycopg2.IntegrityError:
             conn.rollback()
-def
+        except Exception as error:
+            import traceback
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+            print(exc)
+
+        conn.commit()
+    conn.close()
+
+
+
+
 def main():
     """main for testing, run it in the bot for discord access"""
     db_file = 'livedatabase.db'
@@ -206,9 +217,9 @@ def main():
             migrate_donation(donation_data)
             count += 1
         else:
-            cur.close()
             break
 
+    cur.close()
     db.close()
 
 
