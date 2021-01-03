@@ -4,8 +4,8 @@ from datetime import datetime
 from discord import member
 
 import psycopg2
-#from packages.private.secrets import *
-from secrets import *
+from packages.private.secrets import *
+#from secrets import *
 
 var = {
        'Goku': 344958710885515264,
@@ -33,7 +33,7 @@ class RecordObject:
         return f'{self.tag} {self.discordid}'
 
     def objectfy(self):
-        self.tag = self.record[0]
+        self.tag = self.check_tag()
         self.name = self.record[1]
         self.townhall = self.record[2]
         self.league = self.record[3]
@@ -42,6 +42,19 @@ class RecordObject:
         self.in_planning = self.record[6]
         self.is_active = self.record[7]
         self.notes = sepearate_notes(self.record[8])
+
+    def check_tag(self) -> str:
+        if 'O' not in self.record[0]:
+            return self.record[0].upper()
+
+        new_tag = ''
+        for char in self.record[0]:
+            if char != 'O':
+                new_tag += char
+            else:
+                new_tag += '0'
+        return new_tag.upper()
+
 
 class NoteObject:
     def __init__(self, note):
@@ -135,7 +148,7 @@ def migrate_user(record: RecordObject, member: member):
         record.tag,
         member.id if member else record.discordid
     )
-
+    print("We are being called")
     conn = psycopg2.connect(
         dbname=POSTGRES_DB,
         user=POSTGRES_USER,
@@ -165,33 +178,6 @@ def migrate_user(record: RecordObject, member: member):
 
     conn.close()
 
-def migrate_donation(record_tuple):
-    # Commit to new db would go here
-
-    conn = psycopg2.connect(
-        dbname=POSTGRES_DB,
-        user=POSTGRES_USER,
-        password=POSTGRES_PASSWORD,
-        host=POSTGRES_HOST,
-    )
-
-    with conn.cursor() as cur:
-        # sql = """INSERT INTO user_note (discord_id, clash_tag, note_date, commit_by, note) VALUES (%s, %s, %s, %s, %s)"""
-        sql = '''INSERT INTO clash_classic_update (increment_date, tag, current_donations) VALUES (%s, %s, %s)'''
-        print(record_tuple[0])
-        try:
-            cur.executemany(sql, record_tuple)
-        except psycopg2.IntegrityError:
-            conn.rollback()
-        except Exception as error:
-            import traceback
-            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-            print(exc)
-
-        conn.commit()
-    conn.close()
-
-
 
 
 def main():
@@ -201,7 +187,8 @@ def main():
     cur = db.cursor()
 
     count = 0
-    while True:
+    #while True:
+    while count < 3:
         offset = count * 3000000
         print(offset)
 

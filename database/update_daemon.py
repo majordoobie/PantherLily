@@ -20,8 +20,8 @@ from packages.logging_setup import BotLogger as LoggerSetup
 SQL_GET_ACTIVE = """SELECT * 
 FROM discord_user, clash_account
 WHERE is_active = 'true'
-  and discord_user.discord_id = clash_account.discord_id
-  and clash_account.is_primary_account = 'true'"""
+  AND discord_user.discord_id = clash_account.discord_id
+  AND clash_account.is_primary_account = 'true'"""
 
 SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_clan_tag, 
                         current_clan_name) VALUES ($1, $2, $3, $4, $5);"""
@@ -37,14 +37,18 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                 active_members = await conn.fetch(SQL_GET_ACTIVE)
 
                 updates = 0
+
                 async for player in coc_client.get_players((member['clash_tag'] for member in active_members)):
+                    if not player:
+                        log.error('Was not able to get a player object. We do not have member access')
+                        continue
                     try:
                         await conn.execute(SQL_UPDATE_CLASSIC,
                                 datetime.utcnow(),
                                 player.tag,
                                 player.get_achievement("Friend in Need").value,
-                                player.clan.tag,
-                                player.clan.name,
+                                player.clan.tag if player.clan else None,
+                                player.clan.name if player.clan else None,
                         )
                         updates +=1
                     except asyncpg.ForeignKeyViolationError as error:

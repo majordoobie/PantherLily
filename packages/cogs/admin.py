@@ -1,10 +1,8 @@
 from discord.ext import commands
 import logging
 
-from database.migration import migrate_donation
 from packages.cogs.utils.utils import *
 from bot import BotClient
-from packages.database_schema import drop_tables
 
 
 class Administrator(commands.Cog):
