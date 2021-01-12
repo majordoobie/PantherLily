@@ -1,0 +1,59 @@
+{
+    "townhalls" : {
+        "13" : "<:th13:651099879686406145>",
+        "12" : "<:townhall12:546080710406963203>",
+        "11" : "<:townhall11:546080741545738260>",
+        "10" : "<:townhall10:546080756628324353>",
+        "9" : "<:townhall9:546080772118020097>",
+        "8" : "<:townhall8:546080798097539082>"
+    },
+     "troops" : {
+        "Archer" : "<:archer:531661745157046274>",
+        "Baby Dragon" : "<:babydragon:531661745031348235>",
+        "Balloon" : "<:loon:531661754162216970>",
+        "Barbarian" : "<:barbarian:531661752757125149>",
+        "Bowler" : "<:bowler:531661753495584768>",
+        "Dragon" : "<:drag:531661752971165708>",
+        "Electro Dragon" : "<:edrag:531661755781349396>",
+        "Golem" : "<:golem:531661755542405131>",
+        "Goblin" : "<:goblin:531661755185627156>",
+        "Giant" : "<:giant:531661755428896789>",
+        "Healer" : "<:healer:531661755286552587>",
+        "Hog Rider" : "<:hogrider:531661752090230785>",
+        "Ice Golem" : "<:icegolem:531662117690933268>",
+        "Lava Hound" : "<:lavahound:531661755714371594>",
+        "Miner" : "<:miner:531661752954257430>",
+        "Minion" : "<:minion:531661755978481675>",
+        "P.E.K.K.A" : "<:pekka:531661755558920203>",
+        "Valkyrie" : "<:valkyrie:531661755688943627>",
+        "Wall Breaker" : "<:wallbreaker:531661755815034890>",
+        "Witch" : "<:witch:531661755953446922>",
+        "Wizard" : "<:wizard:531661754653212692>",
+        "Yeti" : "<:yeti:653935238422200330>"
+    },
+    "heroes" : {
+        "Barbarian King" : "<:barbking:531661752027447296>",
+        "Archer Queen" : "<:archerqueen:531661745266098200>",
+        "Grand Warden" : "<:grandwarden:531661755022311446>",
+        "Royal Champion" : "<:royalchampion:653935133904338944>"
+    },
+    "spells" : {
+        "Bat Spell" : "<:batspell:531667965813325832>",
+        "Clone Spell" : "<:clone:531661755114586113>",
+        "Earthquake Spell" : "<:earthquake:531661752119853071>",
+        "Freeze Spell" : "<:freeze:531661755873492992>",
+        "Haste Spell" : "<:haste:531661753541722121>",
+        "Healing Spell" : "<:heal:531661755370307604>",
+        "Jump Spell" : "<:jump:531661755651325962>",
+        "Lightning Spell" : "<:lightning:531661755894595584>",
+        "Poison Spell" : "<:poison:531661754007158794>",
+        "Rage Spell" : "<:rage:531661755940864030>",
+        "Skeleton Spell" : "<:skeleton:531661754204291101>"
+    },
+    "siege" : {
+        "Stone Slammer" : "<:smair2:531661989504876553>",
+        "Battle Blimp" : "<:smair1:531661752660787201>",
+        "Wall Wrecker" : "<:smground:531661753721815040>",
+        "Siege Barracks" : "<:barracks:653937171836698625>"
+    }
+}

@@ -61,8 +61,6 @@ def sql_insert_user_note() -> str:
 #
 # Donation queries
 #
-def sql_select_user_active_clash_account() -> object:
-    return '''SELECT * FROM clash_account WHERE discord_id = $1 AND is_primary_account = 'true';'''
 
 def sql_select_user_donation() -> str:
     return '''\

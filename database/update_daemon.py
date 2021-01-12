@@ -43,7 +43,7 @@ VALUES
 ON CONFLICT 
     (week_date, clash_tag)
 DO UPDATE SET
-    current_donation=$3, current_trophy=$4
+    current_donation=$3, current_trophy=$4, current_clan_tag=$5, current_clan_name=$6
 """
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):

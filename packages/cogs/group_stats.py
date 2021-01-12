@@ -36,25 +36,17 @@ class GroupStats(commands.Cog):
             "Unknown": []
         }
 
-        # Get all users with the member role
-        coc_members = []
-        for member in ctx.guild.members:
-            if 'CoC Members' in (role.name for role in member.roles):
-                coc_members.append(member)
 
-        # sort list of member objects by lower chars
-        coc_members.sort(key=lambda x: x.display_name.lower())
-
+        # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
             members_db = await con.fetch(sql_select_all_active_users())
-
         members_db.sort(key=lambda x: x['discord_nickname'].lower())
 
 
-        print(len(members_db))
-        for i in members_db:print(i['discord_nickname'])
 
-        print(len(coc_members))
+
+
+
 
 
 
