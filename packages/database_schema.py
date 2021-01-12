@@ -65,15 +65,30 @@ def create_clash_classic_update() -> str:
     sql = ('''\
 CREATE TABLE IF NOT EXISTS clash_classic_update (
     increment_date TIMESTAMP NOT NULL,
-    tag TEXT NOT NULL,
+    clash_tag TEXT NOT NULL,
     current_donations INTEGER NOT NULL,
+    current_trophies INTEGER NOT NULL,
     current_clan_tag TEXT,
     current_clan_name TEXT,
-    PRIMARY KEY (increment_date, tag),
-    FOREIGN KEY (tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE
+    PRIMARY KEY (increment_date, clash_tag),
+    FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE
 );    
     ''')
     return sql
+
+def create_clash_classic_view() -> str:
+    return '''\
+CREATE TABLE if NOT EXISTS clash_classic_update_view (
+    week_date TIMESTAMP NOT NULL,
+    clash_tag TEXT NOT NULL,
+    current_donation INTEGER,
+    current_trophy INTEGER,
+    current_clan_tag TEXT,
+    current_clan_name TEXT,
+    PRIMARY KEY (week_date, clash_tag),
+    FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE 
+);
+    '''
 
 
 def create_clash_update() -> str:

@@ -8,7 +8,8 @@ def sql_create_tables() -> List[str]:
         create_clash_account(),
         create_user_note(),
         create_clash_update(),
-        create_clash_classic_update()
+        create_clash_classic_update(),
+        create_clash_classic_view()
     ]
 
 #

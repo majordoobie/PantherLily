@@ -39,26 +39,21 @@ class Migration(commands.Cog):
                 print(f'Querying for data between {offset} - {offset + increment} records')
 
                 cur.execute(f'''SELECT DonationsTable.increment_date, MembersTable.tag, DonationsTable.Current_Donation
-                    FROM MembersTable, DonationsTable WHERE MembersTable.is_Active = 'True'
+                    FROM MembersTable, DonationsTable 
+                    WHERE MembersTable.is_Active = 'True'
+                    AND DonationsTable.increment_date > '2020-06-01'
                     ORDER BY DonationsTable.increment_date ASC
                     LIMIT {increment} OFFSET {offset}
                     ;''')
                 donation_data = cur.fetchall()
+                count += 1
 
                 print("Converting string data to datetime...")
 
                 if donation_data:
                     cleaned_up = [ [datetime.strptime(i[0],"%Y-%m-%d %H:%M:%S"),i[1],i[2]] for i in donation_data]
+                    await self.async_migrate_donation(cleaned_up)
 
-                    keep_set = []
-                    keep_date = datetime.strptime('2020-06-01', "%Y-%m-%d")
-                    for data in cleaned_up:
-                        if data[0] > keep_date:
-                            keep_set.append(data)
-
-                    if keep_set:
-                        await self.async_migrate_donation(keep_set)
-                        count += 1
                 else:
                     break
 

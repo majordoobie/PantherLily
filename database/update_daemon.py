@@ -10,12 +10,14 @@ import asyncio
 import nest_asyncio
 import asyncpg
 import coc
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import traceback
 
 from packages.private.settings import Settings
 from packages.logging_setup import BotLogger as LoggerSetup
+from packages.cogs.utils.utils import get_utc_monday
+
 
 SQL_GET_ACTIVE = """SELECT * 
 FROM discord_user, clash_account
@@ -23,15 +25,33 @@ WHERE is_active = 'true'
   AND discord_user.discord_id = clash_account.discord_id
   AND clash_account.is_primary_account = 'true'"""
 
-SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_clan_tag, 
-                        current_clan_name) VALUES ($1, $2, $3, $4, $5);"""
+
+SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_trophies, 
+                        current_clan_tag, current_clan_name) VALUES ($1, $2, $3, $4, $5, $6);"""
+
+SQL_GET_DIFF = """SELECT *
+FROM clash_classic_update
+WHERE increment_date BETWEEN '{}' AND '{}'
+AND tag = '{}' 
+ORDER BY increment_date DESC"""
+
+SQL_INSERT_UPDATE_DIFF = """
+INSERT INTO clash_classic_update_view
+    (week_date, clash_tag, current_donation, current_trophy, current_clan_tag, current_clan_name) 
+VALUES 
+    ($1, $2, $3, $4, $5, $6)
+ON CONFLICT 
+    (week_date, clash_tag)
+DO UPDATE SET
+    current_donation=$3, current_trophy=$4
+"""
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.classic_update')
 
     try:
         while True:
-            log.debug("Starting update loop")
+            log.debug("Starting re-occuring update loop")
             # Get all active members
             async with pool.acquire() as conn:
                 active_members = await conn.fetch(SQL_GET_ACTIVE)
@@ -47,6 +67,7 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                                 datetime.utcnow(),
                                 player.tag,
                                 player.get_achievement("Friend in Need").value,
+                                player.trophies,
                                 player.clan.tag if player.clan else None,
                                 player.clan.name if player.clan else None,
                         )
@@ -65,6 +86,43 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
     except Exception as error:
         log.critical(error, stack_info=True)
 
+async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
+    log = logging.getLogger('PantherDaemon.weekly_update')
+    try:
+        while True:
+            log.debug("Starting weekly update loop")
+            start_date = get_utc_monday()
+            end_date = get_utc_monday() + timedelta(days=7)
+            async with pool.acquire() as conn:
+                active_members = await conn.fetch(SQL_GET_ACTIVE)
+                for member in active_members:
+                    member_diffs = await conn.fetch(SQL_GET_DIFF.format(start_date, end_date, member['clash_tag']))
+                    if len(member_diffs) == 1:
+                        member_diff = dict(member_diffs[0])
+                        member_diff['current_donations'] = 0
+                        member_diff['current_trophies'] = 0
+                    else:
+                        member_diff = dict(member_diffs[0])
+                        member_diff['current_donations'] -= member_diffs[-1]['current_donations']
+                        member_diff['current_trophies'] -= member_diffs[-1]['current_trophies']
+
+                    await conn.execute(SQL_INSERT_UPDATE_DIFF,
+                                   start_date,
+                                   member_diff['tag'],
+                                   member_diff['current_donations'],
+                                   member_diff['current_trophies'],
+                                   member_diff['current_clan_tag'],
+                                   member_diff['current_clan_name'],
+                                   )
+            log.debug(f'Sleeping for {sleep_time} seconds')
+            await asyncio.sleep(sleep_time)
+    except KeyboardInterrupt:
+        log.debug('CTRL + C executed')
+    except Exception as error:
+        log.critical(error, stack_info=True)
+        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+        print(exc)
+
 
 async def main(coc_client_):
     """Async start point will for all background tasks"""
@@ -75,7 +133,8 @@ async def main(coc_client_):
     loop = asyncio.get_running_loop()
 
     tasks = [
-        loop.create_task(update_active_users(300, coc_client_, pool))
+        loop.create_task(update_active_users(300, coc_client_, pool)),
+        loop.create_task(update_weekly_counts(300, pool))
     ]
     await asyncio.wait(tasks)
 

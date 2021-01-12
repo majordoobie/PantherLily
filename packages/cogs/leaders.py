@@ -106,7 +106,6 @@ class Leaders(commands.Cog):
             self.bot.log_role_change(member, role, removed=True)
 
 
-
     async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
         async with self.bot.pool.acquire() as con:
             await con.execute(sql_update_discord_user_is_active(), False, member_id)
