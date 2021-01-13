@@ -53,3 +53,17 @@ if __name__ == '__main__':
         get_levels(int(argv[1]))
     else:
         print("Provide an integer for the town hall level")
+
+"""
+# Possibly implement in the future from strange GML Utils 
+import pandas as pd
+def get_levels(level: int):
+  town_hall = f'TH{level}'
+  troop_df = pd.read_csv('path/to/your/file.csv', skip_blank_lines=True, header=0).set_index('Object', drop=False)
+  troop_df = troop_df.loc[troop_df[town_hall] > 0,
+    ['Object', 'Type', 'Source', 'Emoji', town_hall]]
+  troop_df['town_hall'] = level
+  troop_df = troop_df.transpose().rename({'Object': 'name', 'Type': 'type', 'Source': 'source',
+    town_hall: 'max_level','Emoji': 'emoji'})
+  return troop_df
+"""

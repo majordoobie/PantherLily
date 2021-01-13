@@ -78,20 +78,23 @@ class UserStats(commands.Cog):
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
         if not args:
             return
-
         member: Member
+
+        # If --clash-tag was supplied the search by clash tag directly instead of by user
         if args['clash_tag']:
             tag = args['clash_tag']
             if utils.is_valid_tag(tag):
                 player = await self.bot.coc_client.get_player(tag)
                 if player:
-                    await self._clash_display(ctx, player)
+                    panel_a, panel_b = ClashStats(player).display_troops()
+                    await self._display_panels(ctx, player, panel_a, panel_b)
                     return
                 else:
                     await self.bot.embed_print(ctx, description=f'User with the tag of {tag} was not found',
                                                color=self.bot.WARNING)
+                    return
 
-
+        # If clash tag was not used then attempt to get the user by discord accounts
         elif args['positional']:
             member = await get_discord_member(ctx, args['positional'])
         else:
@@ -120,6 +123,9 @@ class UserStats(commands.Cog):
 
         player = await self.bot.coc_client.get_player(active_player['clash_tag'])
         panel_a, panel_b = ClashStats(player, active_player, set_lvl=args['display_level']).display_all()
+        await self._display_panels(ctx, player, panel_a, panel_b)
+
+    async def _display_panels(self, ctx, player, panel_a, panel_b):
         await self.bot.embed_print(ctx, panel_a, footnote=False)
         panel = await self.bot.embed_print(ctx, panel_b, _return=True)
         panel = await ctx.send(embed=panel)
@@ -133,24 +139,6 @@ class UserStats(commands.Cog):
             await ctx.send(player.share_link)
         except asyncio.TimeoutError:
             pass
-
-    async def _clash_display(self, ctx, player):
-        panel_a, panel_b = ClashStats(player).display_troops()
-        await self.bot.embed_print(ctx, panel_a, footnote=False)
-        panel = await self.bot.embed_print(ctx, panel_b, _return=True)
-        panel = await ctx.send(embed=panel)
-        await panel.add_reaction(self.bot.settings.emojis['link'])
-
-        def check(reaction, user):
-            return not user.bot and str(reaction.emoji) == self.bot.settings.emojis['link']
-
-        try:
-            await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
-            await ctx.send(player.share_link)
-        except asyncio.TimeoutError:
-            pass
-
-
 
 def setup(bot):
     bot.add_cog(UserStats(bot))
