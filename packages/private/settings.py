@@ -108,6 +108,7 @@ class Settings:
 
 
 emoji_dict = {
+    "link": "<:link:694750139847409695>",
     "database": "<:database:541417513842507806>",
     "zulu_server": "<:zuluServer:541405829484642314>",
     "reddit_zulu": "<:redditzulu:541434973153001482>",

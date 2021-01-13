@@ -15,10 +15,11 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['add'])
-
         for i in ctx.guild.emojis:
             print(i.name, i.id)
+        return
+        for name, emoji in self.bot.settings.emojis.items():
+            await ctx.send(f'{name}, {emoji}')
 
     @commands.command()
     async def get_user(self, ctx, *, arg_string):

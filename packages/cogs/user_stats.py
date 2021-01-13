@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
+
+import asyncio
+from coc import utils
 from discord.ext import commands
 from discord.member import Member
 import logging
 
 from bot import BotClient
 from .clash_stats.clash_stats_panel import ClashStats
-from .utils.utils import get_utc_monday, get_discord_member
+from .utils.utils import get_utc_monday, get_discord_member, parse_args
 from .utils.bot_sql import sql_select_user_donation, sql_select_active_account, sql_select_discord_user_id, \
     sql_select_clash_account_discord_id
 from .leaders import account_panel
@@ -63,9 +66,34 @@ class UserStats(commands.Cog):
     async def stats(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `stats` with `{arg_string}`')
         #TODO add a way to just give a tag to get that information
+        arg_dict = {
+            'clash_tag': {
+                'flags': ['-c', '--clash_tag'],
+            },
+            'display_level': {
+                'flags': ['-l', '--level'],
+                'type': 'int',
+            }
+        }
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        if not args:
+            return
+
         member: Member
-        if arg_string:
-            member = await get_discord_member(ctx, arg_string)
+        if args['clash_tag']:
+            tag = args['clash_tag']
+            if utils.is_valid_tag(tag):
+                player = await self.bot.coc_client.get_player(tag)
+                if player:
+                    await self._clash_display(ctx, player)
+                    return
+                else:
+                    await self.bot.embed_print(ctx, description=f'User with the tag of {tag} was not found',
+                                               color=self.bot.WARNING)
+
+
+        elif args['positional']:
+            member = await get_discord_member(ctx, args['positional'])
         else:
             member = await get_discord_member(ctx, ctx.author.id)
 
@@ -88,14 +116,40 @@ class UserStats(commands.Cog):
                                        color=self.bot.ERROR)
             msg = account_panel(db_discord_member, db_clash_accounts)
             await self.bot.embed_print(ctx, msg)
+            return
 
         player = await self.bot.coc_client.get_player(active_player['clash_tag'])
-        # frame, title = ClashStats(player, active_player).payload()
-        # await self.bot.embed_print(ctx, title=title, description=frame)
-        panels = ClashStats(player, active_player)
-        panel_a, panel_b = ClashStats(player, active_player).display_all()
+        panel_a, panel_b = ClashStats(player, active_player, set_lvl=args['display_level']).display_all()
         await self.bot.embed_print(ctx, panel_a, footnote=False)
-        await self.bot.embed_print(ctx, panel_b)
+        panel = await self.bot.embed_print(ctx, panel_b, _return=True)
+        panel = await ctx.send(embed=panel)
+        await panel.add_reaction(self.bot.settings.emojis['link'])
+
+        def check(reaction, user):
+            return not user.bot and str(reaction.emoji) == self.bot.settings.emojis['link']
+
+        try:
+            await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+            await ctx.send(player.share_link)
+        except asyncio.TimeoutError:
+            pass
+
+    async def _clash_display(self, ctx, player):
+        panel_a, panel_b = ClashStats(player).display_troops()
+        await self.bot.embed_print(ctx, panel_a, footnote=False)
+        panel = await self.bot.embed_print(ctx, panel_b, _return=True)
+        panel = await ctx.send(embed=panel)
+        await panel.add_reaction(self.bot.settings.emojis['link'])
+
+        def check(reaction, user):
+            return not user.bot and str(reaction.emoji) == self.bot.settings.emojis['link']
+
+        try:
+            await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+            await ctx.send(player.share_link)
+        except asyncio.TimeoutError:
+            pass
+
 
 
 def setup(bot):

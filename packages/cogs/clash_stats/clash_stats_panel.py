@@ -10,8 +10,8 @@ class ClashStats:
         "9": "<:townhall9:546080772118020097>",
         "8": "<:townhall8:546080798097539082>"
     }
-    def __init__(self, player: Player, active_player: dict, set_lvl=None):
-        """Display an embeded panel containing user stats"""
+    def __init__(self, player: Player, active_player: dict=None, set_lvl=None):
+        """Display an embedded panel containing user stats"""
         self.player = player
         self.member = active_player
         if set_lvl:
@@ -40,7 +40,10 @@ class ClashStats:
 
     def _set_panels(self):
         self.title = f'{self.TOWN_HALLS[str(self.player.town_hall)]} **{self.player.name}**'
-        self.administration_panel = self._get_administration_panel()
+        if self.member:
+            self.administration_panel = self._get_administration_panel()
+        else:
+            self.administration_panel = self._get_light_admin_panel()
         self.hero_panel = self._get_heroes_panel()
         self.troop_panel = self._get_troops_panels()
         self.siege_panel = self._get_sieges_panel()
@@ -53,6 +56,8 @@ class ClashStats:
             frame += f"`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`\n"
 
         frame += (
+        f"`{'Role:':<15}` `{self.player.role:<15}`\n"
+        f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
         f"`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`\n"
         f"`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`\n"
         f"`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`\n"
@@ -64,6 +69,24 @@ class ClashStats:
         f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
         )
         return frame
+
+    def _get_light_admin_panel(self):
+        frame = ''
+        if self.player.town_hall > 11:
+            frame += f"`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`\n"
+        frame += (
+            f"`{'Role:':<15}` `{self.player.role:<15}`\n"
+            f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
+            f"`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`\n"
+            f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
+            f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
+            f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"
+            f"`{'War Stars:':<15}` `{self.player.war_stars:<15}`\n"
+            f"`{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`\n"
+            f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
+        )
+        return frame
+
 
     def _get_heroes_panel(self):
         frame = '**Heroes**\n'
@@ -143,38 +166,8 @@ class ClashStats:
                   f'{self.troop_panel}\n{self.spell_panel}'
         return panel_a, panel_b
 
-
-    def payload(self):
-        title = (f"""
-{self.TOWN_HALLS[str(self.player.town_hall)]} {self.player.name}
-        """)
-        frame = (f"""
-`{'Role:':<15}` `{self.player.role:<15}`
-`{'Player Tag:':<15}` `{self.player.tag:<15}`
-""")
-        if self.player.town_hall > 11:
-            frame += (f"""\
-`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`
-            """)
-        frame += (f"""
-`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`
-`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`
-`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`
-`{'League:':<15}` `{self.player.league.name:<15.15}`
-`{'Trophies:':<15}` `{self.player.trophies:<15}`
-`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`
-`{'War Stars:':<15}` `{self.player.war_stars:<15}`
-`{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`
-`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`
-
-
-**__Displaying Level:__** `{self.town_hall}`
-{self._get_heroes_panel()}
-{self._get_sieges_panel()}
-{self._get_troops_panels()}
-{self._get_spells_panels()}
-""")
-        #TODO: add ashare link!
-
-        return frame, title
+    def display_troops(self):
+        panel_a = f'{self.title}\n{self.administration_panel}\n'
+        panel_b = f'{self.hero_panel}\n{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
+        return panel_a, panel_b
 

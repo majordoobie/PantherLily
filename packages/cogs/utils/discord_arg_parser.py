@@ -216,8 +216,7 @@ class DiscordArgParse:
                                 try:
                                     argument = int(argument)
                                 except ValueError:
-                                    argument_error = self.arg_list[arg_index]
-                                    msg = f'`{argument_error}` was expected to be an integer, got a string instead'
+                                    msg = f'Expected to be an integer, got a string instead'
                                     raise DiscordCommandError(msg)
 
                             self.arg_list.pop(arg_index)
