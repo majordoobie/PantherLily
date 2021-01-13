@@ -13,11 +13,11 @@ class BotExt:
         self.settings = settings
         self.log = logging.getLogger('root.bot_ext')
 
-    async def embed_print(self, ctx, description, title='', color=INFO, codeblock=False, _return=False):
+    async def embed_print(self, ctx, description, title='', color=INFO, codeblock=False, _return=False, footnote=True):
         if not description:
             raise BadArgument("No value to encapsulate in a embed")
 
-        if len(description) < 1900:
+        if len(description) < 1960:
             if codeblock:
                 description = f'```{description}```'
 
@@ -27,7 +27,8 @@ class BotExt:
                 color=color
             )
             # TODO think it looks ugly having this here come back later to decide
-            embed.set_footer(text=self.settings.bot_config['version'])
+            if footnote:
+                embed.set_footer(text=self.settings.bot_config['version'])
 
             if _return:
                 return embed
@@ -47,7 +48,8 @@ class BotExt:
                     description=i,
                     color=color
                 ))
-            embed_list[-1].set_footer(text=self.settings.bot_config['version'])
+            if footnote:
+                embed_list[-1].set_footer(text=self.settings.bot_config['version'])
             if _return:
                 return embed_list
 
@@ -62,7 +64,7 @@ class BotExt:
         blocks = []
         block = ''
         for i in text.split('\n'):
-            if (len(i) + len(block)) > 1900:
+            if (len(i) + len(block)) > 1960:
                 block = block.rstrip('\n')
                 if codeblock:
                     blocks.append(f'```{block}```')

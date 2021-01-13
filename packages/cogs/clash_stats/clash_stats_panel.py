@@ -1,37 +1,28 @@
-import json
-
 from coc import Player
-
-HOME = '/opt/project/packages/cogs/clash_stats/'
+from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
 class ClashStats:
-    """Build stats output"""
+    TOWN_HALLS = {
+        "13": "<:th13:651099879686406145>",
+        "12": "<:townhall12:546080710406963203>",
+        "11": "<:townhall11:546080741545738260>",
+        "10": "<:townhall10:546080756628324353>",
+        "9": "<:townhall9:546080772118020097>",
+        "8": "<:townhall8:546080798097539082>"
+    }
     def __init__(self, player: Player, active_player: dict, set_lvl=None):
-        """
-        set_lvl is going to be an int
-        """
-        import os
-        print(os.getcwd())
-        self.em = self.load_emojis()
-        self.tr = self.load_troop()
+        """Display an embeded panel containing user stats"""
         self.player = player
         self.member = active_player
         if set_lvl:
-            self.lvl = self.get_lvl(set_lvl)
+            self.town_hall = self._get_lvl(set_lvl)
         else:
-            self.lvl = str(player.town_hall)
+            self.town_hall = str(player.town_hall)
+        self.troops = get_levels(int(self.town_hall))
+        self._set_panels()
 
-    def load_troop(self):
-        with open(HOME+'clash_stats_levels.json', 'rt') as trooplevels:
-            f = json.load(trooplevels)
-            return f
-
-    def load_emojis(self):
-        with open(HOME+'clash_stats_emoji.json', 'rt') as emojis:
-            f = json.load(emojis)
-            return f
-
-    def get_lvl(self, set_lvl):
+    def _get_lvl(self, set_lvl):
+        """Private function to get the troop level of a specific level"""
         if isinstance(set_lvl, int):
             if set_lvl in range(8, 14):
                 return str(set_lvl)
@@ -47,9 +38,115 @@ class ClashStats:
         else:
             return str(self.player.town_hall)
 
+    def _set_panels(self):
+        self.title = f'{self.TOWN_HALLS[str(self.player.town_hall)]} **{self.player.name}**'
+        self.administration_panel = self._get_administration_panel()
+        self.hero_panel = self._get_heroes_panel()
+        self.troop_panel = self._get_troops_panels()
+        self.siege_panel = self._get_sieges_panel()
+        self.spell_panel = self._get_spells_panels()
+
+    def _get_administration_panel(self) -> str:
+        """Creates the administration information. This should only be available to registered users"""
+        frame = ''
+        if self.player.town_hall > 11:
+            frame += f"`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`\n"
+
+        frame += (
+        f"`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`\n"
+        f"`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`\n"
+        f"`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`\n"
+        f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
+        f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
+        f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"
+        f"`{'War Stars:':<15}` `{self.player.war_stars:<15}`\n"
+        f"`{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`\n"
+        f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
+        )
+        return frame
+
+    def _get_heroes_panel(self):
+        frame = '**Heroes**\n'
+        count = 0
+        for hero in self.player.heroes:
+            try:
+                emoji = self.troops[hero.name].emoji
+                current_lvl = hero.level
+                max_lvl = self.troops[hero.name].max_level
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += '\n'
+                    count = 0
+            except KeyError:
+                continue
+        return frame
+
+    def _get_sieges_panel(self):
+        frame = ''
+        count = 0
+        for siege in self.player.siege_machines:
+            try:
+                emoji = self.troops[siege.name].emoji
+                current_lvl = siege.level
+                max_lvl = self.troops[siege.name].max_level
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += '\n'
+                    count = 0
+            except KeyError:
+                continue
+        if frame:
+            _frame = '**Sieges**\n'
+            _frame += frame
+            return _frame
+        return frame
+
+    def _get_troops_panels(self):
+        frame = '**Troops**\n'
+        count = 0
+        for troop in self.player.home_troops:
+            try:
+                emoji = self.troops[troop.name].emoji
+                current_lvl = troop.level
+                max_lvl = self.troops[troop.name].max_level
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += '\n'
+                    count = 0
+            except KeyError:
+                continue
+        return frame
+
+    def _get_spells_panels(self):
+        frame = '**Spells**\n'
+        count = 0
+        for spell in self.player.spells:
+            try:
+                emoji = self.troops[spell.name].emoji
+                current_lvl = spell.level
+                max_lvl = self.troops[spell.name].max_level
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += '\n'
+                    count = 0
+            except KeyError:
+                continue
+        return frame
+
+    def display_all(self):
+        panel_a= f'{self.title}\n{self.administration_panel}\n'
+        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}\n{self.siege_panel}\n' \
+                  f'{self.troop_panel}\n{self.spell_panel}'
+        return panel_a, panel_b
+
+
     def payload(self):
         title = (f"""
-{self.em['townhalls'][str(self.player.town_hall)]} {self.player.name}
+{self.TOWN_HALLS[str(self.player.town_hall)]} {self.player.name}
         """)
         frame = (f"""
 `{'Role:':<15}` `{self.player.role:<15}`
@@ -69,74 +166,15 @@ class ClashStats:
 `{'War Stars:':<15}` `{self.player.war_stars:<15}`
 `{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`
 `{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`
-**__Displaying Level:__** `{self.lvl}`
-{self.get_heroes()}
-{self.get_sieges()}
-{self.get_troops()}
-{self.get_spells()}
+
+
+**__Displaying Level:__** `{self.town_hall}`
+{self._get_heroes_panel()}
+{self._get_sieges_panel()}
+{self._get_troops_panels()}
+{self._get_spells_panels()}
 """)
         #TODO: add ashare link!
 
         return frame, title
 
-    def get_heroes(self):
-        frame = '**Heroes**\n'
-        for hero in self.player.heroes:
-            try:
-                emoji = self.em['heroes'][hero.name]
-                current_lvl = hero.level
-                max_lvl = self.tr[self.lvl][hero.name]
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-            except KeyError:
-                continue
-        return frame
-
-    def get_sieges(self):
-        frame = ''
-        for siege in self.player.siege_machines:
-            try:
-                emoji = self.em['siege'][siege.name]
-                current_lvl = siege.level
-                max_lvl = self.tr[self.lvl][siege.name]
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-            except KeyError:
-                continue
-        if frame:
-            _frame = '**Sieges**\n'
-            _frame += frame
-            return _frame
-        return frame
-
-    def get_troops(self):
-        frame = '**Troops**\n'
-        count = 0
-        for troop in self.player.troops:
-            try:
-                emoji = self.em['troops'][troop.name]
-                current_lvl = troop.level
-                max_lvl = self.tr[self.lvl][troop.name]
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += '\n'
-                    count = 0
-            except KeyError:
-                continue
-        return frame
-
-    def get_spells(self):
-        frame = '**Spells**\n'
-        count = 0
-        for spell in self.player.spells:
-            try:
-                emoji = self.em['spells'][spell.name]
-                current_lvl = spell.level
-                max_lvl = self.tr[self.lvl][spell.name]
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += '\n'
-                    count = 0
-            except KeyError:
-                continue
-        return frame

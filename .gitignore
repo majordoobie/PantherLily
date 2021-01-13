@@ -19,3 +19,4 @@ secrets.py
 archive/
 __init__.py
 *.db
+/packages/private/google_login.json

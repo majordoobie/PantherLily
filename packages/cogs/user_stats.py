@@ -89,19 +89,13 @@ class UserStats(commands.Cog):
             msg = account_panel(db_discord_member, db_clash_accounts)
             await self.bot.embed_print(ctx, msg)
 
-        print(active_player)
         player = await self.bot.coc_client.get_player(active_player['clash_tag'])
-        frame, title = ClashStats(player, active_player).payload()
-        await self.bot.embed_print(ctx, title=title, description=frame)
-
-
-
-
-
-
-
-
-
+        # frame, title = ClashStats(player, active_player).payload()
+        # await self.bot.embed_print(ctx, title=title, description=frame)
+        panels = ClashStats(player, active_player)
+        panel_a, panel_b = ClashStats(player, active_player).display_all()
+        await self.bot.embed_print(ctx, panel_a, footnote=False)
+        await self.bot.embed_print(ctx, panel_b)
 
 
 def setup(bot):

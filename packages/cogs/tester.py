@@ -16,13 +16,9 @@ class Tester(commands.Cog):
     @commands.command()
     async def test(self, ctx):
         await self.bot.embed_print(ctx, self.bot.settings.emojis['add'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['delete'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['complete'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['check'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['reset'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['approved'])
-        await self.bot.embed_print(ctx, self.bot.settings.emojis['cancel'])
 
+        for i in ctx.guild.emojis:
+            print(i.name, i.id)
 
     @commands.command()
     async def get_user(self, ctx, *, arg_string):
