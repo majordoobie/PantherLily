@@ -61,7 +61,7 @@ class DiscordArgParse:
         List of strings used to indicate a specific flag is chosen. By convention these
         are prefixed with - or -- for example -e --example
 
-    arg_type: str [optional][defaul=str]
+    arg_type: str [optional][default=str]
         Set a data type for the parameter. By default it will be a string
 
     arg_dict.switch: bool [optional][default=False]

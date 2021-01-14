@@ -63,20 +63,7 @@ def sql_insert_user_note() -> str:
 #
 
 def sql_select_user_donation() -> str:
-    return '''\
-    SELECT * FROM 
-    clash_classic_update
-    WHERE
-    TAG = '{}'
-    AND
-    increment_date
-    between
-    '{}' and timezone('utc', now())
-    ORDER
-    BY
-    increment_date
-    ASC;'''
-
+    return "SELECT * FROM clash_classic_update_view WHERE week_date='{}' AND clash_tag='{}'"
 
 def sql_select_active_account() -> str:
     return '''SELECT * FROM discord_user, clash_account 

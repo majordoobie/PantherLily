@@ -38,13 +38,15 @@ ORDER BY increment_date DESC"""
 
 SQL_INSERT_UPDATE_DIFF = """
 INSERT INTO clash_classic_update_view
-    (week_date, clash_tag, current_donation, current_trophy, current_clan_tag, current_clan_name, clash_name, town_hall) 
+    (week_date, clash_tag, donation_gains, trophy_diff, current_clan_tag, current_clan_name, clash_name, town_hall, 
+    fin_value, current_trophy) 
 VALUES 
-    ($1, $2, $3, $4, $5, $6, $7, $8)
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT 
     (week_date, clash_tag)
 DO UPDATE SET
-    current_donation=$3, current_trophy=$4, current_clan_tag=$5, current_clan_name=$6, clash_name=$7, town_hall=$8
+    donation_gains=$3, trophy_diff=$4, current_clan_tag=$5, current_clan_name=$6, clash_name=$7, town_hall=$8,
+    fin_value=$9, current_trophy=$10
 """
 
 SQL_INSERT_CLAN_MEMBERS = "INSERT INTO present_in_clan (clash_tag, player_name, clash_clan_tag) VALUES ($1, $2, $3)"
@@ -130,24 +132,27 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                     member_diffs = await conn.fetch(SQL_GET_DIFF.format(start_date, end_date, member['clash_tag']))
                     if len(member_diffs) == 1:
                         member_diff = dict(member_diffs[0])
-                        member_diff['current_donations'] = 0
-                        member_diff['current_trophies'] = 0
+                        member_diff['donation_gains'] = 0
+                        member_diff['trophy_diff'] = 0
                         member_diff['clash_name'] = member_diffs[0]['clash_name']
                         member_diff['town_hall'] = member_diffs[0]['town_hall']
                     else:
                         member_diff = dict(member_diffs[0])
-                        member_diff['current_donations'] -= member_diffs[-1]['current_donations']
-                        member_diff['current_trophies'] -= member_diffs[-1]['current_trophies']
+                        member_diff['donation_gains'] = member_diff['current_donations'] - member_diffs[-1]['current_donations']
+                        member_diff['trophy_diff'] = member_diff['current_trophies'] - member_diffs[-1]['current_trophies']
 
-                    await conn.execute(SQL_INSERT_UPDATE_DIFF,
-                                   start_date,
-                                   member_diff['tag'],
-                                   member_diff['current_donations'],
-                                   member_diff['current_trophies'],
-                                   member_diff['current_clan_tag'],
-                                   member_diff['current_clan_name'],
-                                   member_diff['clash_name'],
-                                   member_diff['town_hall']
+                    await conn.execute(
+                        SQL_INSERT_UPDATE_DIFF,
+                        start_date,
+                        member_diff['tag'],
+                        member_diff['donation_gains'],
+                        member_diff['trophy_diff'],
+                        member_diff['current_clan_tag'],
+                        member_diff['current_clan_name'],
+                        member_diff['clash_name'],
+                        member_diff['town_hall'],
+                        member_diff['current_donations'],
+                        member_diff['current_trophies']
                     )
             log.debug(f'Sleeping for {sleep_time} seconds')
             await asyncio.sleep(sleep_time)

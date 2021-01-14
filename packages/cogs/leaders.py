@@ -386,7 +386,7 @@ class Leaders(commands.Cog):
     @commands.check(is_leader)
     @commands.command()
     async def view_account(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `view_acount` with `{arg_string}`')
+        self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
         arg_dict = {}
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
 
@@ -400,6 +400,53 @@ class Leaders(commands.Cog):
         db_discord_member, db_clash_accounts = await self._get_updates(member.id)
         msg = account_panel(db_discord_member, db_clash_accounts)
         await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+
+    @commands.check(is_leader)
+    @commands.command()
+    async def report(self, ctx, *, arg_string=None):
+        self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
+        arg_dict = {
+            'weeks': {
+                'flags': ['-w', '--weeks'],
+                'type': 'int',
+                'default': 1
+            }
+        }
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        true = self.bot.settings.emojis['true']
+        false = self.bot.settings.emojis['false']
+
+        # Get the amount of weeks to pull back
+        dates = []
+        for i in range(0, args['weeks']):
+            dates.append(get_utc_monday() - timedelta(days=(i * 7)))
+
+        # Get report blocks based on dates
+        async with self.bot.pool.acquire() as con:
+            for date in dates:
+                players = await con.fetch(f"SELECT * FROM clash_classic_update_view "
+                                          f"WHERE week_date='{date}'")
+                players.sort(key=lambda x: x['donation_gains'], reverse=True)
+                data_block = f"`\u00A0\u00A0\u00A0 {'Player':<14}⠀` `⠀{'Donation'}⠀`\n"
+                for player in players:
+                    donation = player['donation_gains']
+                    data_block += f"{true if donation > 300 else false}\u00A0`⠀" \
+                                  f"{player['clash_name']:<17.17}⠀` `⠀{donation:⠀>5}⠀`\n"
+
+                embeds = await self.bot.embed_print(ctx, data_block, _return=True, footnote=False)
+                date = f"Week of: {date.strftime('%Y-%m-%d')}"
+                if isinstance(embeds, list):
+                    embeds[-1].set_footer(text=date)
+                    for embed in embeds:
+                        await ctx.send(embed=embed)
+                else:
+                    embeds.set_footer(text=date)
+                    await ctx.send(embed=embeds)
+
+
+
+
+
 
 
 def account_panel(discord_member: dict, coc_accounts: list, title: str='') -> str:

@@ -1,9 +1,13 @@
 import asyncio
+from datetime import timedelta
+
 from discord.ext import commands
 import logging
 
 from bot import BotClient
 from .utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered
+from .utils.utils import parse_args, get_utc_monday
+
 
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
@@ -33,7 +37,7 @@ class GroupStats(commands.Cog):
         async with self.bot.pool.acquire() as con:
             members_db = await con.fetch(sql_select_all_active_users())
             unregistered_users = await con.fetch(sql_select_clash_members_not_registered())
-        members_db.sort(key=lambda x: x['discord_nickname'].lower())
+        members_db.sort(key=lambda x: x['clash_name'].lower())
 
         roster = {}
         clan_locations = {}
@@ -47,7 +51,7 @@ class GroupStats(commands.Cog):
             else:
                 strength[member['town_hall']] = 1
 
-            roster[member['discord_nickname']] = {
+            roster[member['clash_name']] = {
                 'in_mother_clan': _in_clan(member['current_clan_tag']),
                 'in_discord': member['in_zulu_server'],
                 'in_database': True
@@ -101,15 +105,49 @@ class GroupStats(commands.Cog):
 
         try:
             await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+            location_panels = ''
             for clan, players in clan_locations.items():
                 panel = f'__**{clan}**__\n'
                 for player in players:
-                    panel += f'`⠀{player["town_hall"]:<2}⠀` `⠀{player["name"]:<23}⠀`\n'
-                await self.bot.embed_print(ctx, panel)
+                    panel += f'`⠀{player["town_hall"]:<2}⠀` `⠀{player["name"]:<23.23}⠀`\n'
+                location_panels += panel
+            await self.bot.embed_print(ctx, location_panels)
+
         except asyncio.TimeoutError:
             pass
 
+    @commands.command()
+    async def top(self, ctx, *, arg_string=None):
+        self.log.debug(f'User: `{ctx.author}` is running `top`')
+        arg_dict = {
+            'weeks': {
+                'flags': ['-w', '--weeks'],
+                'type': 'int',
+                'default': 1
+            },
+            'donations': {
+                'flags': ['-d', '--donations'],
+                'switch_action': True,
+                'default': True
+            },
+            'trophies': {
+                'flags': ['-t', '--trophies'],
+                'switch_action': True,
+                'default': False
+            }
+        }
+        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
 
+        # Get the amount of weeks to pull back
+        dates = []
+        for i in range(0, args['weeks']):
+            dates.append(get_utc_monday() - timedelta(days=(i * 7)))
+
+        # Get report blocks based on dates
+        async with self.bot.pool.acquire() as con:
+            for date in dates:
+                players = await con.fetch(f"SELECT * FROM clash_classic_update_view "
+                                          f"WHERE week_date='{date}'")
 
 
 
@@ -117,7 +155,6 @@ def _in_clan(clan_tag: str) -> bool:
     if clan_tag == '#2Y28CGP8':
         return True
     return False
-        #TODO: Stop for now we need to populate clash_account for this to work
 
 
 

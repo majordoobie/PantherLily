@@ -37,29 +37,27 @@ class UserStats(commands.Cog):
                 player = await conn.fetchrow(sql_select_active_account().format(member.id))
 
             if not player:
-                await self.bot.embed_print(ctx, f'User `{member.display_name}` is no longer an active member')
+                await self.bot.embed_print(ctx, f'User `{member.display_name}` is no longer an active member',
+                                           color=self.bot.WARNING)
                 return
 
+        week_start = get_utc_monday()
         async with self.bot.pool.acquire() as conn:
-            start_date = get_utc_monday()
-            sql_query = sql_select_user_donation().format(player['clash_tag'], start_date)
-            donation_records = await conn.fetch(sql_query)
+            donation_sql = sql_select_user_donation().format(week_start, player['clash_tag'])
+            player_record = await conn.fetchrow(donation_sql)
 
-        if len(donation_records) < 2:
+        if not player_record:
             await self.bot.embed_print(ctx, title='Donation', description='No results return. Please allow 10 minutes '
                                                                           'minutes to pass to calculate donations')
             return
 
-        else:
-            next_monday = start_date + timedelta(days=7)
-            time_remaining = next_monday - datetime.utcnow()
-            day = time_remaining.days
-            time = str(timedelta(seconds=time_remaining.seconds)).split(":")
-
-            donation_value = donation_records[-1]['current_donations'] - donation_records[0]['current_donations']
-            msg = f'**Donation Stat:**\n{donation_value} | 300\n**Time Remaining:**\n' \
-                  f'{day} days {time[0]} hours {time[1]} minutes'
-            await self.bot.embed_print(ctx, title='Donation', description=msg)
+        week_end = week_start + timedelta(days=7)
+        time_remaining = week_end - datetime.utcnow()
+        day = time_remaining.days
+        time = str(timedelta(seconds=time_remaining.seconds)).split(":")
+        msg = f'**Donation Stat:**\n{player_record["donation_gains"]} | 300\n**Time Remaining:**\n' \
+              f'{day} days {time[0]} hours {time[1]} minutes'
+        await self.bot.embed_print(ctx, title=f'__**{player_record["clash_name"]}**__', description=msg)
 
 
     @commands.command()
