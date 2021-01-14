@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS clash_classic_update (
     current_trophies INTEGER NOT NULL,
     current_clan_tag TEXT,
     current_clan_name TEXT,
+    clash_name TEXT,
+    town_hall INTEGER,
     PRIMARY KEY (increment_date, clash_tag),
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE
 );    
@@ -85,9 +87,21 @@ CREATE TABLE if NOT EXISTS clash_classic_update_view (
     current_trophy INTEGER,
     current_clan_tag TEXT,
     current_clan_name TEXT,
+    clash_name TEXT,
+    town_hall INTEGER,
     PRIMARY KEY (week_date, clash_tag),
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE 
 );
+    '''
+def create_clash_present_in_clan() -> str:
+    return '''\
+CREATE TABLE IF NOT EXISTS present_in_clan (
+    id SERIAL,
+    clash_tag TEXT NOT NULL,
+    player_name TEXT NOT NULL, 
+    clash_clan_tag TEXT,
+    PRIMARY KEY(id)
+)
     '''
 
 

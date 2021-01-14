@@ -90,8 +90,20 @@ def sql_select_active_account() -> str:
 # Group stat queries
 #
 def sql_select_all_active_users() -> str:
-    return '''SELECT * FROM discord_user, clash_account
+    return '''SELECT * FROM discord_user, clash_account, clash_classic_update_view
     WHERE discord_user.discord_id = clash_account.discord_id
     AND discord_user.is_active = 'true'
     AND clash_account.is_primary_account = 'true' 
+    AND clash_account.clash_tag = clash_classic_update_view.clash_tag
+    '''
+
+def sql_select_clash_members_not_registered() -> str:
+    return '''
+    SELECT * FROM present_in_clan
+    WHERE present_in_clan.clash_tag NOT IN (
+    SELECT clash_tag FROM discord_user, clash_account
+    WHERE discord_user.discord_id = clash_account.discord_id
+    AND discord_user.is_active = 'true'
+    AND clash_account.is_primary_account = 'true'
+    );
     '''

@@ -27,7 +27,8 @@ WHERE is_active = 'true'
 
 
 SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_trophies, 
-                        current_clan_tag, current_clan_name) VALUES ($1, $2, $3, $4, $5, $6);"""
+                        current_clan_tag, current_clan_name, clash_name, town_hall) VALUES 
+                        ($1, $2, $3, $4, $5, $6, $7, $8);"""
 
 SQL_GET_DIFF = """SELECT *
 FROM clash_classic_update
@@ -37,14 +38,42 @@ ORDER BY increment_date DESC"""
 
 SQL_INSERT_UPDATE_DIFF = """
 INSERT INTO clash_classic_update_view
-    (week_date, clash_tag, current_donation, current_trophy, current_clan_tag, current_clan_name) 
+    (week_date, clash_tag, current_donation, current_trophy, current_clan_tag, current_clan_name, clash_name, town_hall) 
 VALUES 
-    ($1, $2, $3, $4, $5, $6)
+    ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT 
     (week_date, clash_tag)
 DO UPDATE SET
-    current_donation=$3, current_trophy=$4, current_clan_tag=$5, current_clan_name=$6
+    current_donation=$3, current_trophy=$4, current_clan_tag=$5, current_clan_name=$6, clash_name=$7, town_hall=$8
 """
+
+SQL_INSERT_CLAN_MEMBERS = "INSERT INTO present_in_clan (clash_tag, player_name, clash_clan_tag) VALUES ($1, $2, $3)"
+
+async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
+    log = logging.getLogger('PantherDaemon.present_in_clan_update')
+    try:
+        while True:
+            log.debug("Updating in-clan roster list")
+            members = await coc_client.get_members('#2Y28CGP8')
+            in_clan = []
+            for member in members:
+                in_clan.append((
+                    member.tag,
+                    member.name,
+                    '#2Y28CGP8', # Member.clan doesn't show clan info at this time fix later
+                ))
+            async with pool.acquire() as conn:
+                await conn.execute('DELETE FROM present_in_clan WHERE id > -1')
+                await conn.execute("SELECT setval('present_in_clan_id_seq', 1)")
+                await conn.executemany(SQL_INSERT_CLAN_MEMBERS, in_clan)
+
+            log.debug(f'Sleeping for {sleep_time} seconds')
+            await asyncio.sleep(sleep_time)
+
+    except KeyboardInterrupt:
+        log.debug('CTRL + C executed')
+    except Exception as error:
+        log.critical(error, stack_info=True)
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.classic_update')
@@ -70,6 +99,8 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                                 player.trophies,
                                 player.clan.tag if player.clan else None,
                                 player.clan.name if player.clan else None,
+                                player.name,
+                                player.town_hall
                         )
                         updates +=1
                     except asyncpg.ForeignKeyViolationError as error:
@@ -101,6 +132,8 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                         member_diff = dict(member_diffs[0])
                         member_diff['current_donations'] = 0
                         member_diff['current_trophies'] = 0
+                        member_diff['clash_name'] = member_diffs[0]['clash_name']
+                        member_diff['town_hall'] = member_diffs[0]['town_hall']
                     else:
                         member_diff = dict(member_diffs[0])
                         member_diff['current_donations'] -= member_diffs[-1]['current_donations']
@@ -113,7 +146,9 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                                    member_diff['current_trophies'],
                                    member_diff['current_clan_tag'],
                                    member_diff['current_clan_name'],
-                                   )
+                                   member_diff['clash_name'],
+                                   member_diff['town_hall']
+                    )
             log.debug(f'Sleeping for {sleep_time} seconds')
             await asyncio.sleep(sleep_time)
     except KeyboardInterrupt:
@@ -134,7 +169,8 @@ async def main(coc_client_):
 
     tasks = [
         loop.create_task(update_active_users(300, coc_client_, pool)),
-        loop.create_task(update_weekly_counts(300, pool))
+        loop.create_task(update_weekly_counts(300, pool)),
+        loop.create_task(update_in_clan(300, coc_client_, pool))
     ]
     await asyncio.wait(tasks)
 

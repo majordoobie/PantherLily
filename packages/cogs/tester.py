@@ -15,11 +15,12 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        for i in ctx.guild.emojis:
-            print(i.name, i.id)
-        return
-        for name, emoji in self.bot.settings.emojis.items():
-            await ctx.send(f'{name}, {emoji}')
+        members = await self.bot.coc_client.get_members('#2Y28CGP8')
+        a = members[0]
+        print(dir(a))
+        print(dir(a.clan))
+        for i in members:print(i.clan)
+
 
     @commands.command()
     async def get_user(self, ctx, *, arg_string):
