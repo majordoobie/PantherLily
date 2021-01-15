@@ -97,7 +97,7 @@ class Settings:
 
         if daemon:
             self.main_log_level = DEBUG
-            self.web_log_url = WEBHOOK_URL
+            self.web_log_url = WEBHOOK_DAEMON
             self.web_log_name = 'Panther Daemon'
             self.web_log_level = DEBUG
             self.file_log = "/opt/project/packages/private/panther_daemon.log"
