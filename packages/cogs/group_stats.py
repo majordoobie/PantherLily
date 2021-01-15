@@ -5,7 +5,7 @@ from discord.ext import commands
 import logging
 
 from bot import BotClient
-from .utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered
+from .utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered, sql_select_classic_view
 from .utils.utils import parse_args, get_utc_monday
 
 
@@ -14,7 +14,14 @@ class GroupStats(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('PantherBot.GroupStats')
 
-    @commands.command()
+    @commands.command(
+        aliases=['ro'],
+        brief='Display clan roster',
+        description='Display clan roster',
+        usage='',
+        help='Display users currently registered and all users in the clan. Additionally, display the current location '
+             'of players. This is useful for CWL when the clanmates are scattered.'
+    )
     async def roster(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `roster`')
 
@@ -116,7 +123,17 @@ class GroupStats(commands.Cog):
         except asyncio.TimeoutError:
             pass
 
-    @commands.command()
+    @commands.command(
+        aliases=['t'],
+        brief='Display clan rankings for trophies or donations',
+        description='Display clan rankings for trophies or donations',
+        usage='[-w int][-d(Default)][-t]',
+        help='Display donation or trophy rankings of the clan. By default, top 20 donations will be shown and only '
+             'the current week is shown. If you would like to display trophy rankings instead, use the -t switch.\n\n'
+             'Additionally, you are able to show previous weeks with the -w switch followed by the number of weeks you '
+             'you would like to display.\n\n'
+             '-w || --weeks [integer]\n-d || --donations\n-t || --trophies'
+    )
     async def top(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `top`')
         arg_dict = {
@@ -128,15 +145,18 @@ class GroupStats(commands.Cog):
             'donations': {
                 'flags': ['-d', '--donations'],
                 'switch_action': True,
+                'switch': True,
                 'default': True
             },
             'trophies': {
                 'flags': ['-t', '--trophies'],
                 'switch_action': True,
+                'switch': True,
                 'default': False
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        donation = True if not args['trophies'] else False
 
         # Get the amount of weeks to pull back
         dates = []
@@ -144,25 +164,41 @@ class GroupStats(commands.Cog):
             dates.append(get_utc_monday() - timedelta(days=(i * 7)))
 
         # Get report blocks based on dates
+        data_blocks = []
         async with self.bot.pool.acquire() as con:
             for date in dates:
-                players = await con.fetch(f"SELECT * FROM clash_classic_update_view "
-                                          f"WHERE week_date='{date}'")
+                players = await con.fetch(sql_select_classic_view().format(date))
+                data_blocks.append(players)
 
+        if not donation:
+            for date, players in enumerate(data_blocks):
+                players.sort(key=lambda x: x['current_trophy'], reverse=True)
+                frame = f'__**Trophy Ranking**__\n'
+                frame += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'trop':<4}⠀{'diff':>5}⠀`\n"
+                for count, player in enumerate(players):
+                    count += 1
+                    name = player['clash_name'][:14]
+                    frame += f"`⠀{count:<2}⠀{player['town_hall']:<2}⠀{player['current_trophy']:<4}⠀" \
+                             f"{player['trophy_diff']:<5}⠀{name:<14}`\n"
+                frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+                await ctx.send(frame)
+        else:
+            for date, players in enumerate(data_blocks):
+                players.sort(key=lambda x: x['donation_gains'], reverse=True)
+                frame = f'__**Donation Ranking**__\n'
+                frame += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'Donation':<8}⠀`\n"
+                for count, player in enumerate(players[:20]):
+                    count += 1
+                    frame += f"`⠀{str(count):<2}⠀{player['town_hall']:<2}⠀{player['donation_gains']:<4}⠀" \
+                             f"{player['clash_name']:<14.14}`\n"
 
+                frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+                await ctx.send(frame)
 
 def _in_clan(clan_tag: str) -> bool:
     if clan_tag == '#2Y28CGP8':
         return True
     return False
-
-
-
-
-
-
-
-
 
 def setup(bot):
     bot.add_cog(GroupStats(bot))

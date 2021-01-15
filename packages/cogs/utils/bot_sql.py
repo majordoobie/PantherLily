@@ -94,3 +94,22 @@ def sql_select_clash_members_not_registered() -> str:
     AND clash_account.is_primary_account = 'true'
     );
     '''
+
+def sql_select_classic_view() -> str:
+    return '''\
+    SELECT * FROM
+    clash_classic_update_view as cw
+    WHERE cw.clash_tag IN (
+        SELECT 
+            clash_tag
+        FROM 
+            discord_user, clash_account
+        WHERE
+            discord_user.discord_id = clash_account.discord_id
+        AND
+            discord_user.is_active = 'true'
+        AND
+            clash_account.is_primary_account = 'true'
+    )
+    AND week_date = '{}';
+    '''

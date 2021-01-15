@@ -18,7 +18,14 @@ class UserStats(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('PantherBot.UserStats')
 
-    @commands.command()
+    @commands.command(
+        aliases = ['d'],
+        brief = 'View current donation gains',
+        description = 'View current donation gains',
+        usage = '(user name)',
+        help = 'Display the current donation gains for the weeks cycle. You also have the option of providing '
+               'another users name as an argument to display their donation gains.'
+    )
     async def donation(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `donation`')
         member: Member
@@ -60,7 +67,17 @@ class UserStats(commands.Cog):
         await self.bot.embed_print(ctx, title=f'__**{player_record["clash_name"]}**__', description=msg)
 
 
-    @commands.command()
+    @commands.command(
+        aliases = ['s'],
+        brief = 'Display Clash of Clans stats',
+        description = 'Display Clash of Clans stats',
+        usage = '[-c (str)] [-l (int)]',
+        help = 'Display Clash of Clan stats of the caller. You also have the option of providing someone else\'s '
+               'name to get their Clash of Clan stats.\n'
+               'Users are also able to provide a level they would like to display with the -l switch.\n'
+               'Users are able to get Clash of Clan stats by provide ANYONE\'s Clash tag.\n\n'
+               '-c || --clash-tag\n-l || --level'
+    )
     async def stats(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `stats` with `{arg_string}`')
         #TODO add a way to just give a tag to get that information

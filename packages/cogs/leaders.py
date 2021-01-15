@@ -119,7 +119,16 @@ class Leaders(commands.Cog):
             await con.execute(sql_insert_user_note(), member_id, clash_tag, datetime.now(), ctx.author.id, msg)
 
     @commands.check(is_leader)
-    @commands.command(aliases=['remove', 'user_remove'])
+    @commands.command(
+        aliases = ['remove', 'user_remove'],
+        brief = 'Remove user from Panther Lily',
+        description = 'Remover user from Panther Lily',
+        usage = '[-m str]',
+        help = 'Removing user from Panther Lily does not delete them, it only sets their trackers off. Their '
+               'data, especially their admin notes, will remain for later access.\n\n'
+               'You are able to use this with or without the -m switch.\n\n'
+               '-m || --message'
+    )
     async def remove_user(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
         arg_dict = {
@@ -181,17 +190,24 @@ class Leaders(commands.Cog):
                 await self._remove_defaults(member)
 
     @commands.check(is_leader)
-    @commands.command(aliases=['user_add', 'add'])
+    @commands.command(
+        aliases=['user_add', 'add'],
+        brief = 'Register user to Panther Lily',
+        description = 'Register user to Panther Lily',
+        usage = '[-c(str)] [-d(str)] [--set-alternate]',
+        help = 'Register a new user, a returning user, or set an alternate Clash of Clans account.\n\n'
+               '-c || --clash-tag\n-d || --discord-id\n--set-alternate'
+    )
     async def add_user(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
 
         arg_dict = {
             'coc_tag': {
-                'flags': ['--clash', '-c'],
+                'flags': ['--clash-tag', '-c'],
                 'required': True
             },
             'discord_id': {
-                'flags': ['--discord', '-d'],
+                'flags': ['--discord-id', '-d'],
                 'required': True,
                 'type': 'int'
             },
@@ -346,17 +362,23 @@ class Leaders(commands.Cog):
 
 
     @commands.check(is_leader)
-    @commands.command(aliases=['delete-coc-link', 'delete_coc_link'])
+    @commands.command(
+        aliases=['delete-coc-link', 'delete_coc_link'],
+        brief = 'Remove a Clash of Clans account from a Users account',
+        description = 'Remove a Clash of Clans account from a Users account',
+        usage = '[-c] [-d]',
+        help = 'Delete the link between a Clash of Clans account and a Panther Lily account.\n\n'
+               '-c || --clash-tag\n-d || --discord-id'
+    )
     async def del_coc(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `del_coc` command args: `{arg_string}`')
-
         arg_dict = {
             'coc_tag': {
-                'flags': ['--clash', '-c'],
+                'flags': ['--clash-tag', '-c'],
                 'required': True
             },
             'discord_id': {
-                'flags': ['--discord', '-d'],
+                'flags': ['--discord-id', '-d'],
                 'required': True,
             }
         }
@@ -384,7 +406,13 @@ class Leaders(commands.Cog):
 
 
     @commands.check(is_leader)
-    @commands.command()
+    @commands.command(
+        brief = 'View players account information',
+        description = 'View players account information',
+        usage = '(user_name)',
+        help = 'Display the users information such as all the Clash of Clans account associated with them.'
+               'The command takes a users name or clash tag as a argument.'
+    )
     async def view_account(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
         arg_dict = {}
@@ -402,7 +430,15 @@ class Leaders(commands.Cog):
         await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
 
     @commands.check(is_leader)
-    @commands.command()
+    @commands.command(
+        aliases = ['re'],
+        brief = 'View donation report',
+        description = 'View donation report',
+        usage = '[-w (int)]',
+        help = 'Show the donation report of all users in the clan. You are also able to display previous weeks'
+               'by providing the number of weeks to display.\n\n'
+               '-w || --weeks'
+    )
     async def report(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
         arg_dict = {
@@ -424,8 +460,7 @@ class Leaders(commands.Cog):
         # Get report blocks based on dates
         async with self.bot.pool.acquire() as con:
             for date in dates:
-                players = await con.fetch(f"SELECT * FROM clash_classic_update_view "
-                                          f"WHERE week_date='{date}'")
+                players = await con.fetch(sql_select_classic_view().format(date))
                 players.sort(key=lambda x: x['donation_gains'], reverse=True)
                 data_block = f"`\u00A0\u00A0\u00A0 {'Player':<14}⠀` `⠀{'Donation'}⠀`\n"
                 for player in players:
@@ -442,12 +477,6 @@ class Leaders(commands.Cog):
                 else:
                     embeds.set_footer(text=date)
                     await ctx.send(embed=embeds)
-
-
-
-
-
-
 
 def account_panel(discord_member: dict, coc_accounts: list, title: str='') -> str:
     coc_panel = f'`{"Clash Tag":<15}` `{"Primary Acc":<15}`\n'
@@ -474,9 +503,6 @@ def alternate_account(discord_member: dict, coc_accounts: list, args) -> str:
     title = f'User `{discord_member["discord_name"]}` already has a clash account. If you would like to set an ' \
             f'alternate then please use the following command:\n\n`{arg_string}`'
     return account_panel(discord_member, coc_accounts, title)
-
-
-
 
 def setup(bot):
     bot.add_cog(Leaders(bot))

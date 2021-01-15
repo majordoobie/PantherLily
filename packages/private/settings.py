@@ -9,12 +9,10 @@ VERSION='3.0.0'
 
 
 ENABLED_COGS = (
-    'tester',
     'admin',
     'leaders',
     'group_stats',
     'user_stats',
-    'database_migration'
 )
 
 class Settings:

@@ -10,7 +10,14 @@ class Administrator(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('PantherBot.Administrator')
 
-    @commands.command(alias='bot_roles')
+    @commands.command(
+        alias='bot_roles',
+        brief = 'Display the roles needed for Panther Lily to work',
+        description = 'Display the roles needed for Panther Lily to work',
+        usage = '',
+        help = ''
+    )
+
     async def panther_roles(self, ctx):
         roles_required = {
             'manage_roles': 'Needed to add roles to users',
@@ -25,9 +32,19 @@ class Administrator(commands.Cog):
             'use_external_emojis': 'Use own stored emojis',
             'add_reaction': 'Ability to add reaction to messages'
         }
+        frame = ''
+        for k,v in roles_required.items():
+            frame += f'`{k}` `{v}`'
+        await self.bot.embed_print(ctx, frame)
 
     @commands.check(is_owner)
-    @commands.command(aliases=['kill', 'k'])
+    @commands.command(
+        aliases=['kill', 'k'],
+        brief = 'Turn bot off',
+        description = 'Turn bot off',
+        usage = '',
+        help = ''
+    )
     async def _logout(self, ctx):
         self.log.info('Closing connections...')
         await self.bot.embed_print(ctx, "Logging off")
@@ -47,7 +64,10 @@ class Administrator(commands.Cog):
             self.log.critical("Could not close coc connection", exc_info=True)
 
     @commands.check(is_owner)
-    @commands.command(aliases=['load'])
+    @commands.command(
+        aliases=['load'],
+        hidden=True
+    )
     async def load_cog(self, ctx, cog: str):
         cog = f'{self.bot.settings.cog_path}.{cog}'
         try:
@@ -58,7 +78,10 @@ class Administrator(commands.Cog):
         await ctx.send(f'Loaded {cog} successfully')
 
     @commands.check(is_owner)
-    @commands.command(aliases=['unload'])
+    @commands.command(
+        aliases=['unload'],
+        hidden = True
+    )
     async def unload_cog(self, ctx, cog: str):
         cog = f'{self.bot.settings.cog_path}.{cog}'
         try:
@@ -69,7 +92,9 @@ class Administrator(commands.Cog):
         await ctx.send(f'Unloaded {cog} successfully')
 
     @commands.check(is_owner)
-    @commands.command(aliases=['re'])
+    @commands.command(
+        hidden=True
+    )
     async def re_load(self, ctx, cog: str):
         cog = f'{self.bot.settings.cog_path}.{cog}'
 
@@ -82,7 +107,9 @@ class Administrator(commands.Cog):
         await ctx.send(msg)
 
     @commands.check(is_owner)
-    @commands.command()
+    @commands.command(
+        hidden=True
+    )
     async def list_cogs(self, ctx):
         output = ''
         for i in self.bot.settings.enabled_cogs:
