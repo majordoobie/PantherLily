@@ -35,7 +35,6 @@ class GroupStats(commands.Cog):
 
         legend = f'{clan} Member is in Reddit Zulu in-game.\n'
         legend += f'{db} Member is registered with Pantherlily.\n'
-        legend += f'{discord} Member is Reddit Zulu Discord server.\n'
         legend += f'{waze} Get realtime location of members.\n'
 
         await self.bot.embed_print(ctx, legend)
@@ -84,12 +83,11 @@ class GroupStats(commands.Cog):
 
 
         # Display the roster panel
-        panel = f'{clan}{db}{discord}\u0080\n'
+        panel = f'{clan}{db}\u0080\n'
         count = 0
         for player, stats in roster.items():
             panel += true if stats['in_mother_clan'] else false
             panel += true if stats['in_database'] else false
-            panel += true if stats['in_discord'] else false
             count += 1
             panel += f"  **{count:>2}**  {player}\n"
 
