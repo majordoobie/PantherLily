@@ -12,7 +12,7 @@ class Administrator(commands.Cog):
 
     @commands.command(
         alias='bot_roles',
-        brief = 'Display the roles needed for Panther Lily to work',
+        brief = '',
         description = 'Display the roles needed for Panther Lily to work',
         usage = '',
         help = ''
@@ -40,7 +40,7 @@ class Administrator(commands.Cog):
     @commands.check(is_owner)
     @commands.command(
         aliases=['kill', 'k'],
-        brief = 'Turn bot off',
+        brief = '',
         description = 'Turn bot off',
         usage = '',
         help = ''

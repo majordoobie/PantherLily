@@ -16,7 +16,7 @@ class GroupStats(commands.Cog):
 
     @commands.command(
         aliases=['ro'],
-        brief='Display clan roster',
+        brief='',
         description='Display clan roster',
         usage='',
         help='Display users currently registered and all users in the clan. Additionally, display the current location '
@@ -125,7 +125,7 @@ class GroupStats(commands.Cog):
 
     @commands.command(
         aliases=['t'],
-        brief='Display clan rankings for trophies or donations',
+        brief='-t for trophies',
         description='Display clan rankings for trophies or donations',
         usage='[-w int][-d(Default)][-t]',
         help='Display donation or trophy rankings of the clan. By default, top 20 donations will be shown and only '

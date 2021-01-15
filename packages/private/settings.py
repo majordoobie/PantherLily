@@ -5,7 +5,7 @@ from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION='packages.cogs'
-VERSION='3.0.0'
+VERSION='3.0.1'
 
 
 ENABLED_COGS = (

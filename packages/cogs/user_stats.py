@@ -20,7 +20,7 @@ class UserStats(commands.Cog):
 
     @commands.command(
         aliases = ['d'],
-        brief = 'View current donation gains',
+        brief = '',
         description = 'View current donation gains',
         usage = '(user name)',
         help = 'Display the current donation gains for the weeks cycle. You also have the option of providing '
@@ -69,7 +69,7 @@ class UserStats(commands.Cog):
 
     @commands.command(
         aliases = ['s'],
-        brief = 'Display Clash of Clans stats',
+        brief = '',
         description = 'Display Clash of Clans stats',
         usage = '[-c (str)] [-l (int)]',
         help = 'Display Clash of Clan stats of the caller. You also have the option of providing someone else\'s '

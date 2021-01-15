@@ -120,8 +120,8 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
-        aliases = ['remove', 'user_remove'],
-        brief = 'Remove user from Panther Lily',
+        aliases = ['remove_user'],
+        brief = '',
         description = 'Remover user from Panther Lily',
         usage = '[-m str]',
         help = 'Removing user from Panther Lily does not delete them, it only sets their trackers off. Their '
@@ -129,7 +129,7 @@ class Leaders(commands.Cog):
                'You are able to use this with or without the -m switch.\n\n'
                '-m || --message'
     )
-    async def remove_user(self, ctx, *, arg_string=None):
+    async def remove(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
         arg_dict = {
             'kick_message': {
@@ -191,14 +191,14 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
-        aliases=['user_add', 'add'],
-        brief = 'Register user to Panther Lily',
+        aliases=['add_user'],
+        brief = '',
         description = 'Register user to Panther Lily',
         usage = '[-c(str)] [-d(str)] [--set-alternate]',
         help = 'Register a new user, a returning user, or set an alternate Clash of Clans account.\n\n'
                '-c || --clash-tag\n-d || --discord-id\n--set-alternate'
     )
-    async def add_user(self, ctx, *, arg_string=None):
+    async def add(self, ctx, *, arg_string=None):
         self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
 
         arg_dict = {
@@ -364,7 +364,7 @@ class Leaders(commands.Cog):
     @commands.check(is_leader)
     @commands.command(
         aliases=['delete-coc-link', 'delete_coc_link'],
-        brief = 'Remove a Clash of Clans account from a Users account',
+        brief = '',
         description = 'Remove a Clash of Clans account from a Users account',
         usage = '[-c] [-d]',
         help = 'Delete the link between a Clash of Clans account and a Panther Lily account.\n\n'
@@ -407,7 +407,7 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
-        brief = 'View players account information',
+        brief = '',
         description = 'View players account information',
         usage = '(user_name)',
         help = 'Display the users information such as all the Clash of Clans account associated with them.'
@@ -432,7 +432,7 @@ class Leaders(commands.Cog):
     @commands.check(is_leader)
     @commands.command(
         aliases = ['re'],
-        brief = 'View donation report',
+        brief = '',
         description = 'View donation report',
         usage = '[-w (int)]',
         help = 'Show the donation report of all users in the clan. You are also able to display previous weeks'

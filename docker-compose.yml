@@ -48,4 +48,8 @@ networks:
     name: panther_network
 
 
+# docker exec -t panther_db pg_dump -c -U pg -d pantherdb > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
+# cat dump_15-01-2021_01_30_01.sql | docker exec -i panther_db psql -U pg -d pantherd
+
+
 
