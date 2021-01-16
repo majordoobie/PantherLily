@@ -28,7 +28,6 @@ class GroupStats(commands.Cog):
         # Create legend to display
         clan = self.bot.settings.emojis["reddit_zulu"]
         db = self.bot.settings.emojis["database"]
-        discord = self.bot.settings.emojis["zulu_server"]
         waze = self.bot.settings.emojis["waze"]
         true = self.bot.settings.emojis["true"]
         false = self.bot.settings.emojis["false"]
@@ -65,12 +64,12 @@ class GroupStats(commands.Cog):
             clan_location = clan_locations.get(member['current_clan_name'])
             if clan_location:
                 clan_locations[member['current_clan_name']].append({
-                    'name': member['discord_name'],
+                    'name': member['clash_name'],
                     'town_hall': member['town_hall']
                 })
             else:
                 clan_locations[member['current_clan_name']] = [{
-                    'name': member['discord_name'],
+                    'name': member['clash_name'],
                     'town_hall': member['town_hall']
                 }]
 

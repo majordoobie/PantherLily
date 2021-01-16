@@ -54,13 +54,14 @@ class ClashStats:
         frame = ''
         if self.player.town_hall > 11:
             frame += f"`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`\n"
-
+        role = self.player.role if self.player.role else 'None'
+        clan = self.player.clan.name if self.player.clan else 'None'
         frame += (
-        f"`{'Role:':<15}` `{self.player.role:<15}`\n"
+        f"`{'Role:':<15}` `{role:<15}`\n"
         f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
         f"`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`\n"
         f"`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`\n"
-        f"`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`\n"
+        f"`{'Current Clan:':<15}` `{clan:<15.15}`\n"
         f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
         f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
         f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"
@@ -72,12 +73,14 @@ class ClashStats:
 
     def _get_light_admin_panel(self):
         frame = ''
+        role = self.player.role if self.player.role else 'None'
+        clan = self.player.clan.name if self.player.clan else 'None'
         if self.player.town_hall > 11:
             frame += f"`{'TH Weapon LvL:':<15}` `{self.player.town_hall_weapon:<15}`\n"
         frame += (
-            f"`{'Role:':<15}` `{self.player.role:<15}`\n"
+            f"`{'Role:':<15}` `{role:<15}`\n"
             f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
-            f"`{'Current Clan:':<15}` `{self.player.clan.name:<15.15}`\n"
+            f"`{'Current Clan:':<15}` `{clan:<15.15}`\n"
             f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
             f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
             f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"

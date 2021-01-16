@@ -134,9 +134,6 @@ def is_owner(ctx):
 
 
 def is_leader(ctx):
-    if is_owner(ctx):
-        return True
-
     for role in ctx.author.roles:
         if role.id == LEADERS:
             return True
