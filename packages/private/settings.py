@@ -5,7 +5,7 @@ from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION='packages.cogs'
-VERSION='3.0.2'
+VERSION='3.0.3'
 
 
 ENABLED_COGS = (
@@ -13,6 +13,7 @@ ENABLED_COGS = (
     'leaders',
     'group_stats',
     'user_stats',
+    'background_tasks'
 )
 
 class Settings:
@@ -37,22 +38,13 @@ class Settings:
         # Server IDs
         self.zulu_server = ZULU_SERVER
 
-        # TODO: move this to a discord configuration during setup
         # Static Roles
-        if self.bot_mode == 'dev_mode':
-            self.default_roles = {
-                'th11s': 303965664375472128,
-                'th12s': 455572149277687809,
-                'th13s': 653562690937159683,
-                'CoC Members': 294287799010590720
-            }
-        else:
-            self.default_roles = {
-                'th11s': 770971695199813651,
-                'th12s': 770971587657859102,
-                'th13s': 770971779292200970,
-                'CoC Members': 770971726880047105
-            }
+        self.default_roles = {
+            'th11s': 303965664375472128,
+            'th12s': 455572149277687809,
+            'th13s': 653562690937159683,
+            'CoC Members': 294287799010590720
+        }
 
     def get_config(self):
         if self.bot_mode == 'live_mode':

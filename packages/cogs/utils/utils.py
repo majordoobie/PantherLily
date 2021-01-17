@@ -1,11 +1,13 @@
-from typing import Optional, Union
+from typing import Optional, Union, List
 
+from asyncpg.pool import Pool
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
 from datetime import datetime, timedelta
 from discord.member import Member
-from discord.ext.commands import MemberConverter, UserConverter, NotOwner
-from discord.ext.commands import Context, UserNotFound, MemberNotFound
+from discord.ext.commands import NotOwner
+from discord.ext.commands import Context
+from discord import Role, Guild
 import discord
 
 from packages.private.settings import *
@@ -13,7 +15,7 @@ from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgPars
 from packages.bot_ext import BotExt
 
 
-async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None) -> Union[Member, None]:
+async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Union[Member, None]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 
@@ -27,6 +29,8 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=
 
     print_prt: Method
         Pointer to the global embed function of the bot
+    _return: bool
+        Return on failure instead of printing and raising error
 
     Returns
     -------
@@ -50,11 +54,45 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=
     if member:
         return member
     else:
+        # Return None for further evaluation
+        if _return:
+            return None
+
         if print_prt:
             await print_prt(ctx, f'Discord member: {disco_id} was not found', color=BotExt.WARNING)
             return None
         else:
             print(f'Discord member: {disco_id} was not found')
+
+async def get_discord_user(ctx: Context, username: str, pool: Pool):
+    pass
+
+def get_default_roles(guild: Guild, settings: Settings, level: int) -> Union[List[Role], None]:
+    """
+    Return default roles for new users
+    Parameters
+    ----------
+    guild: Guild
+        Guild object in question
+    settings: Setting
+        Settings for the bot
+    level: int
+        Town hall level of the user
+
+    Returns
+    -------
+    List[Role]
+        List of default roles for the user
+    """
+    role_town_hall = settings.default_roles.get(f'th{level}s')
+    role_coc_member = settings.default_roles.get('CoC Members')
+    if role_town_hall:
+        role_town_hall = guild.get_role(role_town_hall)
+        role_coc_member = guild.get_role(role_coc_member)
+        if isinstance(role_coc_member, Role) and isinstance(role_town_hall, Role):
+            return [role_town_hall, role_coc_member,]
+
+    return None
 
 
 async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient, print_ptr) -> Optional[Player]:
@@ -134,57 +172,12 @@ def is_owner(ctx):
 
 
 def is_leader(ctx):
+    if ctx.author.id == OWNER:
+        return True
     for role in ctx.author.roles:
         if role.id == LEADERS:
             return True
     return False
-
-
-async def update_user(ctx, guild_member, update_dict):
-    """
-    Coro to update a users attributes from nickname to roles
-    Parameters
-    ----------
-    ctx : discord.ext.commands.Context
-        Represents the context in which a command is being invoked under.
-    guild_member : discord.member.Member
-        Discord guild user object
-    update_dict : dict
-        Dictionary containing the items to change
-    Raises
-    ------
-    discord.Forbidden
-        Raised if the bot does not have the proper permissions or the roles of the target is higher than the bots
-    """
-    await guild_member.edit(nick=update_dict['nick'],
-                            roles=role_list(ctx, guild_member, update_dict['roles']))
-
-
-async def new_user_roles(ctx, player):
-    """
-    Coro users to return the two default roles every new user gets when they join the clan
-    Parameters
-    ----------
-    ctx : discord.ext.commands.Context
-        Represents the context in which a command is being invoked under.
-    player : coc.SearchPlayer
-        Clash player object
-    Returns
-    -------
-    List of default roles
-    """
-    # Check if the town hall is supported
-    if player.town_hall not in ctx.bot.keys.static_th_roles:
-        raise discord.InvalidData(f'Role `{player.town_hall}` does not exist. Create the role first.')
-    # Get guild object
-    zulu_server = ctx.bot.get_guild(ctx.bot.keys.zulu_server)
-
-    # Get default user roles
-    town_hall_role_id = ctx.bot.keys.static_th_roles[player.town_hall]
-    town_hall_role = zulu_server.get_role(town_hall_role_id)
-    member_role = zulu_server.get_role(ctx.bot.keys.coc_member_role)
-
-    return [town_hall_role, member_role]
 
 
 def role_list(ctx, guild_member, new_roles):

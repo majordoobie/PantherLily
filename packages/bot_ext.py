@@ -1,6 +1,8 @@
 import logging
+from logging import Logger
+from typing import Union, List
 
-from discord import Embed
+from discord import Embed, Role, Member
 from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
 
 class BotExt:
@@ -87,9 +89,30 @@ class BotExt:
             raise NotOwner("Please ask a developer to run this command")
 
 
-    def log_role_change(self, member, role, removed=False):
-        """Log roles gained and lost"""
-        if removed:
-            self.log.debug(f'`{member.name}` lost role `{role.name}`')
+    def log_role_change(self, member: Member, role: Union[List[Role], Role], log: Logger, removed: bool=False) -> None:
+        """
+        Simple centralized place to log role changes. The input will either be a list of roles or
+        a single role
+        Parameters
+        ----------
+        member: Member
+            Member whose role has changed
+        role: Role
+            Role or roles that have changed
+        log: Logger
+            Logger root to log to
+        removed: bool
+            Bool stating if the role or roles have been removed
+
+        Returns
+        -------
+        None
+        """
+        if isinstance(role, Role):
+            msg = 'lost role' if removed else 'received role'
+            log.info(f'`{member.display_name}` {msg} `{role.name}`')
+
         else:
-            self.log.debug(f'`{member.name}` received role `{role.name}`')
+            msg = 'lost role' if removed else 'received role'
+            for _role in role:
+                log.info(f'`{member.display_name}` {msg} `{_role.name}`')

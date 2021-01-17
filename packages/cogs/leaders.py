@@ -47,46 +47,26 @@ class Leaders(commands.Cog):
 
     async def _set_defaults(self, ctx, member, clash_level: int, in_game_name: str):
         """Set default roles and name change"""
-        clash_level_role = None
-        if clash_level == 11:
-            clash_level_role = self.bot.settings.default_roles['th11s']
-        elif clash_level == 12:
-            clash_level_role = self.bot.settings.default_roles['th12s']
-        elif clash_level == 13:
-            clash_level_role = self.bot.settings.default_roles['th13s']
+        default_roles = get_default_roles(ctx.guild, self.bot.settings, clash_level)
 
-
-
-        clash_level_role = ctx.guild.get_role(clash_level_role)
-        coc_member_role = self.bot.settings.default_roles['CoC Members']
-        coc_member_role = ctx.guild.get_role(coc_member_role)
-
-        if clash_level_role is None or coc_member_role is None:
-            if clash_level_role is None:
-                msg = f'Unable to retrieve town hall role for {clash_level} please make sure it exits for me to ' \
-                      f'automatically assign it to users.'
-                await self.bot.embed_print(ctx, msg, title='Role not found', color=self.bot.ERROR)
-
-            if coc_member_role is None:
-                msg = f'Unable to retrieve CoC Members role. Please make sure that it exits for me to automatically ' \
-                      f'assign it.'
-                await self.bot.embed_print(ctx, msg, title='Role not found', color=self.bot.ERROR)
+        if default_roles is None:
+            msg = f'Unable to retrieve `th{clash_level}s` role or `CoC Members` role. please make sure it ' \
+                  f'exits for me to automatically assign it to users.'
+            await self.bot.embed_print(ctx, msg, title='Role not found', color=self.bot.ERROR)
+        else:
+            try:
+                await member.add_roles(*default_roles)
+                self.bot.log_role_change(member, default_roles, log=self.log)
+            except Exception as error:
+                self.bot.log.error(error, exc_info=True)
+                exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+                await self.bot.embed_print(ctx, exc, title='User role change error', color=self.bot.ERROR)
 
         try:
-            if isinstance(coc_member_role, discord.Role):
-                await member.add_roles(coc_member_role)
-                self.bot.log_role_change(member, coc_member_role)
-            if isinstance(clash_level_role, discord.Role):
-                await member.add_roles(clash_level_role)
-                self.bot.log_role_change(member, clash_level_role)
-        except Exception as error:
-            self.bot.log.error(error, exc_info=True)
-            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-            await self.bot.embed_print(ctx, exc, title='User role change error', color=self.bot.ERROR)
-
-        try:
-            await member.edit(nick=in_game_name, reason='Panther Bot')
-            self.log.debug(f'Changed {member.name} name to {member.nick}')
+            if member.display_name != in_game_name:
+                old_name = member.display_name
+                await member.edit(nick=in_game_name, reason='Panther Bot')
+                self.log.debug(f'Changed `{old_name}` name to `{in_game_name}`')
         except Exception as error:
             self.bot.log.error(error, exc_info=True)
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
@@ -103,7 +83,7 @@ class Leaders(commands.Cog):
 
         await member.edit(roles=keep_roles)
         for role in remove_roles:
-            self.bot.log_role_change(member, role, removed=True)
+            self.bot.log_role_change(member, role, log=self.log, removed=True)
 
 
     async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
