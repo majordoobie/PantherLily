@@ -18,7 +18,7 @@ class BackgroundTasks(commands.Cog):
     def cog_unload(self):
         self.sync_clash_discord.cancel()
 
-    @tasks.loop(seconds=1800.0)
+    @tasks.loop(seconds=600)
     async def sync_clash_discord(self):
         self.log.debug('Starting discord loop')
         async with self.bot.pool.acquire() as conn:
