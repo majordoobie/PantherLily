@@ -117,7 +117,7 @@ class Leaders(commands.Cog):
         }
 
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `remove` with {args}')
 
         if not args['positional']:
             await self.bot.embed_print(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
@@ -196,7 +196,7 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `add` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `add` with {args}')
 
         if not args:
             return
@@ -363,7 +363,7 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `del_coc` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `del_coc` with {args}')
 
         if not args:
             return
@@ -389,6 +389,7 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
+        aliases=['view'],
         brief = '',
         description = 'View players account information',
         usage = '(user_name)',
@@ -398,7 +399,7 @@ class Leaders(commands.Cog):
     async def view_account(self, ctx, *, arg_string=None):
         arg_dict = {}
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `view_account` with {args}')
 
         if args['positional']:
             member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
@@ -430,7 +431,7 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `report` with {args}')
 
         true = self.bot.settings.emojis['true']
         false = self.bot.settings.emojis['false']

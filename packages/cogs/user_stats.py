@@ -27,7 +27,7 @@ class UserStats(commands.Cog):
                'another users name as an argument to display their donation gains.'
     )
     async def donation(self, ctx, *, arg_string=None):
-        self.log.warning(f'{ctx.author.display_name} ran `donation` with {arg_string}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `donation` with {arg_string}')
         member: Member
         if arg_string:
             member = await get_discord_member(ctx, arg_string)
@@ -89,7 +89,7 @@ class UserStats(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `stats` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `stats` with {args}')
         if not args:
             return
         member: Member

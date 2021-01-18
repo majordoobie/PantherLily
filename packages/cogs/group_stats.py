@@ -23,7 +23,7 @@ class GroupStats(commands.Cog):
              'of players. This is useful for CWL when the clanmates are scattered.'
     )
     async def roster(self, ctx, *, arg_string=None):
-        self.log.warning(f'{ctx.author.display_name} ran `roster` with {arg_string}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `roster` with {arg_string}')
 
         # Create legend to display
         clan = self.bot.settings.emojis["reddit_zulu"]
@@ -152,7 +152,7 @@ class GroupStats(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'{ctx.author.display_name} ran `top` with {args}')
+        self.log.warning(f'`{ctx.author.display_name}` ran `top` with {args}')
         donation = True if not args['trophies'] else False
 
         # Get the amount of weeks to pull back
