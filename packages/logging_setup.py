@@ -99,11 +99,11 @@ class DiscordWebhookHandler(logging.Handler):
 
     def discord_log(self, record):
         colors = {
-            10: 0xFFFF99,
-            20: 0xCCFFFF,
-            30: 0xFF8000,
-            40: 0xFF0000,
-            50: 0x6600CC
+            10: 0xCCFFFF,  # Debug Cyan | Automatic tasks will go here
+            20: 0x0B5394,  # Info  Blue | Changes by automatic tasks go here
+            30: 0xFFD966,  # Warning    | User ran a command
+            40: 0xFF8000,  # Error Org  | User caused an affect
+            50: 0xFF0000   # Critical   | All errors will go here
         }
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
 

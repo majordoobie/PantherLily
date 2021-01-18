@@ -53,8 +53,8 @@ SQL_INSERT_CLAN_MEMBERS = "INSERT INTO present_in_clan (clash_tag, player_name, 
 
 async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.present_in_clan_update')
-    try:
-        while True:
+    while True:
+        try:
             log.debug("Updating in-clan roster list")
             members = await coc_client.get_members('#2Y28CGP8')
             in_clan = []
@@ -72,18 +72,18 @@ async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: a
             log.debug(f'Sleeping for {sleep_time} seconds')
             await asyncio.sleep(sleep_time)
 
-    except KeyboardInterrupt:
-        log.debug('CTRL + C executed')
-    except Exception as error:
-        log.critical(error, stack_info=True)
+        except KeyboardInterrupt:
+            log.debug('CTRL + C executed')
+        except Exception as error:
+            log.critical(error, exc_info=True)
+            log.debug('Attempting to continue working...')
+            await asyncio.sleep(sleep_time)
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.classic_update')
-
-    try:
-        while True:
+    while True:
+        try:
             log.debug("Starting re-occuring update loop")
-            # Get all active members
             async with pool.acquire() as conn:
                 active_members = await conn.fetch(SQL_GET_ACTIVE)
 
@@ -106,23 +106,26 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                         )
                         updates +=1
                     except asyncpg.ForeignKeyViolationError as error:
-                        log.error(error, stack_info=True)
+                        log.error(error, exc_info=True)
                     except Exception as error:
-                        log.error(error, stack_info=True)
+                        log.error(error, exc_info=True)
 
                 log.info(f"Updated {updates} members")
             log.debug(f'Sleeping for {sleep_time} seconds')
             await asyncio.sleep(sleep_time)
 
-    except KeyboardInterrupt:
-        log.debug('CTRL + C executed')
-    except Exception as error:
-        log.critical(error, stack_info=True)
+        except KeyboardInterrupt:
+            log.debug('CTRL + C executed')
+        except Exception as error:
+            log.critical(error, exc_info=True)
+            log.debug('Attempting to continue working...')
+            await asyncio.sleep(sleep_time)
+
 
 async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.weekly_update')
-    try:
-        while True:
+    while True:
+        try:
             log.debug("Starting weekly update loop")
             start_date = get_utc_monday()
             end_date = get_utc_monday() + timedelta(days=7)
@@ -156,12 +159,13 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                     )
             log.debug(f'Sleeping for {sleep_time} seconds')
             await asyncio.sleep(sleep_time)
-    except KeyboardInterrupt:
-        log.debug('CTRL + C executed')
-    except Exception as error:
-        log.critical(error, stack_info=True)
-        exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-        print(exc)
+        except KeyboardInterrupt:
+            log.debug('CTRL + C executed')
+        except Exception as error:
+            log.critical(error, exc_info=True)
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+            print(exc)
+            await asyncio.sleep(sleep_time)
 
 
 async def main(coc_client_):

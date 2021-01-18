@@ -1,7 +1,7 @@
 import logging
+from random import choice
 
-import traceback
-from discord import Member
+from discord import Member, Activity, ActivityType, Status, Game
 from discord.ext import commands, tasks
 
 from bot import BotClient
@@ -14,9 +14,37 @@ class BackgroundTasks(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('PantherBot.BackgroundTasks')
         self.sync_clash_discord.start()
+        #self.update_presence.start()
 
     def cog_unload(self):
         self.sync_clash_discord.cancel()
+        #self.update_presence.cancel()
+
+    @tasks.loop(seconds=60)
+    async def update_presence(self):
+        self.log.debug("Changing presence...")
+        messages = [
+            (ActivityType.playing, "Spotify"),
+            (ActivityType.playing, "Overwatch"),
+            (ActivityType.playing, "Clash of Clans"),
+            (ActivityType.playing, "with cat nip~"),
+            (ActivityType.watching, "Fairy Tail"),
+            (ActivityType.playing, "I'm not a cat!"),
+            (ActivityType.watching, "p.help"),
+            (ActivityType.playing, "p.top --trophy"),
+            (ActivityType.playing, "p.t --weeks 3"),
+            (ActivityType.watching, "Dragon Ball Z"),
+            (ActivityType.playing, "Reddit Zulu is #1")
+        ]
+        activity = choice(messages)
+        activity_obj = Activity(type=activity[0], name=activity[1])
+        activity = Game(activity[1])
+        try:
+            self.log.debug(f"Attempting to change activity to {activity}")
+            print(dir(self.bot))
+            await self.bot.change_presence(status=Status.online, activity=activity_obj)
+        except Exception:
+            self.log.critical(f'Could not change presence with {activity}', exc_info=True)
 
     @tasks.loop(seconds=600)
     async def sync_clash_discord(self):
@@ -30,20 +58,8 @@ class BackgroundTasks(commands.Cog):
             guild = self.bot.get_guild(293943534028062721)
             member = guild.get_member(user['discord_id'])
             if not member:
-                self.log.error(f'Unable to retrieve member object for {user["discord_id"]}')
+                self.log.critical(f'Unable to retrieve member object for {user["discord_id"]}')
                 continue
-
-            # if member.id == 265368254761926667:
-            #     print(member.display_name)
-            #     print(user['clash_name'])
-            #     rs = member.roles
-            #     for role in rs:
-            #         if role.id == 653562690937159683:
-            #             rs.pop(rs.index(role))
-            #     print(rs)
-            #     rs.append(member.guild.get_role(455572149277687809))
-            #     await member.edit(roles=rs)
-            #     print('removed roles')
 
             if member.display_name != user['clash_name']:
                 try:
@@ -55,7 +71,7 @@ class BackgroundTasks(commands.Cog):
 
             users_town_hall_role = self.bot.settings.default_roles.get(f"th{user['town_hall']}s")
             if users_town_hall_role not in (role.id for role in member.roles):
-                self.log.debug(f'{member.display_name} does not contain the role th{user["town_hall"]}s - updating')
+                self.log.info(f'{member.display_name} does not contain the role th{user["town_hall"]}s - updating')
                 member_roles = member.roles
 
                 for role in member_roles:
@@ -72,7 +88,7 @@ class BackgroundTasks(commands.Cog):
                         await member.edit(roles=member_roles, reason="Panther Bot Background Sync")
                         self.bot.log_role_change(member, member_roles, log=self.log)
                     except Exception as error:
-                        self.log.error(error, exc_info=True)
+                        self.log.critical(error, exc_info=True)
 
     @sync_clash_discord.before_loop
     async def before_sync_clash_discord(self):

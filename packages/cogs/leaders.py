@@ -29,7 +29,7 @@ class Leaders(commands.Cog):
             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
             if not args['coc_alternate']:
                 msg = alternate_account(db_discord_member, db_clash_accounts, args)
-                self.log.warning(msg)
+                self.log.error(msg)
                 await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
                 # if the user added the flag then add the new clash account and set it to primary
             else:
@@ -38,7 +38,7 @@ class Leaders(commands.Cog):
                 await con.execute(sql_insert_clash_account(), *coc_record)
                 db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                 msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
-                self.log.info(msg)
+                self.log.error(msg)
                 await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                               ctx.author.id, msg)
@@ -66,9 +66,9 @@ class Leaders(commands.Cog):
             if member.display_name != in_game_name:
                 old_name = member.display_name
                 await member.edit(nick=in_game_name, reason='Panther Bot')
-                self.log.debug(f'Changed `{old_name}` name to `{in_game_name}`')
+                self.log.error(f'Changed `{old_name}` name to `{in_game_name}`')
         except Exception as error:
-            self.bot.log.error(error, exc_info=True)
+            self.bot.log.critical(error, exc_info=True)
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
@@ -94,7 +94,7 @@ class Leaders(commands.Cog):
                 msg = account_panel(db_discord_member, db_clash_accounts, f'Kick Message:\n{kick_message}')
             else:
                 msg = account_panel(db_discord_member, db_clash_accounts, 'User set to inactive')
-            self.log.info(msg)
+            self.log.error(msg)
             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
             await con.execute(sql_insert_user_note(), member_id, clash_tag, datetime.now(), ctx.author.id, msg)
 
@@ -110,7 +110,6 @@ class Leaders(commands.Cog):
                '-m || --message'
     )
     async def remove(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
         arg_dict = {
             'kick_message': {
                 'flags': ['-m', '--message'],
@@ -118,6 +117,8 @@ class Leaders(commands.Cog):
         }
 
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
+
         if not args['positional']:
             await self.bot.embed_print(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
             return
@@ -147,7 +148,7 @@ class Leaders(commands.Cog):
                         return True
 
             msg = 'You are about to remove user without a reason message. Click the check box to continue otherwise ' \
-                  f'use the following:\n\n `<command> {arg_string}`\n`-m "User note message"`'
+                  f'use the following:\n\n `p.remove {arg_string}`\n`-m "User note message"`'
             raw_embed = await self.bot.embed_print(ctx, msg, _return=True)
             embed_object = await ctx.send(embed=raw_embed)
             await embed_object.add_reaction(self.bot.settings.emojis['check'])
@@ -179,8 +180,6 @@ class Leaders(commands.Cog):
                '-c || --clash-tag\n-d || --discord-id\n--set-alternate'
     )
     async def add(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `add_user` command args: `{arg_string}`')
-
         arg_dict = {
             'coc_tag': {
                 'flags': ['--clash-tag', '-c'],
@@ -197,6 +196,8 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `add` with {args}')
+
         if not args:
             return
 
@@ -226,20 +227,20 @@ class Leaders(commands.Cog):
 
             # Add a brand new user that is not in the database at all
             if db_discord_member is None and len(db_clash_accounts) == 0:
-                self.log.debug(f'Adding new user {member.name} with clash of {player.tag}')
+                self.log.error(f'Adding new user {member.name} with clash of {player.tag}')
                 await con.execute(sql_insert_discord_user(), *discord_record)
                 await con.execute(sql_insert_clash_account(), *coc_record)
                 db_discord_member, db_clash_accounts = await self._get_updates(member.id)
 
                 msg = account_panel(db_discord_member, db_clash_accounts, "New user added")
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
-                self.log.info(msg)
+                self.log.error(msg)
                 await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                 await self._set_defaults(ctx, member, player.town_hall, player.name)
 
             # If user HAS a discord account BUT their active state is set to false
             elif db_discord_member['is_active'] == False:
-                self.log.debug(f'Discord member `{member.name}:{member.id}` already exits, but `is_active` attribute is '
+                self.log.error(f'Discord member `{member.name}:{member.id}` already exits, but `is_active` attribute is '
                               f'set to `false`')
 
                 # If they have 0 clash accounts then their main account was probably removed so just add one and move on
@@ -248,7 +249,7 @@ class Leaders(commands.Cog):
                     await con.execute(sql_insert_clash_account(), *coc_record)
                     db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                     msg = account_panel(db_discord_member, db_clash_accounts, "User enabled")
-                    self.log.info(msg)
+                    self.log.error(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
                     await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -261,7 +262,7 @@ class Leaders(commands.Cog):
                         await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
                         db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                         msg = account_panel(db_discord_member, db_clash_accounts, "User enabled")
-                        self.log.info(msg)
+                        self.log.error(msg)
                         await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                         await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                           ctx.author.id, msg)
@@ -280,7 +281,7 @@ class Leaders(commands.Cog):
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'User enabled')
-                            self.log.info(msg)
+                            self.log.error(msg)
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
@@ -295,7 +296,7 @@ class Leaders(commands.Cog):
                     await con.execute(sql_insert_clash_account(), *coc_record)
                     db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                     msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account assigned')
-                    self.log.info(msg)
+                    self.log.error(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                   ctx.author.id, msg)
@@ -305,14 +306,14 @@ class Leaders(commands.Cog):
                     if db_clash_accounts[0]['clash_tag'] == player.tag:
                         if db_clash_accounts[0]['is_primary_account']:
                             msg = account_panel(db_discord_member, db_clash_accounts, 'No action taken')
-                            self.log.info(msg)
+                            self.log.error(msg)
                             await self.bot.embed_print(ctx, msg)
 
                         else:
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
-                            self.log.info(msg)
+                            self.log.error(msg)
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                       ctx.author.id, msg)
@@ -328,7 +329,7 @@ class Leaders(commands.Cog):
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
-                            self.log.info(msg)
+                            self.log.error(msg)
                             await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
@@ -338,7 +339,7 @@ class Leaders(commands.Cog):
                     await self._multi_account_logic(ctx, coc_record, member, player, args)
 
                 else:
-                    self.log.error(f'Invalid condition met with args {arg_string}')
+                    self.log.critical(f'Invalid condition met with args {arg_string}')
 
 
     @commands.check(is_leader)
@@ -351,7 +352,6 @@ class Leaders(commands.Cog):
                '-c || --clash-tag\n-d || --discord-id'
     )
     async def del_coc(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `del_coc` command args: `{arg_string}`')
         arg_dict = {
             'coc_tag': {
                 'flags': ['--clash-tag', '-c'],
@@ -363,6 +363,8 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `del_coc` with {args}')
+
         if not args:
             return
 
@@ -379,7 +381,7 @@ class Leaders(commands.Cog):
                     await con.execute(sql_delete_clash_account_record(), player.tag, member.id)
                     clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
                     msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
-                    self.log.info(msg)
+                    self.log.error(msg)
                     await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
                     return
             await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
@@ -394,9 +396,9 @@ class Leaders(commands.Cog):
                'The command takes a users name or clash tag as a argument.'
     )
     async def view_account(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
         arg_dict = {}
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
 
         if args['positional']:
             member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
@@ -420,7 +422,6 @@ class Leaders(commands.Cog):
                '-w || --weeks'
     )
     async def report(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `view_account` with `{arg_string}`')
         arg_dict = {
             'weeks': {
                 'flags': ['-w', '--weeks'],
@@ -429,6 +430,8 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `remove` with {args}')
+
         true = self.bot.settings.emojis['true']
         false = self.bot.settings.emojis['false']
 

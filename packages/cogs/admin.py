@@ -46,7 +46,7 @@ class Administrator(commands.Cog):
         help = ''
     )
     async def _logout(self, ctx):
-        self.log.info('Closing connections...')
+        self.log.error('Closing connections...')
         await self.bot.embed_print(ctx, "Logging off")
         try:
             await self.bot.coc_client.close()

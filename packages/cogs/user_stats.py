@@ -27,7 +27,7 @@ class UserStats(commands.Cog):
                'another users name as an argument to display their donation gains.'
     )
     async def donation(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `donation`')
+        self.log.warning(f'{ctx.author.display_name} ran `donation` with {arg_string}')
         member: Member
         if arg_string:
             member = await get_discord_member(ctx, arg_string)
@@ -55,7 +55,7 @@ class UserStats(commands.Cog):
 
         if not player_record:
             await self.bot.embed_print(ctx, title='Donation', description='No results return. Please allow 10 minutes '
-                                                                          'minutes to pass to calculate donations')
+                                                                          'to pass to calculate donations')
             return
 
         week_end = week_start + timedelta(days=7)
@@ -79,8 +79,6 @@ class UserStats(commands.Cog):
                '-c || --clash-tag\n-l || --level'
     )
     async def stats(self, ctx, *, arg_string=None):
-        self.log.debug(f'User: `{ctx.author}` is running `stats` with `{arg_string}`')
-        #TODO add a way to just give a tag to get that information
         arg_dict = {
             'clash_tag': {
                 'flags': ['-c', '--clash_tag'],
@@ -91,6 +89,7 @@ class UserStats(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+        self.log.warning(f'{ctx.author.display_name} ran `stats` with {args}')
         if not args:
             return
         member: Member
