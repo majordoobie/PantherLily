@@ -260,3 +260,4 @@ def get_utc_monday() -> datetime:
         last_monday = last_monday.replace(hour=1, minute=0, second=0, microsecond=0)
 
     return last_monday
+

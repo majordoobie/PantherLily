@@ -117,7 +117,11 @@ class Leaders(commands.Cog):
         }
 
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'`{ctx.author.display_name}` ran `remove` with {args}')
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="remove",
+                                   args=args,
+                                   arg_string=arg_string)
 
         if not args['positional']:
             await self.bot.embed_print(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
@@ -196,7 +200,11 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'`{ctx.author.display_name}` ran `add` with {args}')
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="add",
+                                   args=args,
+                                   arg_string=arg_string)
 
         if not args:
             return
@@ -364,6 +372,11 @@ class Leaders(commands.Cog):
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
         self.log.warning(f'`{ctx.author.display_name}` ran `del_coc` with {args}')
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="del_coc",
+                                   args=args,
+                                   arg_string=arg_string)
 
         if not args:
             return
@@ -389,17 +402,21 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
-        aliases=['view'],
+        aliases=['view_account'],
         brief = '',
         description = 'View players account information',
         usage = '(user_name)',
         help = 'Display the users information such as all the Clash of Clans account associated with them.'
                'The command takes a users name or clash tag as a argument.'
     )
-    async def view_account(self, ctx, *, arg_string=None):
+    async def view(self, ctx, *, arg_string=None):
         arg_dict = {}
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'`{ctx.author.display_name}` ran `view_account` with {args}')
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="view",
+                                   args=args,
+                                   arg_string=arg_string)
 
         if args['positional']:
             member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
@@ -431,7 +448,11 @@ class Leaders(commands.Cog):
             }
         }
         args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(f'`{ctx.author.display_name}` ran `report` with {args}')
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="report",
+                                   args=args,
+                                   arg_string=arg_string)
 
         true = self.bot.settings.emojis['true']
         false = self.bot.settings.emojis['false']

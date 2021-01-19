@@ -116,3 +116,29 @@ class BotExt:
             msg = 'lost role' if removed else 'received role'
             for _role in role:
                 log.info(f'`{member.display_name}` {msg} `{_role.name}`')
+
+    def log_user_commands(self, log: Logger, **kwargs) -> None:
+        """
+        Centralized command line logging
+
+        Parameters
+        ----------
+        log: Logger
+            Logger root used for the cog
+        kwargs
+            user=ctx.author.display_name,
+            command="donation",
+            args=None,
+            arg_string=arg_string
+
+        Returns
+        -------
+        None
+        """
+        msg = f'User:       `{kwargs["user"]}`\n' \
+              f'Executed:   `{kwargs["command"]}`\n' \
+              f'arg_string: `{kwargs["arg_string"]}`\n' \
+              f'args:       `{kwargs["args"]}`'
+
+        log.warning(msg)
+

@@ -7,14 +7,23 @@ from discord.ext import commands, tasks
 from bot import BotClient
 from packages.cogs.utils.bot_sql import sql_select_all_active_users
 from packages.cogs.utils.utils import get_default_roles
+from packages.logging_setup import BotLogger as LoggerSetup
+from packages.private.settings import Settings
 
 
 class BackgroundTasks(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('PantherBot.BackgroundTasks')
+        self._setup_logging()
         self.sync_clash_discord.start()
         #self.update_presence.start()
+
+    def _setup_logging(self):
+        """Setup custom logging for the background tasks"""
+        settings = Settings(daemon=True)
+        LoggerSetup(settings, 'PantherBot.BackgroundTasks')
+        self.log = logging.getLogger('PantherBot.BackgroundTasks')
+        self.log.debug('Logging initialized')
 
     def cog_unload(self):
         self.sync_clash_discord.cancel()
