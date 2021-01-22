@@ -111,6 +111,9 @@ class DiscordWebhookHandler(logging.Handler):
             msg = f'{record.msg}\n\n{record.exc_text}'
         else:
             msg = record.msg
-        embed = Embed(title=f'{record.name}', description=msg, color=colors[record.levelno])
-        webhook.send(embed=embed, username=self.settings.web_log_name)
+        if record.name == 'Background.Sync' and self.webhook_url.endswith('xEN'):
+            pass
+        else:
+            embed = Embed(title=f'{record.name}', description=msg, color=colors[record.levelno])
+            webhook.send(embed=embed, username=self.settings.web_log_name)
 

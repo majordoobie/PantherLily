@@ -21,8 +21,9 @@ class BackgroundTasks(commands.Cog):
     def _setup_logging(self):
         """Setup custom logging for the background tasks"""
         settings = Settings(daemon=True)
-        LoggerSetup(settings, 'PantherBot.BackgroundTasks')
-        self.log = logging.getLogger('PantherBot.BackgroundTasks')
+        LoggerSetup(settings, 'Background')
+        self.log = logging.getLogger('Background.Sync')
+
         self.log.debug('Logging initialized')
 
     def cog_unload(self):
@@ -61,6 +62,8 @@ class BackgroundTasks(commands.Cog):
         async with self.bot.pool.acquire() as conn:
             active_users = await conn.fetch(sql_select_all_active_users())
 
+        # Counter for how many changes were done
+        update_count = 0
         for user in active_users:
             member: Member
             # TODO: Add guild to a key somewhere else to support multiple guilds
@@ -75,6 +78,7 @@ class BackgroundTasks(commands.Cog):
                     old_name = member.display_name
                     await member.edit(nick=user['clash_name'], reason='Panther Bot Background Sync')
                     self.log.info(f'Changed `{old_name}` name to `{user["clash_name"]}`')
+                    update_count += 1
                 except Exception as error:
                     self.log.error(error, exc_info=True)
 
@@ -96,8 +100,10 @@ class BackgroundTasks(commands.Cog):
                     try:
                         await member.edit(roles=member_roles, reason="Panther Bot Background Sync")
                         self.bot.log_role_change(member, member_roles, log=self.log)
+                        update_count += 1
                     except Exception as error:
                         self.log.critical(error, exc_info=True)
+        self.log.info(f'Conducted {update_count} changes')
 
     @sync_clash_discord.before_loop
     async def before_sync_clash_discord(self):
