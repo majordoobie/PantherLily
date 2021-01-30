@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 
 from bot import BotClient
 from packages.cogs.utils.bot_sql import sql_select_all_active_users
-from packages.cogs.utils.utils import get_default_roles
+from packages.cogs.utils.utils import get_default_roles, get_utc_monday
 from packages.logging_setup import BotLogger as LoggerSetup
 from packages.private.settings import Settings
 
@@ -60,7 +60,7 @@ class BackgroundTasks(commands.Cog):
     async def sync_clash_discord(self):
         self.log.debug('Starting discord loop')
         async with self.bot.pool.acquire() as conn:
-            active_users = await conn.fetch(sql_select_all_active_users())
+            active_users = await conn.fetch(sql_select_all_active_users().format(get_utc_monday()))
 
         # Counter for how many changes were done
         update_count = 0

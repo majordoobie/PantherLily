@@ -44,7 +44,7 @@ class GroupStats(commands.Cog):
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
-            members_db = await con.fetch(sql_select_all_active_users())
+            members_db = await con.fetch(sql_select_all_active_users().format(get_utc_monday()))
             unregistered_users = await con.fetch(sql_select_clash_members_not_registered())
         members_db.sort(key=lambda x: x['clash_name'].lower())
 
