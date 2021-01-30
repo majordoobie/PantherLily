@@ -402,7 +402,7 @@ class Leaders(commands.Cog):
 
     @commands.check(is_leader)
     @commands.command(
-        aliases=['view_account'],
+        aliases=['v', 'view_account'],
         brief = '',
         description = 'View players account information',
         usage = '(user_name)',

@@ -133,6 +133,9 @@ class ClashStats:
         frame = '**Troops**\n'
         count = 0
         for troop in self.player.home_troops:
+            # Skip the sieges from this panel
+            if troop in self.player.siege_machines:
+                continue
             try:
                 emoji = self.troops[troop.name].emoji
                 current_lvl = troop.level
