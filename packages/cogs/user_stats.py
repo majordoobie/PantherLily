@@ -130,17 +130,10 @@ class UserStats(commands.Cog):
         async with self.bot.pool.acquire() as conn:
             active_player = await conn.fetchrow(sql_select_active_account().format(member.id))
 
-        # If player is no longer active
         if not active_player:
-            async with self.bot.pool.acquire() as conn:
-                db_discord_member = await conn.fetchrow(sql_select_discord_user_id(), member.id)
-                db_clash_accounts = await conn.fetch(sql_select_clash_account_discord_id(), member.id)
-
             await self.bot.embed_print(ctx, f'User `{member.display_name}` is no longer an active member. You could '
                                             f'query their stats using their clash tag instead if you like.',
                                        color=self.bot.ERROR)
-            msg = account_panel(db_discord_member, db_clash_accounts)
-            await self.bot.embed_print(ctx, msg)
             return
 
         player = await self.bot.coc_client.get_player(active_player['clash_tag'])
