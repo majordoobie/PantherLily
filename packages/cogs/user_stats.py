@@ -16,7 +16,7 @@ from .leaders import account_panel
 class UserStats(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('PantherBot.UserStats')
+        self.log = logging.getLogger(f'{self.bot.settings.log_name}.UserStats')
 
     @commands.command(
         aliases = ['d'],

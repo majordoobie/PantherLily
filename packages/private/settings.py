@@ -52,19 +52,25 @@ class Settings:
                 'bot_name': 'Panther Lily',
                 'bot_token': LIVE_TOKEN,
                 'bot_prefix': ['p.', 'P.', 'Panther.', 'panther.'],
-                'version': f'Panther Lily Version: {VERSION}',
+                'version': f'PantherLily v{VERSION}',
                 'key_name': 'Panther_Bot3 Keys',
+                'log_name': 'PantherLily'
                 }
         elif self.bot_mode == 'dev_mode':
             return {
-                'bot_name': 'Panther Lily [Dev Shell]',
+                'bot_name': 'Panther Dev Shell',
                 'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
                 'version': 'Panther v3 Beta',
                 'key_name': 'DevShell Keys',
+                'log_name': 'DevShell'
                 }
         else:
             self.bot_mode = None
+
+    @property
+    def log_name(self):
+        return f'{self.bot_config["log_name"]}'
 
     def _set_cogs(self):
         self.cog_path = COG_LOCATION
@@ -98,6 +104,13 @@ class Settings:
 
 
 emoji_dict = {
+    "super_troop": "<:super_troop:804932109428457492>",
+    "topoff2": "<:topoff2:804926402234286091>",
+    "topoff": "<:topoff:531458370037743626>",
+    "happy": "<:happy:531507608172101632>",
+    "mega": "<:mega:531507799432364045>",
+    "stop": "<:stop:531525166698594326>",
+    "nyancat_big": "<:nyancat_big:532317386184065024>",
     "link": "<:link:694750139847409695>",
     "database": "<:database:541417513842507806>",
     "zulu_server": "<:zuluServer:541405829484642314>",

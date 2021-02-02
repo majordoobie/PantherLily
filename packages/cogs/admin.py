@@ -8,7 +8,7 @@ from bot import BotClient
 class Administrator(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('PantherBot.Administrator')
+        self.log = logging.getLogger(f'{self.bot.settings.log_name}.Administrator')
 
     @commands.command(
         alias='bot_roles',

@@ -12,7 +12,7 @@ from .utils.utils import parse_args, get_utc_monday
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('PantherBot.GroupStats')
+        self.log = logging.getLogger(f'{self.bot.settings.log_name}.GroupStats')
 
     @commands.command(
         aliases=['ro'],

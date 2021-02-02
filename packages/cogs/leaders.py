@@ -14,7 +14,7 @@ from packages.cogs.utils.utils import *
 class Leaders(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger('PantherBot.Leaders')
+        self.log = logging.getLogger(f'{self.bot.settings.log_name}.Leaders')
 
     async def _get_updates(self, member_id: int) -> tuple:
         """Method gets the most up to date user information - this code is repeated a lot in this class"""

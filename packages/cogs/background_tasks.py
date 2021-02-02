@@ -3,6 +3,7 @@ from random import choice
 
 from discord import Member, Activity, ActivityType, Status, Game
 from discord.ext import commands, tasks
+from discord import errors
 
 from bot import BotClient
 from packages.cogs.utils.bot_sql import sql_select_all_active_users
@@ -22,7 +23,7 @@ class BackgroundTasks(commands.Cog):
         """Setup custom logging for the background tasks"""
         settings = Settings(daemon=True)
         LoggerSetup(settings, 'Background')
-        self.log = logging.getLogger('Background.Sync')
+        self.log = logging.getLogger(f'{self.bot.settings.log_name}.BackgroundSync')
 
         self.log.debug('Logging initialized')
 
@@ -79,6 +80,9 @@ class BackgroundTasks(commands.Cog):
                     await member.edit(nick=user['clash_name'], reason='Panther Bot Background Sync')
                     self.log.info(f'Changed `{old_name}` name to `{user["clash_name"]}`')
                     update_count += 1
+                except errors.Forbidden:
+                    msg = f'Unable to change the name of {member.display_name} due to lack of permission'
+                    self.log.error(msg)
                 except Exception as error:
                     self.log.error(error, exc_info=True)
 
@@ -101,6 +105,9 @@ class BackgroundTasks(commands.Cog):
                         await member.edit(roles=member_roles, reason="Panther Bot Background Sync")
                         self.bot.log_role_change(member, member_roles, log=self.log)
                         update_count += 1
+                    except errors.Forbidden:
+                        msg = f'Unable to provide roles to {member.display_name} due to lack of permissions'
+                        self.log.error(msg)
                     except Exception as error:
                         self.log.critical(error, exc_info=True)
         self.log.info(f'Conducted {update_count} changes')
