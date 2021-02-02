@@ -56,7 +56,8 @@ class Leaders(commands.Cog):
         else:
             try:
                 await member.add_roles(*default_roles)
-                self.bot.log_role_change(member, default_roles, log=self.log)
+                for role in default_roles:
+                    self.bot.log_role_change(member, role, log=self.log)
             except Exception as error:
                 self.bot.log.error(error, exc_info=True)
                 exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
