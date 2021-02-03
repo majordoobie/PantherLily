@@ -3,7 +3,7 @@ from logging import Logger
 from typing import Union, List
 
 from discord import Embed, Role, Member
-from discord.ext.commands import MemberConverter, UserConverter, NotOwner, BadArgument
+from discord.ext.commands import Context, NotOwner, BadArgument
 
 class BotExt:
     INFO = 0x000080         # blued
@@ -15,7 +15,7 @@ class BotExt:
         self.settings = settings
         self.log = logging.getLogger('root.bot_ext')
 
-    async def embed_print(self, ctx, description, title='', color=INFO, codeblock=False, _return=False, footnote=True):
+    async def embed_print(self, ctx: Context, description, title='', color=INFO, codeblock=False, _return=False, footnote=True):
         if not description:
             raise BadArgument("No value to encapsulate in a embed")
 

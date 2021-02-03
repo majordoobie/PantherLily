@@ -93,7 +93,8 @@ class Administrator(commands.Cog):
 
     @commands.check(is_owner)
     @commands.command(
-        hidden=True
+        hidden=True,
+        aliases=['r'],
     )
     async def re_load(self, ctx, cog: str):
         cog = f'{self.bot.settings.cog_path}.{cog}'

@@ -111,6 +111,7 @@ class DiscordWebhookHandler(logging.Handler):
             msg = f'{record.msg}\n\n{record.exc_text}'
         else:
             msg = record.msg
+
         if record.name == 'Background.Sync' and self.webhook_url.endswith('xEN'):
             pass
         else:

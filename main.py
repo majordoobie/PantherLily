@@ -64,9 +64,18 @@ async def run(settings: Settings, coc_client: coc):
         pass
 
     finally:
-        await coc_client.close()
-        await pool.close()
-        await bot.close()
+        try:
+            await coc_client.close()
+        except:
+            pass
+        try:
+            await pool.close()
+        except:
+            pass
+        try:
+            await bot.close()
+        except:
+            pass
 
 
 def main():
