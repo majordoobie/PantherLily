@@ -69,7 +69,6 @@ class Happy(commands.Cog):
 
         # Confirm that the emoji object is one that we support
         if str(payload.emoji) not in self.emojis.values():
-            print(payload.emoji.name, payload.emoji.id)
             return
 
         # Get the message object to edit it
