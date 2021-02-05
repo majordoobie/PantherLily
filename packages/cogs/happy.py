@@ -38,19 +38,19 @@ class Happy(commands.Cog):
     def default_dataset(self) -> dict:
         """Return the default data parameter"""
         return {
-                'h1': None,
-                'h2': None,
-                'h3': None,
-                'h4': None,
-                'h5': None,
-                'h6': None,
-                'h7': None,
-                'h8': None,
-                'h9': None,
-                'h10': None,
-                "topoff2": None,
-                "super_troop": None
-            }
+            'h1': None,
+            'h2': None,
+            'h3': None,
+            'h4': None,
+            'h5': None,
+            'h6': None,
+            'h7': None,
+            'h8': None,
+            'h9': None,
+            'h10': None,
+            "topoff2": None,
+            "super_troop": None
+        }
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
@@ -82,6 +82,9 @@ class Happy(commands.Cog):
         # The panel should be active, but if it is not then clear the reactions and update the db
         # What to do when stop is called
         if str(payload.emoji) == self.emojis["stop"] or not record["active"]:
+            record = dict(record)
+            record["active"] = False
+            await self._refresh_panel(record, message)
             await message.clear_reactions()
             sql = f"""UPDATE happy SET active=False WHERE message_id={payload.message_id}"""
             async with self.bot.pool.acquire() as con:
@@ -118,12 +121,15 @@ class Happy(commands.Cog):
 
         # If done, remove reactions and set panel to false
         if done:
+            record = dict(record)
+            record["active"] = False
+            await self._refresh_panel(record, message)
             await message.clear_reactions()
             sql = f"""UPDATE happy SET active=False WHERE panel_name='{record["panel_name"]}'"""
             async with self.bot.pool.acquire() as con:
                 await con.execute(sql)
 
-    async def _refresh_panel(self, record: Record, message: Message, reset_emojis=False):
+    async def _refresh_panel(self, record: Union[Record, dict], message: Message, reset_emojis=False):
         panel, emoji_stack = self._panel_factory(record)
         embeds = await self.bot.send(ctx=None, description=panel, footnote=False, _return=True)
         for embed in embeds:
@@ -173,8 +179,8 @@ class Happy(commands.Cog):
         """
         if not panel_name:
             await self.bot.send(ctx, "Please provide a panel name to delete. You can use the `Panther.Happy "
-                                      "list` command to view all the panels available to you.",
-                                      color=self.bot.WARNING)
+                                     "list` command to view all the panels available to you.",
+                                color=self.bot.WARNING)
             return None
 
         panel_name = panel_name.title()
@@ -185,7 +191,7 @@ class Happy(commands.Cog):
 
         if not row:
             await self.bot.send(ctx, f'Could not find a panel with the name of `{panel_name}`',
-                                       color=self.bot.WARNING)
+                                color=self.bot.WARNING)
             return None
 
         else:
@@ -265,7 +271,7 @@ class Happy(commands.Cog):
                 return
             else:
                 panel_rows = int(panel_rows)
-                if not 1 <= panel_rows <=10:
+                if not 1 <= panel_rows <= 10:
                     msg = f'The number of rows you provided does not fall within 1 and 10.'
                     await self.bot.send(ctx, msg, color=self.bot.ERROR)
                     return
@@ -321,6 +327,8 @@ class Happy(commands.Cog):
             await self.bot.send(ctx, msg, color=self.bot.WARNING)
             return
 
+        instance = dict(instance)
+        instance["active"] = True
         panel, emoji_stack = self._panel_factory(instance)
         embeds = await self.bot.send(ctx, panel, footnote=False, _return=True)
         for embed in embeds:
@@ -397,11 +405,11 @@ class Happy(commands.Cog):
         message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
         if not message:
             return
+        instance = dict(instance)
+        instance["active"] = False
+        await self._refresh_panel(instance, message)
         await message.clear_reactions()
         await self.bot.send(ctx, 'Stopped panel from running.')
-
-
-
 
     @happy.command(
         name='list',
@@ -421,10 +429,10 @@ class Happy(commands.Cog):
             sql = """SELECT * FROM happy"""
             rows = await conn.fetch(sql)
 
-        panel = f'{"NAME":<10} {"#":<2} {"ACTIVE":<5}\n'
+        panel = f'{"NAME":<15} {"ROWS":<5} {"ACTIVE"}\n'
         for row in rows:
-            active = "True" if row["active"] else "False"
-            panel += f'{row["panel_name"]:<10} {row["panel_rows"]:<2} {active:<5}\n'
+            active = "T" if row["active"] else "F"
+            panel += f'{row["panel_name"]:<18} {row["panel_rows"]:<2} {active:<1}\n'
         await self.bot.send(ctx, panel, code_block=True)
 
     @happy.command(
@@ -495,24 +503,23 @@ class Happy(commands.Cog):
         data = instance["data"]
         emoji_stack = []
 
-        panel = f'**Panel:** `{instance["panel_name"]}`\n'
+        status = 'Active' if instance["active"] else 'Inactive'
+        panel = f'**Panel Name:**   `{instance["panel_name"]}`\n' \
+                f'**Panel Status:** `{status}`\n\n'
+
         for i in range(0, instance["panel_rows"]):
             emoji = self.emojis[f'h{i + 1}']
             emoji_stack.append(emoji)
-            key = f'h{i+1}'
+            key = f'h{i + 1}'
             panel += f'{emoji} `[{ranges[i]:>7}]: {data[key] if data[key] else "":<20}`\n'
 
-        panel += f'{self.emojis["topoff2"]} `[{"Top off":>7}]: {data["topoff2"] if data["topoff2"] else "":<20}`\n'
+        panel += f'{self.emojis["topoff2"]} `[{"Topoff":>7}]: {data["topoff2"] if data["topoff2"] else "":<20}`\n'
         panel += f'{self.emojis["super_troop"]} `[{"Super":>7}]: {data["super_troop"] if data["super_troop"] else "":<20}`\n'
         emoji_stack.append(self.emojis["topoff2"])
         emoji_stack.append(self.emojis["super_troop"])
         emoji_stack.append(self.emojis["stop"])
 
         return panel, emoji_stack
-
-
-
-
 
 
 def setup(bot):
