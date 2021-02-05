@@ -104,6 +104,25 @@ class Happy(commands.Cog):
             sql = f"""UPDATE happy SET data='{_dict}' WHERE panel_name='{record["panel_name"]}' """
             await con.execute(sql)
 
+        # Automatically remove reactions when panel is full
+        done = True
+        for index, value in enumerate(record["data"].values()):
+            if index >= record["panel_rows"]:
+                continue
+            if value is None:
+                done = False
+        if record["data"]["topoff2"] is None:
+            done = False
+        if record["data"]["super_troop"] is None:
+            done = False
+
+        # If done, remove reactions and set panel to false
+        if done:
+            await message.clear_reactions()
+            sql = f"""UPDATE happy SET active=False WHERE panel_name='{record["panel_name"]}'"""
+            async with self.bot.pool.acquire() as con:
+                await con.execute(sql)
+
     async def _refresh_panel(self, record: Record, message: Message, reset_emojis=False):
         panel, emoji_stack = self._panel_factory(record)
         embeds = await self.bot.send(ctx=None, description=panel, footnote=False, _return=True)
