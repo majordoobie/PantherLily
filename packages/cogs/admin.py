@@ -12,10 +12,10 @@ class Administrator(commands.Cog):
 
     @commands.command(
         alias='bot_roles',
-        brief = '',
+        brief='',
         description = 'Display the roles needed for Panther Lily to work',
-        usage = '',
-        help = ''
+        usage='',
+        help='The provided text are all the roles required for this bot to work.'
     )
 
     async def panther_roles(self, ctx):
@@ -33,9 +33,9 @@ class Administrator(commands.Cog):
             'add_reaction': 'Ability to add reaction to messages'
         }
         frame = ''
-        for k,v in roles_required.items():
-            frame += f'`{k}` `{v}`'
-        await self.bot.embed_print(ctx, frame)
+        for k, v in roles_required.items():
+            frame += f'`{k}`\n{v}\n\n'
+        await self.bot.send(ctx, frame)
 
     @commands.check(is_owner)
     @commands.command(
@@ -47,7 +47,7 @@ class Administrator(commands.Cog):
     )
     async def _logout(self, ctx):
         self.log.error('Closing connections...')
-        await self.bot.embed_print(ctx, "Logging off")
+        await self.bot.send(ctx, "Logging off")
         try:
             await self.bot.coc_client.close()
         except Exception as error:

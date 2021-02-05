@@ -11,7 +11,7 @@ class Tester(commands.Cog):
     
     @commands.command()
     async def ping(self, ctx):
-        await self.bot.embed_print(ctx=ctx, description='ponnnnnnnnng')
+        await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.command()
     async def test(self, ctx):

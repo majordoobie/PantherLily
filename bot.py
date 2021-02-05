@@ -61,7 +61,6 @@ class BotClient(commands.Bot, BotExt):
             for sql_table in sql_create_tables():
                 await con.execute(sql_table)
 
-
     async def on_resume(self):
         self.log.info('Resuming connection...')
 
@@ -73,21 +72,21 @@ class BotClient(commands.Bot, BotExt):
             exc = ''.join(
                 traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
-            await self.embed_print(ctx, title='DEBUG ENABLED', description=f'{exc}',
-                                   codeblock=True, color=self.WARNING)
+            await self.send(ctx, title='DEBUG ENABLED', description=f'{exc}',
+                                   code_block=True, color=self.WARNING)
 
         # Catch all errors within command logic
         if isinstance(error, commands.CommandInvokeError):
             original = error.original
             # Catch errors such as roles not found
             if isinstance(original, InvalidData):
-                await self.embed_print(ctx, title='INVALID OPERATION', color=self.ERROR,
+                await self.send(ctx, title='INVALID OPERATION', color=self.ERROR,
                                        description=original.args[0])
                 return
 
             # Catch permission issues
             elif isinstance(original, Forbidden):
-                await self.embed_print(ctx, title='FORBIDDEN', color=self.ERROR,
+                await self.send(ctx, title='FORBIDDEN', color=self.ERROR,
                                        description='Even with proper permissions, the target user must be lower in the '
                                                    'role hierarchy of this bot.')
                 return
@@ -96,17 +95,17 @@ class BotClient(commands.Bot, BotExt):
         if isinstance(error, commands.CheckFailure):
             try:
                 if error.args[0] == 'Not owner':
-                    await self.embed_print(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
+                    await self.send(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
                                            description='Only Doobie can run this command')
                     return
             except:
                 pass
-            await self.embed_print(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
+            await self.send(ctx, title='COMMAND FORBIDDEN', color=self.ERROR,
                                    description='Only `CoC Leadership` are permitted to use this command')
             return
 
         # Catch all
         err = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
-        await self.embed_print(ctx, title='COMMAND ERROR',
+        await self.send(ctx, title='COMMAND ERROR',
                                description=err, color=self.ERROR)

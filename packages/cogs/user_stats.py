@@ -40,7 +40,7 @@ class UserStats(commands.Cog):
 
         if not member:
             user = arg_string if arg_string else ctx.author
-            await self.bot.embed_print(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
+            await self.bot.send(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
             return
 
         else:
@@ -48,7 +48,7 @@ class UserStats(commands.Cog):
                 player = await conn.fetchrow(sql_select_active_account().format(member.id))
 
             if not player:
-                await self.bot.embed_print(ctx, f'User `{member.display_name}` is no longer an active member',
+                await self.bot.send(ctx, f'User `{member.display_name}` is no longer an active member',
                                            color=self.bot.WARNING)
                 return
 
@@ -58,7 +58,7 @@ class UserStats(commands.Cog):
             player_record = await conn.fetchrow(donation_sql)
 
         if not player_record:
-            await self.bot.embed_print(ctx, title='Donation', description='No results return. Please allow 10 minutes '
+            await self.bot.send(ctx, title='Donation', description='No results return. Please allow 10 minutes '
                                                                           'to pass to calculate donations')
             return
 
@@ -68,7 +68,11 @@ class UserStats(commands.Cog):
         time = str(timedelta(seconds=time_remaining.seconds)).split(":")
         msg = f'**Donation Stat:**\n{player_record["donation_gains"]} | 300\n**Time Remaining:**\n' \
               f'{day} days {time[0]} hours {time[1]} minutes'
-        await self.bot.embed_print(ctx, title=f'__**{player_record["clash_name"]}**__', description=msg)
+        author = [
+            member.display_name,
+            member.avatar_url
+        ]
+        await self.bot.send(ctx, description=msg, author=author)
 
 
     @commands.command(
@@ -112,7 +116,7 @@ class UserStats(commands.Cog):
                     await self._display_panels(ctx, player, panel_a, panel_b)
                     return
                 else:
-                    await self.bot.embed_print(ctx, description=f'User with the tag of {tag} was not found',
+                    await self.bot.send(ctx, description=f'User with the tag of {tag} was not found',
                                                color=self.bot.WARNING)
                     return
 
@@ -124,14 +128,14 @@ class UserStats(commands.Cog):
 
         if not member:
             user = arg_string if arg_string else ctx.author
-            await self.bot.embed_print(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
+            await self.bot.send(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
             return
 
         async with self.bot.pool.acquire() as conn:
             active_player = await conn.fetchrow(sql_select_active_account().format(member.id))
 
         if not active_player:
-            await self.bot.embed_print(ctx, f'User `{member.display_name}` is no longer an active member. You could '
+            await self.bot.send(ctx, f'User `{member.display_name}` is no longer an active member. You could '
                                             f'query their stats using their clash tag instead if you like.',
                                        color=self.bot.ERROR)
             return
@@ -141,9 +145,9 @@ class UserStats(commands.Cog):
         await self._display_panels(ctx, player, panel_a, panel_b)
 
     async def _display_panels(self, ctx, player, panel_a, panel_b):
-        await self.bot.embed_print(ctx, panel_a, footnote=False)
-        panel = await self.bot.embed_print(ctx, panel_b, _return=True)
-        panel = await ctx.send(embed=panel)
+        await self.bot.send(ctx, panel_a, footnote=False)
+        panel = await self.bot.send(ctx, panel_b, _return=True)
+        panel = await ctx.send(embed=panel[0])
         await panel.add_reaction(self.bot.settings.emojis['link'])
 
         def check(reaction, user):

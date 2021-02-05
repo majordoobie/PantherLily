@@ -1,10 +1,8 @@
-"""
-100 % @ 1734
-"""
 import asyncio
 import logging
 import asyncpg
 import argparse
+import json
 
 import coc
 from discord import Intents
@@ -45,7 +43,10 @@ async def run(settings: Settings, coc_client: coc):
         Clash of Clans client of interacting with the Clash of Clans API
     """
     try:
-        pool = await asyncpg.create_pool(settings.dsn)
+        async def init(con):
+            """Create custom column type, json."""
+            await con.set_type_codec('json', schema='pg_catalog', encoder=json.dumps, decoder=json.loads)
+        pool = await asyncpg.create_pool(settings.dsn, init=init)
     except Exception as error:
         exit(error)
     intents = Intents.default()

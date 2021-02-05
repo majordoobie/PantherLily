@@ -40,7 +40,7 @@ class GroupStats(commands.Cog):
         legend += f'{db} Member is registered with Pantherlily.\n'
         legend += f'{waze} Get realtime location of members.\n'
 
-        await self.bot.embed_print(ctx, legend)
+        await self.bot.send(ctx, legend)
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
@@ -83,8 +83,6 @@ class GroupStats(commands.Cog):
                 'in_discord': False,
                 'in_database': False
             }
-
-
         # Display the roster panel
         panel = f'{clan}{db}\u0080\n'
         count = 0
@@ -94,7 +92,7 @@ class GroupStats(commands.Cog):
             count += 1
             panel += f"  **{count:>2}**  {player}\n"
 
-        await self.bot.embed_print(ctx, panel, footnote=False)
+        await self.bot.send(ctx, panel, footnote=False)
 
         strength_panel = f'__**Registered Members**__\n`⠀{"Total members":\u00A0<13}⠀` `⠀{strength_count:>2}⠀`\n'
         levels = [level for level in strength.keys()]
@@ -103,8 +101,9 @@ class GroupStats(commands.Cog):
             town_hall = f'Total TH{level}'
             strength_panel += f"`⠀{town_hall:\u00A0<13}⠀` `⠀{strength[level]:>2}⠀`\n"
 
-        strength_embed = await self.bot.embed_print(ctx, strength_panel, _return=True)
-        strength_panel = await ctx.send(embed=strength_embed)
+        strength_embed = await self.bot.send(ctx, strength_panel, _return=True)
+        for embed in strength_embed:
+            strength_panel = await ctx.send(embed=embed)
         await strength_panel.add_reaction(waze)
 
         # Display the location panels
@@ -119,7 +118,7 @@ class GroupStats(commands.Cog):
                 for player in players:
                     panel += f'`⠀{player["town_hall"]:<2}⠀` `⠀{player["name"]:<23.23}⠀`\n'
                 location_panels += panel
-            await self.bot.embed_print(ctx, location_panels)
+            await self.bot.send(ctx, location_panels)
 
         except asyncio.TimeoutError:
             pass

@@ -30,7 +30,7 @@ class Leaders(commands.Cog):
             if not args['coc_alternate']:
                 msg = alternate_account(db_discord_member, db_clash_accounts, args)
                 self.log.error(msg)
-                await self.bot.embed_print(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
+                await self.bot.send(ctx, msg, title='Multiple clash accounts', color=self.bot.WARNING)
                 # if the user added the flag then add the new clash account and set it to primary
             else:
                 await con.execute(sql_update_discord_user_is_active(), True, member.id)
@@ -39,7 +39,7 @@ class Leaders(commands.Cog):
                 db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                 msg = account_panel(db_discord_member, db_clash_accounts, "Alternate clash account set")
                 self.log.error(msg)
-                await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                               ctx.author.id, msg)
 
@@ -52,7 +52,7 @@ class Leaders(commands.Cog):
         if default_roles is None:
             msg = f'Unable to retrieve `th{clash_level}s` role or `CoC Members` role. please make sure it ' \
                   f'exits for me to automatically assign it to users.'
-            await self.bot.embed_print(ctx, msg, title='Role not found', color=self.bot.ERROR)
+            await self.bot.send(ctx, msg, title='Role not found', color=self.bot.ERROR)
         else:
             try:
                 await member.add_roles(*default_roles)
@@ -61,7 +61,7 @@ class Leaders(commands.Cog):
             except Exception as error:
                 self.bot.log.error(error, exc_info=True)
                 exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-                await self.bot.embed_print(ctx, exc, title='User role change error', color=self.bot.ERROR)
+                await self.bot.send(ctx, exc, title='User role change error', color=self.bot.ERROR)
 
         try:
             if member.display_name != in_game_name:
@@ -71,7 +71,7 @@ class Leaders(commands.Cog):
         except Exception as error:
             self.bot.log.critical(error, exc_info=True)
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-            await self.bot.embed_print(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
+            await self.bot.send(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
     async def _remove_defaults(self, member):
         keep_roles = []
@@ -96,7 +96,7 @@ class Leaders(commands.Cog):
             else:
                 msg = account_panel(db_discord_member, db_clash_accounts, 'User set to inactive')
             self.log.error(msg)
-            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+            await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
             await con.execute(sql_insert_user_note(), member_id, clash_tag, datetime.now(), ctx.author.id, msg)
 
     @commands.check(is_leader)
@@ -125,10 +125,10 @@ class Leaders(commands.Cog):
                                    arg_string=arg_string)
 
         if not args['positional']:
-            await self.bot.embed_print(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
+            await self.bot.send(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
             return
 
-        member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
+        member = await get_discord_member(ctx, args['positional'], self.bot.send)
         if member is None:
             return
 
@@ -154,8 +154,9 @@ class Leaders(commands.Cog):
 
             msg = 'You are about to remove user without a reason message. Click the check box to continue otherwise ' \
                   f'use the following:\n\n `p.remove {arg_string}`\n`-m "User note message"`'
-            raw_embed = await self.bot.embed_print(ctx, msg, _return=True)
-            embed_object = await ctx.send(embed=raw_embed)
+            raw_embeds = await self.bot.send(ctx, msg, _return=True)
+            for embed in raw_embeds:
+                embed_object = await ctx.send(embed=embed)
             await embed_object.add_reaction(self.bot.settings.emojis['check'])
             await embed_object.add_reaction(self.bot.settings.emojis['delete'])
 
@@ -211,8 +212,8 @@ class Leaders(commands.Cog):
             return
 
         # Get user objects
-        player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.embed_print)
-        member = await get_discord_member(ctx, args['discord_id'], self.bot.embed_print)
+        player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.send)
+        member = await get_discord_member(ctx, args['discord_id'], self.bot.send)
         if not player or not member:
             return
 
@@ -244,7 +245,7 @@ class Leaders(commands.Cog):
                 msg = account_panel(db_discord_member, db_clash_accounts, "New user added")
                 await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
                 self.log.error(msg)
-                await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                 await self._set_defaults(ctx, member, player.town_hall, player.name)
 
             # If user HAS a discord account BUT their active state is set to false
@@ -259,7 +260,7 @@ class Leaders(commands.Cog):
                     db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                     msg = account_panel(db_discord_member, db_clash_accounts, "User enabled")
                     self.log.error(msg)
-                    await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                    await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(), ctx.author.id, msg)
                     await self._set_defaults(ctx, member, player.town_hall, player.name)
 
@@ -272,7 +273,7 @@ class Leaders(commands.Cog):
                         db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                         msg = account_panel(db_discord_member, db_clash_accounts, "User enabled")
                         self.log.error(msg)
-                        await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                        await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                         await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                           ctx.author.id, msg)
                         await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -291,7 +292,7 @@ class Leaders(commands.Cog):
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'User enabled')
                             self.log.error(msg)
-                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
                             await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -306,7 +307,7 @@ class Leaders(commands.Cog):
                     db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                     msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account assigned')
                     self.log.error(msg)
-                    await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                    await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                     await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                   ctx.author.id, msg)
                     await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -316,14 +317,14 @@ class Leaders(commands.Cog):
                         if db_clash_accounts[0]['is_primary_account']:
                             msg = account_panel(db_discord_member, db_clash_accounts, 'No action taken')
                             self.log.error(msg)
-                            await self.bot.embed_print(ctx, msg)
+                            await self.bot.send(ctx, msg)
 
                         else:
                             await con.execute(sql_update_clash_account_coc_alt_primary(), True, member.id, player.tag)
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
                             self.log.error(msg)
-                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                       ctx.author.id, msg)
                             await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -339,7 +340,7 @@ class Leaders(commands.Cog):
                             db_discord_member, db_clash_accounts = await self._get_updates(member.id)
                             msg = account_panel(db_discord_member, db_clash_accounts, 'Clash account set')
                             self.log.error(msg)
-                            await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                            await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                             await con.execute(sql_insert_user_note(), member.id, player.tag, datetime.now(),
                                               ctx.author.id, msg)
                             await self._set_defaults(ctx, member, player.town_hall, player.name)
@@ -382,8 +383,8 @@ class Leaders(commands.Cog):
         if not args:
             return
 
-        player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.embed_print)
-        member = await get_discord_member(ctx, args['discord_id'], self.bot.embed_print)
+        player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.send)
+        member = await get_discord_member(ctx, args['discord_id'], self.bot.send)
         if not player or not member:
             return
 
@@ -396,9 +397,9 @@ class Leaders(commands.Cog):
                     clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
                     msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
                     self.log.error(msg)
-                    await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+                    await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                     return
-            await self.bot.embed_print(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
+            await self.bot.send(ctx, f"Nothing to delete, check commands\n{account_panel(discord_member, clash_accounts)}")
 
 
     @commands.check(is_leader)
@@ -420,7 +421,7 @@ class Leaders(commands.Cog):
                                    arg_string=arg_string)
 
         if args['positional']:
-            member = await get_discord_member(ctx, args['positional'], self.bot.embed_print)
+            member = await get_discord_member(ctx, args['positional'], self.bot.send)
             if not member:
                 return
         else:
@@ -428,7 +429,7 @@ class Leaders(commands.Cog):
 
         db_discord_member, db_clash_accounts = await self._get_updates(member.id)
         msg = account_panel(db_discord_member, db_clash_accounts)
-        await self.bot.embed_print(ctx, msg, color=self.bot.SUCCESS)
+        await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
 
     @commands.check(is_leader)
     @commands.command(
@@ -474,7 +475,7 @@ class Leaders(commands.Cog):
                     data_block += f"{true if donation > 300 else false}\u00A0`⠀" \
                                   f"{player['clash_name']:<17.17}⠀` `⠀{donation:⠀>5}⠀`\n"
 
-                embeds = await self.bot.embed_print(ctx, data_block, _return=True, footnote=False)
+                embeds = await self.bot.send(ctx, data_block, _return=True, footnote=False)
                 date = f"Week of: {date.strftime('%Y-%m-%d')}"
                 if isinstance(embeds, list):
                     embeds[-1].set_footer(text=date)

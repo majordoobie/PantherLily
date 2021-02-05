@@ -33,7 +33,7 @@ class Role_Manager(commands.Cog):
         for index,role in enumerate(ctx.guild.roles):
             if role.id != 293943534028062721: # @everyone
                 output += f"` {index:<2} ` ` {role.name} `\n"
-        #await self.bot.embed_print(ctx, title='**__SERVER ROLES__**', description=output)
+        #await self.bot.send(ctx, title='**__SERVER ROLES__**', description=output)
         await self.util.embed_print(ctx, title='**__SERVER ROLES__**', description=output)
 
     @roles.command(name='find')
