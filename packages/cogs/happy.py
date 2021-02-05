@@ -104,11 +104,16 @@ class Happy(commands.Cog):
             sql = f"""UPDATE happy SET data='{_dict}' WHERE panel_name='{record["panel_name"]}' """
             await con.execute(sql)
 
-    async def _refresh_panel(self, record: Record, message: Message):
+    async def _refresh_panel(self, record: Record, message: Message, reset_emojis=False):
         panel, emoji_stack = self._panel_factory(record)
         embeds = await self.bot.send(ctx=None, description=panel, footnote=False, _return=True)
         for embed in embeds:
             await message.edit(embed=embed)
+
+        if reset_emojis:
+            await message.clear_reactions()
+            for reaction in emoji_stack:
+                await message.add_reaction(reaction)
 
     async def _get_message(self, message_id: int, channel_id: int, guild_id: int) -> Optional[Message]:
         """Get a message object"""
@@ -402,6 +407,67 @@ class Happy(commands.Cog):
             active = "True" if row["active"] else "False"
             panel += f'{row["panel_name"]:<10} {row["panel_rows"]:<2} {active:<5}\n'
         await self.bot.send(ctx, panel, code_block=True)
+
+    @happy.command(
+        name='edit',
+        aliases=['e'],
+        brief='',
+        usage='(panel_name)(+/-)(int)',
+        help='Edit the amount of rows available to a panel.\n\nExample:\n'
+             'edit +3\n'
+             'edit -3'
+    )
+    async def edit_panel(self, ctx, *, arg_string=None):
+        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
+        self.bot.log_user_commands(self.log,
+                                   user=ctx.author.display_name,
+                                   command="happy edit_panel",
+                                   args=args,
+                                   arg_string=arg_string)
+
+        string_objects = args["positional"].split(' ')
+
+        instance = await self._panel_exists(ctx, string_objects[0])
+        if not instance:
+            return
+
+        if len(string_objects) not in [2, 3]:
+            await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.')
+            return
+        elif len(string_objects) == 2:
+            try:
+                operator, integer = string_objects[1][0], string_objects[1][1:]
+            except:
+                await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.', color=self.bot.ERROR)
+                return
+        else:
+            operator, integer = string_objects[1], string_objects[2]
+
+        if operator not in ['+', '-']:
+            await self.bot.send(ctx, 'Invalid operators used', color=self.bot.ERROR)
+            return
+        if not integer.isdigit():
+            await self.bot.send(ctx, 'Invalid integer provided', color=self.bot.ERROR)
+            return
+        elif int(integer) not in range(0, 11):
+            await self.bot.send(ctx, 'Invalid integer range provided', color=self.bot.ERROR)
+            return
+
+        if operator == '+':
+            new_rows = instance["panel_rows"] + int(integer)
+        else:
+            new_rows = instance["panel_rows"] - int(integer)
+        if new_rows not in range(0, 11):
+            await self.bot.send(ctx, 'New row count exceeds range of 0 to 10', color=self.bot.ERROR)
+            return
+
+        async with self.bot.pool.acquire() as con:
+            sql = f"""UPDATE happy SET panel_rows={new_rows} WHERE panel_name='{instance["panel_name"]}'"""
+            await con.execute(sql)
+
+        instance = await self._panel_exists(ctx, instance["panel_name"])
+        message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
+        await self._refresh_panel(instance, message, reset_emojis=True)
 
     def _panel_factory(self, instance) -> Tuple[str, list]:
         ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25', '26 - 30', '31 - 35', '36 - 40',
