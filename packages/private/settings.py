@@ -4,9 +4,8 @@ Settings for all libraries especially the Bot
 from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
-COG_LOCATION='packages.cogs'
-VERSION='3.2.1'
-
+COG_LOCATION = 'packages.cogs'
+VERSION = '3.2.2'
 
 ENABLED_COGS = (
     'admin',
@@ -16,6 +15,7 @@ ENABLED_COGS = (
     'background_tasks',
     'happy',
 )
+
 
 class Settings:
     def __init__(self, bot_mode=None, daemon=False):
@@ -56,7 +56,7 @@ class Settings:
                 'version': f'PantherLily v{VERSION}',
                 'key_name': 'Panther_Bot3 Keys',
                 'log_name': 'PantherLily'
-                }
+            }
         elif self.bot_mode == 'dev_mode':
             return {
                 'bot_name': 'Panther Dev Shell',
@@ -65,7 +65,7 @@ class Settings:
                 'version': 'Panther v3 Beta',
                 'key_name': 'DevShell Keys',
                 'log_name': 'DevShell'
-                }
+            }
         else:
             self.bot_mode = None
 
@@ -75,8 +75,7 @@ class Settings:
 
     def _set_cogs(self):
         self.cog_path = COG_LOCATION
-        self.enabled_cogs = [ f'{self.cog_path}.{cog}' for cog in ENABLED_COGS ]
-
+        self.enabled_cogs = [f'{self.cog_path}.{cog}' for cog in ENABLED_COGS]
 
     def _set_logging_settings(self, daemon):
         self.file_log_size = 10000
@@ -101,7 +100,6 @@ class Settings:
             self.web_log_level = DEBUG
             self.file_log = "/opt/project/packages/private/panther_daemon.log"
             self.file_log_level = DEBUG
-
 
 
 emoji_dict = {
@@ -201,6 +199,3 @@ emoji_dict = {
     "left": "<:left:682765217414775013>",
     "save": "<:save:682765217528152065>"
 }
-
-
-
