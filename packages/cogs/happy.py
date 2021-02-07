@@ -241,13 +241,13 @@ class Happy(commands.Cog):
         async with self.bot.pool.acquire() as conn:
             sql = f"""DELETE FROM happy WHERE panel_name='{panel_name["panel_name"]}' """
             await conn.execute(sql)
-        await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', color=self.bot.SUCCESS)
+        await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', color=self.bot.SUCCESS, footnote=False)
 
     @happy.command(
         name='create',
         aliases=['cr'],
         brief='',
-        help='Crete a panel by providing the name of a panel and the number of rows you would like to '
+        help='Create a panel by providing the name of a panel and the number of rows you would like to '
              'create.\n\n'
              'Example:\n'
              'p.h create sunday_war 10',
@@ -301,7 +301,7 @@ class Happy(commands.Cog):
                     0,
                     self.default_dataset
                 )
-                await self.bot.send(ctx, f'Panel `{panel_name}` created!', color=self.bot.SUCCESS)
+                await self.bot.send(ctx, f'Panel `{panel_name}` created!', color=self.bot.SUCCESS, footnote=False)
 
     @happy.command(
         name='view',
@@ -376,7 +376,7 @@ class Happy(commands.Cog):
                 return
             await self._refresh_panel(instance, message)
         else:
-            await self.bot.send(ctx, 'Cleared panel')
+            await self.bot.send(ctx, 'Cleared panel', color=self.bot.SUCCESS, footnote=False)
 
     @happy.command(
         name='stop',
@@ -409,7 +409,7 @@ class Happy(commands.Cog):
         instance["active"] = False
         await self._refresh_panel(instance, message)
         await message.clear_reactions()
-        await self.bot.send(ctx, 'Stopped panel from running.')
+        await self.bot.send(ctx, 'Stopped panel from running.', color=self.bot.SUCCESS, footnote=False)
 
     @happy.command(
         name='list',

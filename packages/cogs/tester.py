@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import Embed
 from coc import utils, NotFound
 from discord import Embed
 #from packages.cogs.utils import embed_print
@@ -15,12 +16,54 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        members = await self.bot.coc_client.get_members('#2Y28CGP8')
-        a = members[0]
-        print(dir(a))
-        print(dir(a.clan))
-        for i in members:print(i.clan)
+        from packages.cogs.clash_stats.clash_stats_panel import ClashStats
+        player = await self.bot.coc_client.get_player('L2G9VLUC')
 
+        clash_stat = ClashStats(player)
+        panel_a, panel_b = clash_stat.display_all()
+        hero_pane = '\n'.join(clash_stat._get_heroes_panel().split('\n')[1:])
+        troop_pane = '\n'.join(clash_stat._get_troops_panels().split('\n')[1:])
+        siege_panel = '\n'.join(clash_stat._get_sieges_panel().split('\n')[1:])
+        spell_panel = '\n'.join(clash_stat._get_spells_panels().split('\n')[1:])
+
+        embed = {
+            'fields': [
+                {
+                    'name': '**Heroes**',
+                    'value': panel_a
+                },
+                {
+                    'name': '**Heroes**',
+                    'value': hero_pane
+                },
+                {
+                    'name': '**Sieges**',
+                    'value': siege_panel
+                },
+                {
+                    'name': '**Troops**',
+                    'value': troop_pane
+                },
+                {
+                    'name': '**Spells**',
+                    'value': spell_panel
+                },
+            ]
+        }
+        await ctx.send(embed=Embed.from_dict(embed))
+
+
+
+    @commands.command()
+    async def list_emojis(self, ctx):
+        out = ''
+        for emoji in self.bot.emojis:
+            out += f'{emoji} | `<:{emoji.name}:{emoji.id}>`\n'
+            if len(out) > 1900:
+                await ctx.send(out)
+                out = ''
+
+        await ctx.send(out)
 
     @commands.command()
     async def get_user(self, ctx, *, arg_string):

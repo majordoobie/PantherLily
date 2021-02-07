@@ -1,6 +1,7 @@
 from coc import Player
 from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
+
 class ClashStats:
     TOWN_HALLS = {
         "13": "<:th13:651099879686406145>",
@@ -10,7 +11,8 @@ class ClashStats:
         "9": "<:townhall9:546080772118020097>",
         "8": "<:townhall8:546080798097539082>"
     }
-    def __init__(self, player: Player, active_player: dict=None, set_lvl=None):
+
+    def __init__(self, player: Player, active_player: dict = None, set_lvl=None):
         """Display an embedded panel containing user stats"""
         self.player = player
         self.member = active_player
@@ -57,17 +59,17 @@ class ClashStats:
         role = self.player.role if self.player.role else 'None'
         clan = self.player.clan.name if self.player.clan else 'None'
         frame += (
-        f"`{'Role:':<15}` `{role:<15}`\n"
-        f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
-        f"`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`\n"
-        f"`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`\n"
-        f"`{'Current Clan:':<15}` `{clan:<15.15}`\n"
-        f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
-        f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
-        f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"
-        f"`{'War Stars:':<15}` `{self.player.war_stars:<15}`\n"
-        f"`{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`\n"
-        f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
+            f"`{'Role:':<15}` `{role:<15}`\n"
+            f"`{'Player Tag:':<15}` `{self.player.tag:<15}`\n"
+            f"`{'Member Status:':<15}` `{'True' if self.member['is_active'] else 'False':<15}`\n"
+            f"`{'Joined Date:':<15}` `{self.member['guild_join_date'].strftime('%Y-%b-%d'):<15}`\n"
+            f"`{'Current Clan:':<15}` `{clan:<15.15}`\n"
+            f"`{'League:':<15}` `{self.player.league.name:<15.15}`\n"
+            f"`{'Trophies:':<15}` `{self.player.trophies:<15}`\n"
+            f"`{'Best Trophies:':<15}` `{self.player.best_trophies:<15}`\n"
+            f"`{'War Stars:':<15}` `{self.player.war_stars:<15}`\n"
+            f"`{'Attack Wins:':<15}` `{self.player.attack_wins:<15}`\n"
+            f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
         )
         return frame
 
@@ -89,7 +91,6 @@ class ClashStats:
             f"`{'Defense Wins:':<15}` `{self.player.defense_wins:<15}`\n"
         )
         return frame
-
 
     def _get_heroes_panel(self):
         frame = '**Heroes**\n'
@@ -166,8 +167,36 @@ class ClashStats:
                 continue
         return frame
 
+    @property
+    def to_dict(self) -> dict:
+        return {
+            'color': 0x000080,
+            'fields': [
+                {
+                    'name': f'{self.TOWN_HALLS[str(self.player.town_hall)]}',
+                    'value': self.administration_panel
+                },
+                {
+                    'name': '**Heroes**',
+                    'value': '\n'.join(self._get_heroes_panel().split('\n')[1:])
+                },
+                {
+                    'name': '**Sieges**',
+                    'value': '\n'.join(self._get_sieges_panel().split('\n')[1:])
+                },
+                {
+                    'name': '**Troops**',
+                    'value': '\n'.join(self._get_troops_panels().split('\n')[1:])
+                },
+                {
+                    'name': '**Spells**',
+                    'value': '\n'.join(self._get_spells_panels().split('\n')[1:])
+                },
+            ]
+        }
+
     def display_all(self):
-        panel_a= f'{self.title}\n{self.administration_panel}\n'
+        panel_a = f'{self.title}\n{self.administration_panel}\n'
         panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}\n{self.siege_panel}\n' \
                   f'{self.troop_panel}\n{self.spell_panel}'
         return panel_a, panel_b

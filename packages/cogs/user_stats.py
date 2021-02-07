@@ -144,6 +144,18 @@ class UserStats(commands.Cog):
         panel_a, panel_b = ClashStats(player, active_player, set_lvl=args['display_level']).display_all()
         await self._display_panels(ctx, player, panel_a, panel_b)
 
+        # from discord import Embed
+        # clash_stat = ClashStats(player, active_player, set_lvl=['display_level'])
+        # embed = Embed.from_dict(clash_stat.to_dict)
+        # async with self.bot.pool.acquire() as con:
+        #     sql = f"""SELECT discord_user.discord_id from discord_user, clash_account WHERE clash_tag='{player.tag}'
+        #     AND discord_user.discord_id=clash_account.discord_id"""
+        #     member = await con.fetchval(sql)
+        #     member = ctx.guild.get_member(member)
+        #
+        # embed.set_author(name=member.display_name, icon_url=member.avatar_url)
+        # await ctx.send(embed=embed)
+
     async def _display_panels(self, ctx, player, panel_a, panel_b):
         await self.bot.send(ctx, panel_a, footnote=False)
         panel = await self.bot.send(ctx, panel_b, _return=True)
