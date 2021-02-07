@@ -29,7 +29,7 @@ class Tester(commands.Cog):
         embed = {
             'fields': [
                 {
-                    'name': '**Heroes**',
+                    'name': '\u200b',
                     'value': panel_a
                 },
                 {

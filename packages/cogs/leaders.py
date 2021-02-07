@@ -471,7 +471,7 @@ class Leaders(commands.Cog):
                 data_block = f"`\u00A0\u00A0\u00A0 {'Player':<14}⠀` `⠀{'Donation'}⠀`\n"
                 for player in players:
                     donation = player['donation_gains']
-                    emoji = true if donation > 300 else false
+                    emoji = true if donation >= 300 else false
                     if date == current_week:
                         if not player["guild_join_date"] < current_week:
                             emoji = warning

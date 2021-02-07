@@ -241,7 +241,7 @@ async def parse_args(ctx: Context, settings: Settings, arg_dict: dict, arg_strin
         return parsed_args
     except DiscoArgParseException as error:
         bot_ext = BotExt(settings)
-        await bot_ext.embed_print(ctx=ctx, title=error.base_name, description=error.msg, color=BotExt.ERROR)
+        await bot_ext.send(ctx=ctx, title=error.base_name, description=error.msg, color=BotExt.ERROR)
         return None
 
 

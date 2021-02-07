@@ -34,7 +34,7 @@ class Role_Manager(commands.Cog):
             if role.id != 293943534028062721: # @everyone
                 output += f"` {index:<2} ` ` {role.name} `\n"
         #await self.bot.send(ctx, title='**__SERVER ROLES__**', description=output)
-        await self.util.embed_print(ctx, title='**__SERVER ROLES__**', description=output)
+        await self.util.send(ctx, title='**__SERVER ROLES__**', description=output)
 
     @roles.command(name='find')
     async def roles_find(self, ctx, *, cmd):
@@ -62,7 +62,7 @@ class Role_Manager(commands.Cog):
             for member in primary_role.members:
                 if member in secondary_role.members:
                     output += f"` 00 ` ` {member.name:<25.25} `\n"
-            await self.util.embed_print(ctx, title=f'**__MEMBERS WITH {primary_role.name} and {secondary_role.name}__**', description=output)
+            await self.util.send(ctx, title=f'**__MEMBERS WITH {primary_role.name} and {secondary_role.name}__**', description=output)
 
         # Send without the with statement
         else:
@@ -72,7 +72,7 @@ class Role_Manager(commands.Cog):
             output = f"` TH ` ` Player `\n"
             for member in role.members:
                 output += f"` 00 ` ` {member.name:<25.25} `\n"
-            await self.util.embed_print(ctx, title=f'**__MEMBERS WITH {role.name}__**', description=output)
+            await self.util.send(ctx, title=f'**__MEMBERS WITH {role.name}__**', description=output)
 
     @roles.command(name='give')
     async def roles_give(self, ctx, *, cmd):
