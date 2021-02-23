@@ -494,7 +494,9 @@ class Happy(commands.Cog):
 
         instance = await self._panel_exists(ctx, instance["panel_name"])
         message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
-        await self._refresh_panel(instance, message, reset_emojis=True)
+        await self.bot.send(ctx, 'Panel edited', color=self.bot.SUCCESS, footnote=False)
+        if instance["active"]:
+            await self._refresh_panel(instance, message, reset_emojis=True)
 
     def _panel_factory(self, instance) -> Tuple[str, list]:
         ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25', '26 - 30', '31 - 35', '36 - 40',
