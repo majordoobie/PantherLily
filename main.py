@@ -55,7 +55,8 @@ async def run(settings: Settings, coc_client: coc):
     intents.reactions = True
     bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
                     command_prefix=settings.bot_config['bot_prefix'], intents=intents)
-    log = logging.getLogger('root')
+
+    log = logging.getLogger(f'{settings.bot_config["log_name"]}.Main')
 
     try:
         await bot.start(settings.bot_config['bot_token'])
@@ -93,7 +94,7 @@ def main():
     elif args.live_mode:
         settings = Settings('live_mode')
 
-    BotLogger(settings, "PantherBot")
+    BotLogger(settings)
     loop = asyncio.get_event_loop()
     coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
                            key_names=settings.bot_config['key_name'])

@@ -21,8 +21,8 @@ class BackgroundTasks(commands.Cog):
 
     def _setup_logging(self):
         """Setup custom logging for the background tasks"""
-        settings = Settings(daemon=True)
-        LoggerSetup(settings, self.bot.settings.log_name)
+        # settings = Settings(daemon=True)
+        # LoggerSetup(settings, self.bot.settings.log_name)
         self.log = logging.getLogger(f'{self.bot.settings.log_name}.BackgroundSync')
 
         self.log.debug('Logging initialized')

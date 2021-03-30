@@ -7,10 +7,10 @@ from discord.ext.commands import Context, NotOwner, BadArgument
 
 
 class BotExt:
-    INFO = 0x000080         # blued
-    ERROR = 0xff0010        # red
-    SUCCESS = 0x00ff00      # green
-    WARNING = 0xff8000      # orange
+    INFO = 0x000080  # blued
+    ERROR = 0xff0010  # red
+    SUCCESS = 0x00ff00  # green
+    WARNING = 0xff8000  # orange
 
     def __init__(self, settings):
         self.settings = settings
@@ -74,7 +74,7 @@ class BotExt:
             raise NotOwner("Please ask a developer to run this command")
 
     @staticmethod
-    def log_role_change(member: Member, role: Union[List[Role], Role], log: Logger, removed: bool=False) -> None:
+    def log_role_change(member: Member, role: Union[List[Role], Role], log: Logger, removed: bool = False) -> None:
         """
         Simple centralized place to log role changes. The input will either be a list of roles or
         a single role
@@ -120,10 +120,12 @@ class BotExt:
         -------
         None
         """
-        msg = f'User:       `{kwargs["user"]}`\n' \
-              f'Executed:   `{kwargs["command"]}`\n' \
-              f'arg_string: `{kwargs["arg_string"]}`\n' \
-              f'args:       `{kwargs["args"]}`'
-
+        msg = f'''
+```
+User:        {kwargs["user"]}               
+Executed:    {kwargs["command"]}
+Arg Passed:  {kwargs["arg_string"]}
+Args Parsed: {kwargs["args"]}
+```
+'''
         log.warning(msg)
-

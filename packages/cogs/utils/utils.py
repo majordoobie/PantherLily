@@ -1,6 +1,7 @@
 from typing import Optional, Union, List
 
 from asyncpg.pool import Pool
+from asyncpg import Record
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
 from datetime import datetime, timedelta
@@ -13,6 +14,7 @@ import discord
 from packages.private.settings import *
 from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
 from packages.bot_ext import BotExt
+from packages.cogs.utils.bot_sql import sql_select_member_find
 
 
 async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Union[Member, None]:
@@ -64,8 +66,41 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=
         else:
             print(f'Discord member: {disco_id} was not found')
 
-async def get_discord_user(ctx: Context, username: str, pool: Pool):
-    pass
+
+async def get_database_user(user_token: str, pool: Pool) -> Optional[Record]:
+    """
+    Search the database for the user string. The string will be casted to upper.
+    Parameters
+    ----------
+    user_token: str
+        Token used to match with
+    pool:
+        Database
+
+    Returns
+    -------
+    Record:
+        Record from the result
+
+    Raises
+    ------
+    RuntimeError:
+        Generic error for when more than one result is found with the query
+    """
+    sql = sql_select_member_find()
+    integer_id = int(user_token) if user_token.isdigit() else -1
+    async with pool.acquire() as con:
+        members = await con.fetch(sql, user_token.upper(), integer_id)
+    if len(members) > 1:
+        records = [f"{record['discord_name']}" for record in members]
+        raise RuntimeError("The query used resulted in more than one result which should not happen. "
+                           "Please use a different string to query and let doobie know about this "
+                           "situation.", records)
+    elif not members:
+        return None
+
+    return members[0]
+
 
 def get_default_roles(guild: Guild, settings: Settings, level: int) -> Union[List[Role], None]:
     """

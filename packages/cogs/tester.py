@@ -1,21 +1,29 @@
+from discord import Member
 from discord.ext import commands
 from discord import Embed
 from coc import utils, NotFound
 from discord import Embed
-#from packages.cogs.utils import embed_print
+# from packages.cogs.utils import embed_print
 from packages.cogs.utils.utils import parse_args
 
 
 class Tester(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.command()
     async def ping(self, ctx):
         await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.command()
-    async def test(self, ctx):
+    async def test(self, ctx, arg_string):
+
+        from packages.cogs.utils.utils import get_database_user
+        user = await get_database_user(arg_string.upper(), self.bot.pool)
+        print(user, "\n\n")
+
+        return
+
         from packages.cogs.clash_stats.clash_stats_panel import ClashStats
         player = await self.bot.coc_client.get_player('L2G9VLUC')
 
@@ -51,8 +59,6 @@ class Tester(commands.Cog):
             ]
         }
         await ctx.send(embed=Embed.from_dict(embed))
-
-
 
     @commands.command()
     async def list_emojis(self, ctx):

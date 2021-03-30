@@ -1,6 +1,5 @@
 from asyncio import TimeoutError
 import traceback
-from datetime import datetime
 
 from discord.ext import commands
 import logging
@@ -73,7 +72,14 @@ class Leaders(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.send(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
-    async def _remove_defaults(self, member):
+    async def _remove_defaults(self, member: discord.member) -> None:
+        """
+        Function used to remove the default roles
+        Parameters
+        ----------
+        member: Member
+            Member object representing the user to affect
+        """
         keep_roles = []
         remove_roles = []
         for role in member.roles[1:]:  # skip the first role @everyone
@@ -127,14 +133,21 @@ class Leaders(commands.Cog):
             await self.bot.send(ctx, 'You must provide the discord user as an argument', color=self.bot.WARNING)
             return
 
-        member = await get_discord_member(ctx, args['positional'], self.bot.send)
-        if member is None:
+        # Get the database user object
+        db_member = await get_database_user(args['positional'], self.bot.pool)
+
+        if db_member is None:
             return
 
+        # If database user object exists, then attempt to get the discord member object
+        member = await get_discord_member(ctx, db_member['discord_id'], self.bot.send, _return=True)
+
+        # Fetch all the clash account
         clash_tag = None
         async with self.bot.pool.acquire() as con:
-            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
+            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), db_member['discord_id'])
 
+        # Fetch the primary account
         for clash_account in clash_accounts:
             if clash_account['is_primary_account']:
                 clash_tag = clash_account['clash_tag']
@@ -142,8 +155,9 @@ class Leaders(commands.Cog):
             clash_tag = clash_accounts[0]['clash_tag']
 
         if args['kick_message']:
-            await self._remove_user(ctx, member.id, clash_tag, kick_message=args['kick_message'])
-            await self._remove_defaults(member)
+            await self._remove_user(ctx, db_member['discord_id'], clash_tag, kick_message=args['kick_message'])
+            if member:
+                await self._remove_defaults(member)
         else:
             def check(reaction, user):
                 if user == ctx.author:
@@ -153,6 +167,7 @@ class Leaders(commands.Cog):
             msg = 'You are about to remove user without a reason message. Click the check box to continue otherwise ' \
                   f'use the following:\n\n `p.remove {arg_string}`\n`-m "User note message"`'
             raw_embeds = await self.bot.send(ctx, msg, _return=True)
+            embed_object = ''
             for embed in raw_embeds:
                 embed_object = await ctx.send(embed=embed)
             await embed_object.add_reaction(self.bot.settings.emojis['check'])
@@ -170,8 +185,9 @@ class Leaders(commands.Cog):
                 return
 
             else:
-                await self._remove_user(ctx, member.id, clash_tag)
-                await self._remove_defaults(member)
+                await self._remove_user(ctx, member['discord_id'], clash_tag)
+                if member:
+                    await self._remove_defaults(member)
 
     @commands.check(is_leader)
     @commands.command(

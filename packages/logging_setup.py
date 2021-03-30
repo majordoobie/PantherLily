@@ -4,8 +4,8 @@ from logging.handlers import QueueListener, QueueHandler
 from queue import Queue
 from discord import Webhook, RequestsWebhookAdapter, Embed
 
-
 from packages.private.settings import Settings
+from packages.bot_ext import BotExt
 
 
 class BotLogger:
@@ -16,7 +16,8 @@ class BotLogger:
     Basically the discord thread will just log into the queue and the listener will pick up any records
     and log them into i/o and web if needed.
     """
-    def __init__(self, settings: Settings, logger_name: str):
+
+    def __init__(self, settings: Settings):
         self.settings = settings
         self.log_queue = Queue(-1)
         self.log_handlers = []
@@ -27,7 +28,7 @@ class BotLogger:
         # Set up file logging
         self._set_file_logging()
 
-        root = logging.getLogger(logger_name)
+        root = logging.getLogger(self.settings.bot_config['log_name'])
         root.setLevel(settings.main_log_level)
         root.addHandler(QueueListenerHandler(self.log_handlers))
 
@@ -56,6 +57,7 @@ class QueueListenerHandler(QueueHandler):
     Since all logs must go to the Queue Listener then Queue Handler will then take them and emit them as normal
     in a new thread. So all normal handlers will go into Queue Handler instead of the root logger "logging.getLogger"
     """
+
     def __init__(self, handlers, respect_handler_level=True, auto_run=True, queue=Queue(-1)):
         self.queue = queue
         super().__init__(self.queue)
@@ -67,28 +69,26 @@ class QueueListenerHandler(QueueHandler):
             self.start()
             atexit.register(self.stop)
 
-
     def start(self):
         self._listener.start()
-
 
     def stop(self):
         self._listener.stop()
 
-
     def emit(self, record):
         return super().emit(record)
+
 
 class DiscordWebhookHandler(logging.Handler):
     """
     Logs to a discord webhook so that users can also see what is gong on
     """
+
     def __init__(self, settings: Settings):
         super().__init__()
         self.settings = settings
         self.webhook_url = self.settings.web_log_url
         self.setLevel(self.settings.web_log_level)
-
 
     def emit(self, record):
         try:
@@ -103,7 +103,7 @@ class DiscordWebhookHandler(logging.Handler):
             20: 0x0B5394,  # Info  Blue | Changes by automatic tasks go here
             30: 0xFFD966,  # Warning    | User ran a command
             40: 0xFF8000,  # Error Org  | User caused an affect
-            50: 0xFF0000   # Critical   | All errors will go here
+            50: 0xFF0000  # Critical   | All errors will go here
         }
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
 
@@ -112,9 +112,29 @@ class DiscordWebhookHandler(logging.Handler):
         else:
             msg = record.msg
 
-        if record.name == 'Background.Sync' and self.webhook_url.endswith('xEN'):
-            pass
-        else:
-            embed = Embed(title=f'{record.name}', description=msg, color=colors[record.levelno])
-            webhook.send(embed=embed, username=self.settings.web_log_name)
+        msgs = self.text_split(msg)
+        msg = msgs[0]
+        embed = Embed(title=f'{record.name}', description=msg, color=colors[record.levelno])
+        webhook.send(embed=embed, username=self.settings.web_log_name)
+
+        if len(msg) > 1:
+            for msg in msgs[1:]:
+                embed = Embed(description=msg, color=colors[record.levelno])
+                webhook.send(embed=embed, username=self.settings.web_log_name)
+
+    @staticmethod
+    def text_split(text: str) -> list:
+        blocks = []
+        block = ''
+        for i in text.split('\n'):
+            if (len(i) + len(block)) > 1960:
+                block = block.rstrip('\n')
+                blocks.append(block)
+                block = f'{i}\n'
+            else:
+                block += f'{i}\n'
+        if block:
+            blocks.append(block)
+        return blocks
+
 
