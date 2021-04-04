@@ -159,7 +159,6 @@ class Leaders(commands.Cog):
             await self.bot.send(ctx, f"Database user [{args['positional']}] was not found")
             return
 
-
         # Fetch all the clash account
         clash_tag = None
         async with self.bot.pool.acquire() as con:
@@ -173,7 +172,7 @@ class Leaders(commands.Cog):
             clash_tag = clash_accounts[0]['clash_tag']
 
         # If database user object exists, then attempt to get the discord member object
-        member: Member = await get_discord_member(ctx, db_member['discord_id'], self.bot.send, _return=True)
+        member = await get_discord_member(ctx, db_member['discord_id'], self.bot.send, _return=True)
 
         if args['kick_message']:
             await self._remove_user(ctx, db_member['discord_id'], clash_tag, kick_message=args['kick_message'])

@@ -17,7 +17,7 @@ from packages.bot_ext import BotExt
 from packages.cogs.utils.bot_sql import sql_select_member_find
 
 
-async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Union[Member, None]:
+async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Optional[Member]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 
@@ -36,7 +36,8 @@ async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=
 
     Returns
     -------
-    Optional[Member]
+    member: Member or None
+        Returns a member object
     """
     member = None
     if isinstance(disco_id, int):
@@ -79,13 +80,13 @@ async def get_database_user(user_token: str, pool: Pool) -> Optional[Record]:
 
     Returns
     -------
-    Record:
-        Record from the result
+    record: Records or None
+        Returns the record if a result was found
 
     Raises
     ------
     RuntimeError:
-        Generic error for when more than one result is found with the query
+        Returns a error message followed by the list of list of users hist followed by all the records returned
     """
     sql = sql_select_member_find()
     integer_id = int(user_token) if user_token.isdigit() else -1
