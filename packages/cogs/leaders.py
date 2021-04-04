@@ -4,6 +4,7 @@ import traceback
 from discord.ext import commands
 import logging
 
+from coc.utils import correct_tag
 from bot import BotClient
 
 from packages.cogs.utils.bot_sql import *
@@ -134,13 +135,30 @@ class Leaders(commands.Cog):
             return
 
         # Get the database user object
-        db_member = await get_database_user(args['positional'], self.bot.pool)
+        db_member: Record
+        try:
+            db_member = await get_database_user(args['positional'], self.bot.pool)
+        except RuntimeError as error:
+            records: Record = error.args[-1]
+            discord_id = records[0]['discord_id']
+            # Check if there is multiple results of different users
+            for record in records:
+                if record['discord_id'] != discord_id:
+                    users = [(record['discord_id'], record['discord_name'],) for record in records]
+                    users_string = ""
+                    for _tuple in users:
+                        users_string += f"{_tuple}\n"
+
+                    msg = f"Query returned multiple discord_ids. Try using a different query term to attempt to " \
+                          f"resolve. Otherwise, let doobie know about this issue.\n{users_string}"
+                    await self.bot.send(ctx, title="Multiple Results", description=msg, color=self.bot.WARNING)
+                    return
+            db_member = records[0]
 
         if db_member is None:
+            await self.bot.send(ctx, f"Database user [{args['positional']}] was not found")
             return
 
-        # If database user object exists, then attempt to get the discord member object
-        member = await get_discord_member(ctx, db_member['discord_id'], self.bot.send, _return=True)
 
         # Fetch all the clash account
         clash_tag = None
@@ -153,6 +171,9 @@ class Leaders(commands.Cog):
                 clash_tag = clash_account['clash_tag']
         if not clash_tag:
             clash_tag = clash_accounts[0]['clash_tag']
+
+        # If database user object exists, then attempt to get the discord member object
+        member: Member = await get_discord_member(ctx, db_member['discord_id'], self.bot.send, _return=True)
 
         if args['kick_message']:
             await self._remove_user(ctx, db_member['discord_id'], clash_tag, kick_message=args['kick_message'])
@@ -185,7 +206,7 @@ class Leaders(commands.Cog):
                 return
 
             else:
-                await self._remove_user(ctx, member['discord_id'], clash_tag)
+                await self._remove_user(ctx, db_member['discord_id'], clash_tag)
                 if member:
                     await self._remove_defaults(member)
 
@@ -396,19 +417,33 @@ class Leaders(commands.Cog):
         if not args:
             return
 
-        player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.send)
-        member = await get_discord_member(ctx, args['discord_id'], self.bot.send)
-        if not player or not member:
+        player: Player = await get_coc_player(ctx, args['coc_tag'], self.bot.coc_client, self.bot.send)
+        if player is None:
             return
+        # member: Member = await get_discord_member(ctx, args['discord_id'], self.bot.send)
+        member: Record
+        try:
+            member = await get_database_user(args['discord_id'], self.bot.pool)
+        except RuntimeError as error:
+            member = None
+            records: Record = error.args[-1]
+            fixed_tag = correct_tag(args['coc_tag'])
+            for record in records:
+                if record['clash_tag'] == fixed_tag:
+                    member = record
+
+            if member is None:
+                raise RuntimeError(error.args[0], error.args[1])
 
         async with self.bot.pool.acquire() as con:
-            discord_member = await con.fetchrow(sql_select_discord_user_id(), member.id)
-            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
+            discord_member = await con.fetchrow(sql_select_discord_user_id(), member['discord_id'])
+            clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member['discord_id'])
             for clash_account in clash_accounts:
                 if clash_account['clash_tag'] == player.tag:
-                    await con.execute(sql_delete_clash_account_record(), player.tag, member.id)
-                    clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member.id)
-                    msg = f'Removed `{player.tag}` from `{member.name}:{member.id}`\n{account_panel(discord_member, clash_accounts)}'
+                    await con.execute(sql_delete_clash_account_record(), player.tag, member['discord_id'])
+                    clash_accounts = await con.fetch(sql_select_clash_account_discord_id(), member['discord_id'])
+                    msg = f'Removed `{player.tag}` from `{member["discord_name"]}:{member["discord_id"]}`\n' \
+                          f'{account_panel(discord_member, clash_accounts)}'
                     self.log.error(msg)
                     await self.bot.send(ctx, msg, color=self.bot.SUCCESS)
                     return

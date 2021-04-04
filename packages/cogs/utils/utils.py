@@ -95,7 +95,7 @@ async def get_database_user(user_token: str, pool: Pool) -> Optional[Record]:
         records = [f"{record['discord_name']}" for record in members]
         raise RuntimeError("The query used resulted in more than one result which should not happen. "
                            "Please use a different string to query and let doobie know about this "
-                           "situation.", records)
+                           "situation.", records, members)
     elif not members:
         return None
 
@@ -163,7 +163,7 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
     try:
         player = await coc_client.get_player(player_tag)
     except NotFound:
-        await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided: `{player_tag}` tag does "
+        await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided [`{player_tag}`] tag does "
                                                                f"not exist"), color=BotExt.WARNING)
         return None
 
