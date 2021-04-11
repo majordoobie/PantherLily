@@ -13,6 +13,7 @@ def drop_tables() -> List[str]:
         "DROP TABLE user_note CASCADE;"
     ]
 
+
 def create_discord_users() -> str:
     sql = ('''\
 CREATE TABLE IF NOT EXISTS discord_user (
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS discord_user (
 );
 ''')
     return sql
+
 
 def create_clash_account() -> str:
     sql = ('''\
@@ -56,10 +58,11 @@ CREATE TABLE IF NOT EXISTS user_note (
     note TEXT NOT NULL,
     FOREIGN KEY (discord_id) REFERENCES discord_user (discord_id) ON DELETE CASCADE,
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE, 
-    FOREIGN KEY (commit_by) REFERENCES discord_user (discord_id) ON DELETE CASCADE,
+    FOREIGN KEY (commit_by) REFERENCES discord_user (discord_id) ON DELETE CASCADE
 );
 ''')
     return sql
+
 
 def create_clash_classic_update() -> str:
     sql = ('''\
@@ -78,6 +81,7 @@ CREATE TABLE IF NOT EXISTS clash_classic_update (
     ''')
     return sql
 
+
 def create_clash_classic_view() -> str:
     return '''\
 CREATE TABLE if NOT EXISTS clash_classic_update_view (
@@ -93,6 +97,8 @@ CREATE TABLE if NOT EXISTS clash_classic_update_view (
     FOREIGN KEY (clash_tag) REFERENCES clash_account (clash_tag) ON DELETE CASCADE 
 );
     '''
+
+
 def create_clash_present_in_clan() -> str:
     return '''\
 CREATE TABLE IF NOT EXISTS present_in_clan (

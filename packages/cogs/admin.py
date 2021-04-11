@@ -1,5 +1,6 @@
 from discord.ext import commands
 import logging
+import traceback
 
 from packages.cogs.utils.utils import *
 from bot import BotClient
@@ -101,8 +102,9 @@ class Administrator(commands.Cog):
 
         try:
             self.bot.reload_extension(cog)
-        except Exception as e:
-            await ctx.send("```py\n{}: {}\n```".format(type(e).__name__, str(e)))
+        except Exception as error:
+            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+            await ctx.send(exc)
             return
         msg = f"""```python\nReloaded '{cog}' successfully```"""
         await ctx.send(msg)

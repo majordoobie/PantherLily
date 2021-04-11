@@ -60,8 +60,8 @@ class Happy(commands.Cog):
 
         # Check to see if it is a panel that exits in the database
         async with self.bot.pool.acquire() as con:
-            sql = f"""SELECT * FROM happy WHERE message_id={payload.message_id}"""
-            record = await con.fetchrow(sql)
+            sql = "SELECT * FROM happy WHERE message_id=$1"
+            record = await con.fetchrow(sql, payload.message_id)
 
         # If message ID is not part of the Happy table, then ignore
         if not record:
@@ -82,13 +82,11 @@ class Happy(commands.Cog):
         # The panel should be active, but if it is not then clear the reactions and update the db
         # What to do when stop is called
         if str(payload.emoji) == self.emojis["stop"] or not record["active"]:
-            record = dict(record)
-            record["active"] = False
             await self._refresh_panel(record, message)
             await message.clear_reactions()
-            sql = f"""UPDATE happy SET active=False WHERE message_id={payload.message_id}"""
+            sql = "UPDATE happy SET active=False WHERE message_id=$1"
             async with self.bot.pool.acquire() as con:
-                await con.execute(sql)
+                await con.execute(sql, payload.message_id)
 
             return
 
@@ -103,9 +101,9 @@ class Happy(commands.Cog):
 
         # Update the database
         async with self.bot.pool.acquire() as con:
-            _dict = json.dumps(record["data"])
-            sql = f"""UPDATE happy SET data='{_dict}' WHERE panel_name='{record["panel_name"]}' """
-            await con.execute(sql)
+            _dict = record['data']
+            sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
+            await con.execute(sql, _dict, record['panel_name'])
 
         # Automatically remove reactions when panel is full
         done = True
@@ -125,9 +123,9 @@ class Happy(commands.Cog):
             record["active"] = False
             await self._refresh_panel(record, message)
             await message.clear_reactions()
-            sql = f"""UPDATE happy SET active=False WHERE panel_name='{record["panel_name"]}'"""
+            sql = "UPDATE happy SET active=$1 WHERE panel_name=$2"
             async with self.bot.pool.acquire() as con:
-                await con.execute(sql)
+                await con.execute(sql, False, record['panel_name'])
 
     async def _refresh_panel(self, record: Union[Record, dict], message: Message, reset_emojis=False):
         panel, emoji_stack = self._panel_factory(record)
@@ -186,8 +184,8 @@ class Happy(commands.Cog):
         panel_name = panel_name.title()
 
         async with self.bot.pool.acquire() as conn:
-            sql = f"""SELECT * FROM happy WHERE panel_name='{panel_name}' """
-            row = await conn.fetchrow(sql)
+            sql = "SELECT * FROM happy WHERE panel_name=$1"
+            row = await conn.fetchrow(sql, panel_name)
 
         if not row:
             await self.bot.send(ctx, f'Could not find a panel with the name of `{panel_name}`',
@@ -239,8 +237,8 @@ class Happy(commands.Cog):
             return
 
         async with self.bot.pool.acquire() as conn:
-            sql = f"""DELETE FROM happy WHERE panel_name='{panel_name["panel_name"]}' """
-            await conn.execute(sql)
+            sql = "DELETE FROM happy WHERE panel_name=$1"
+            await conn.execute(sql, panel_name['panel_name'])
         await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', color=self.bot.SUCCESS, footnote=False)
 
     @happy.command(
@@ -283,14 +281,13 @@ class Happy(commands.Cog):
             return
 
         async with self.bot.pool.acquire() as conn:
-            sql = f"""SELECT panel_name FROM happy WHERE panel_name='{panel_name}' """
+            sql = "SELECT panel_name FROM happy WHERE panel_name=$1"
             sql2 = f"""INSERT INTO happy (panel_name, panel_rows, active, message_id, channel_id, guild_id, data) VALUES 
             ($1, $2, $3, $4, $5, $6, $7)"""
 
-            if await conn.fetchrow(sql):
+            if await conn.fetchrow(sql, panel_name):
                 await self.bot.send(ctx, f'Panel `{panel_name}` already exists.', color=self.bot.WARNING)
             else:
-
                 await conn.execute(
                     sql2,
                     panel_name,
@@ -337,19 +334,15 @@ class Happy(commands.Cog):
             await panel.add_reaction(emoji)
 
         async with self.bot.pool.acquire() as conn:
-            sql = f"""UPDATE happy SET message_id={panel.id}, 
-                                       active=true,
-                                       channel_id={panel.channel.id},
-                                       guild_id={panel.guild.id}
-                                       WHERE panel_name='{instance["panel_name"]}' """
-            await conn.execute(sql)
+            sql = "UPDATE happy SET message_id=$1, active=$2, channel_id=$3, guild_id=$4 WHERE panel_name=$5"
+            await conn.execute(sql, panel.id, True, panel.channel.id, panel.guild.id, instance['panel_name'])
 
     @happy.command(
         name='clear',
         aliases=['cl'],
         brief='',
         help='Clears all the reactions on a panel.',
-        usage=('panel_name')
+        usage="panel_name"
     )
     async def clear_panel(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -365,10 +358,10 @@ class Happy(commands.Cog):
 
         async with self.bot.pool.acquire() as con:
             _json = json.dumps(self.default_dataset)
-            sql = f"""UPDATE happy SET data='{_json}' WHERE panel_name='{instance["panel_name"]}'"""
-            sql2 = f"""SELECT * FROM happy WHERE panel_name='{instance["panel_name"]}' """
-            await con.execute(sql)
-            instance = await con.fetchrow(sql2)
+            sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
+            sql2 = "SELECT * FROM happy WHERE panel_name=$1"
+            await con.execute(sql, _json, instance['panel_name'])
+            instance = await con.fetchrow(sql2, instance['panel_name'])
 
         if instance["active"]:
             message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
@@ -399,8 +392,8 @@ class Happy(commands.Cog):
             return
 
         async with self.bot.pool.acquire() as con:
-            sql = f"""UPDATE happy SET active=False WHERE panel_name='{instance["panel_name"]}'"""
-            await con.execute(sql)
+            sql = "UPDATE happy SET active=$1 WHERE panel_name=$2"
+            await con.execute(sql, False, instance['panel_name'])
 
         message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
         if not message:
@@ -489,8 +482,8 @@ class Happy(commands.Cog):
             return
 
         async with self.bot.pool.acquire() as con:
-            sql = f"""UPDATE happy SET panel_rows={new_rows} WHERE panel_name='{instance["panel_name"]}'"""
-            await con.execute(sql)
+            sql = "UPDATE happy SET panel_rows=$1 WHERE panel_name=$2"
+            await con.execute(sql, new_rows, instance['panel_name'])
 
         instance = await self._panel_exists(ctx, instance["panel_name"])
         message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])

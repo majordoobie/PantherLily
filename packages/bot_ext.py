@@ -16,7 +16,7 @@ class BotExt:
         self.settings = settings
         self.log = logging.getLogger('root.bot_ext')
 
-    async def send(self, ctx: Context, description, title='', color=INFO, code_block=False, _return=False,
+    async def send(self, ctx: Union[Context, None], description, title='', color=INFO, code_block=False, _return=False,
                    footnote=True, author: Union[list, None] = None) -> Optional[list]:
         if not description:
             raise BadArgument("No value to encapsulate in a embed")
@@ -102,7 +102,8 @@ class BotExt:
             for _role in role:
                 log.info(f'`{member.display_name}` {msg} `{_role.name}`')
 
-    def log_user_commands(self, log: Logger, **kwargs) -> None:
+    @staticmethod
+    def log_user_commands(log: Logger, **kwargs) -> None:
         """
         Centralized command line logging
 
