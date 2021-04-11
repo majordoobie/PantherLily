@@ -4,6 +4,7 @@ any slowdowns from I/O.
 """
 # Little hack to get the parent packages for the bot working in here
 import sys
+
 sys.path.append('/opt/project')
 
 import asyncio
@@ -18,13 +19,11 @@ from packages.private.settings import Settings
 from packages.logging_setup import BotLogger as LoggerSetup
 from packages.cogs.utils.utils import get_utc_monday
 
-
 SQL_GET_ACTIVE = """SELECT * 
 FROM discord_user, clash_account
 WHERE is_active = 'true'
   AND discord_user.discord_id = clash_account.discord_id
   AND clash_account.is_primary_account = 'true'"""
-
 
 SQL_UPDATE_CLASSIC = """INSERT INTO clash_classic_update (increment_date, tag, current_donations, current_trophies, 
                         current_clan_tag, current_clan_name, clash_name, town_hall) VALUES 
@@ -51,6 +50,7 @@ DO UPDATE SET
 
 SQL_INSERT_CLAN_MEMBERS = "INSERT INTO present_in_clan (clash_tag, player_name, clash_clan_tag) VALUES ($1, $2, $3)"
 
+
 async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.present_in_clan_update')
     while True:
@@ -62,7 +62,7 @@ async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: a
                 in_clan.append((
                     member.tag,
                     member.name,
-                    '#2Y28CGP8', # Member.clan doesn't show clan info at this time fix later
+                    '#2Y28CGP8',  # Member.clan doesn't show clan info at this time fix later
                 ))
             async with pool.acquire() as conn:
                 await conn.execute('DELETE FROM present_in_clan WHERE id > -1')
@@ -78,6 +78,7 @@ async def update_in_clan(sleep_time: int, coc_client: coc.client.Client, pool: a
             log.critical(error, exc_info=True)
             log.debug('[CLAN UPDATE] Attempting to continue working...')
             await asyncio.sleep(sleep_time)
+
 
 async def update_active_users(sleep_time: int, coc_client: coc.client.Client, pool: asyncpg.pool.Pool):
     log = logging.getLogger('PantherDaemon.classic_update')
@@ -95,16 +96,16 @@ async def update_active_users(sleep_time: int, coc_client: coc.client.Client, po
                         continue
                     try:
                         await conn.execute(SQL_UPDATE_CLASSIC,
-                                datetime.utcnow(),
-                                player.tag,
-                                player.get_achievement("Friend in Need").value,
-                                player.trophies,
-                                player.clan.tag if player.clan else None,
-                                player.clan.name if player.clan else None,
-                                player.name,
-                                player.town_hall
-                        )
-                        updates +=1
+                                           datetime.utcnow(),
+                                           player.tag,
+                                           player.get_achievement("Friend in Need").value,
+                                           player.trophies,
+                                           player.clan.tag if player.clan else None,
+                                           player.clan.name if player.clan else None,
+                                           player.name,
+                                           player.town_hall
+                                           )
+                        updates += 1
                     except asyncpg.ForeignKeyViolationError as error:
                         log.error(error, exc_info=True)
                     except Exception as error:
@@ -141,8 +142,10 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                         member_diff['town_hall'] = member_diffs[0]['town_hall']
                     else:
                         member_diff = dict(member_diffs[0])
-                        member_diff['donation_gains'] = member_diff['current_donations'] - member_diffs[-1]['current_donations']
-                        member_diff['trophy_diff'] = member_diff['current_trophies'] - member_diffs[-1]['current_trophies']
+                        member_diff['donation_gains'] = member_diff['current_donations'] - member_diffs[-1][
+                            'current_donations']
+                        member_diff['trophy_diff'] = member_diff['current_trophies'] - member_diffs[-1][
+                            'current_trophies']
 
                     await conn.execute(
                         SQL_INSERT_UPDATE_DIFF,
@@ -170,10 +173,10 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
 
 async def main(coc_client_):
     """Async start point will for all background tasks"""
-    LoggerSetup(SETTINGS, 'PantherDaemon')
+    LoggerSetup(SETTINGS)
     log = logging.getLogger('PantherDaemon')
     log.debug("['DAEMON ROOT] Starting background loops")
-    pool : asyncpg.pool.Pool = await asyncpg.create_pool(SETTINGS.dsn)
+    pool: asyncpg.pool.Pool = await asyncpg.create_pool(SETTINGS.dsn)
     loop = asyncio.get_running_loop()
 
     tasks = [
