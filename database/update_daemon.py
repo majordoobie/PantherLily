@@ -188,7 +188,7 @@ async def main(coc_client_):
 
 
 if __name__ == '__main__':
-    SETTINGS = Settings(daemon=True)
+    SETTINGS = Settings("live_mode", daemon=True)
 
     # Nest patches asyncio to allow for nested loops to allow logging into coc
     nest_asyncio.apply()

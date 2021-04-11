@@ -28,8 +28,7 @@ class BotLogger:
         # Set up file logging
         self._set_file_logging()
 
-        # root = logging.getLogger(self.settings.bot_config['log_name'])
-        root = logging.getLogger("PantherLily")
+        root = logging.getLogger(self.settings.log_name)
         root.setLevel(settings.main_log_level)
         root.addHandler(QueueListenerHandler(self.log_handlers))
 

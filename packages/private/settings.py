@@ -20,6 +20,7 @@ ENABLED_COGS = (
 class Settings:
     def __init__(self, bot_mode=None, daemon=False):
         self.bot_mode = bot_mode
+        self.daemon = daemon
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
         self.owner = OWNER
@@ -71,7 +72,10 @@ class Settings:
 
     @property
     def log_name(self):
-        return f'{self.bot_config["log_name"]}'
+        if self.daemon:
+            return "PantherDaemon"
+        else:
+            return f"{self.bot_config['log_name']}"
 
     def _set_cogs(self):
         self.cog_path = COG_LOCATION
