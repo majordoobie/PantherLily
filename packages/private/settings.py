@@ -5,7 +5,7 @@ from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION = 'packages.cogs'
-VERSION = '3.3.0'
+VERSION = '3.3.1'
 
 ENABLED_COGS = (
     'admin',
@@ -45,6 +45,7 @@ class Settings:
             'th11s': 303965664375472128,
             'th12s': 455572149277687809,
             'th13s': 653562690937159683,
+            'th14s': 831212009625747518,
             'CoC Members': 294287799010590720
         }
 

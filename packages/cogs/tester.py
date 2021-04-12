@@ -18,6 +18,11 @@ class Tester(commands.Cog):
     @commands.command()
     async def test(self, ctx, arg_string):
 
+        for guild in self.bot.guilds:
+            print(guild)
+
+        return
+
         from packages.cogs.utils.utils import get_database_user
         user = await get_database_user(arg_string.upper(), self.bot.pool)
         print(user, "\n\n")

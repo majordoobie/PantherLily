@@ -4,6 +4,7 @@ from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
 class ClashStats:
     TOWN_HALLS = {
+        "14": "<:14:828991721181806623>",
         "13": "<:th13:651099879686406145>",
         "12": "<:townhall12:546080710406963203>",
         "11": "<:townhall11:546080741545738260>",
