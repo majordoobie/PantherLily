@@ -115,7 +115,7 @@ class ClashStats:
         return frame
 
     def _get_hero_pets_panel(self):
-        frame = "**Hero Pets**\n"
+        frame = ""
         count = 0
         for troop in self.player.troops:
             if troop.name in HERO_PETS_ORDER:
@@ -130,7 +130,11 @@ class ClashStats:
                         count = 0
                 except KeyError:
                     continue
-        frame = frame.rstrip("\n")
+        if frame:
+            _frame = "**Hero Pets**\n"
+            _frame += frame
+            _frame = _frame.rstrip("\n")
+            return _frame
         return frame
         pass
 
@@ -152,8 +156,8 @@ class ClashStats:
         if frame:
             _frame = '**Sieges**\n'
             _frame += frame
+            _frame = _frame.rstrip("\n")
             return _frame
-        frame = frame.rstrip("\n")
         return frame
 
     def _get_troops_panels(self):
