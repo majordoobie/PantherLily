@@ -111,7 +111,9 @@ class ClashStats:
                     count = 0
             except KeyError:
                 continue
-        frame = frame.rstrip("\n")
+
+        if frame[-1] != "\n":
+            frame += "\n"
         return frame
 
     def _get_hero_pets_panel(self):
@@ -130,11 +132,14 @@ class ClashStats:
                         count = 0
                 except KeyError:
                     continue
+
         if frame:
             _frame = "**Hero Pets**\n"
             _frame += frame
-            _frame = _frame.rstrip("\n")
+            if _frame[-1] != "\n":
+                _frame += "\n"
             return _frame
+
         return frame
         pass
 
@@ -156,8 +161,10 @@ class ClashStats:
         if frame:
             _frame = '**Sieges**\n'
             _frame += frame
-            _frame = _frame.rstrip("\n")
+            if _frame[-1] != "\n":
+                _frame += "\n"
             return _frame
+
         return frame
 
     def _get_troops_panels(self):
@@ -178,7 +185,9 @@ class ClashStats:
                     count = 0
             except KeyError:
                 continue
-        frame = frame.rstrip("\n")
+
+        if frame[-1] != "\n":
+            frame += "\n"
         return frame
 
     def _get_spells_panels(self):
@@ -196,7 +205,10 @@ class ClashStats:
                     count = 0
             except KeyError:
                 continue
-        frame = frame.rstrip("\n")
+
+        if frame[-1] != "\n":
+            frame += "\n"
+
         return frame
 
     @property
@@ -229,11 +241,11 @@ class ClashStats:
 
     def display_all(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}\n{self.hero_pets_panel}\n' \
-                  f'{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
+        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}{self.hero_pets_panel}' \
+                  f'{self.siege_panel}{self.troop_panel}{self.spell_panel}'
         return panel_a, panel_b
 
     def display_troops(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'{self.hero_panel}\n{self.hero_pets_panel}\n{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
+        panel_b = f'{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}{self.troop_panel}{self.spell_panel}'
         return panel_a, panel_b
