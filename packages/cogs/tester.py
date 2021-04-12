@@ -17,10 +17,15 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, arg_string):
+        HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 
-        for guild in self.bot.guilds:
-            print(guild)
-
+        player_tag = "#822ULGVY"
+        player = await self.bot.coc_client.get_player(player_tag)
+        print(dir(player))
+        for i in player.home_troops:
+            print(i.name)
+            # if i.name in HERO_PETS_ORDER:
+            #     print(i.name, i.is_max, i.level, i.max_level, i.village, sep="\n")
         return
 
         from packages.cogs.utils.utils import get_database_user

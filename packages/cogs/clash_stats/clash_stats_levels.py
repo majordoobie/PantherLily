@@ -3,6 +3,7 @@ from sys import argv
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
+
 class ClashTroopLevel:
     def __init__(self, payload: dict):
         self.name = payload['name']

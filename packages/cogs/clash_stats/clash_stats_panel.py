@@ -1,6 +1,8 @@
 from coc import Player
 from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
+HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
+
 
 class ClashStats:
     TOWN_HALLS = {
@@ -27,14 +29,14 @@ class ClashStats:
     def _get_lvl(self, set_lvl):
         """Private function to get the troop level of a specific level"""
         if isinstance(set_lvl, int):
-            if set_lvl in range(8, 14):
+            if set_lvl in range(8, 15):
                 return str(set_lvl)
             else:
                 return str(self.player.town_hall)
         elif isinstance(set_lvl, str):
             if set_lvl.isdigit():
                 set_lvl = int(set_lvl)
-                if set_lvl in range(8, 14):
+                if set_lvl in range(8, 15):
                     return str(set_lvl)
             else:
                 return str(self.player.town_hall)
@@ -48,6 +50,7 @@ class ClashStats:
         else:
             self.administration_panel = self._get_light_admin_panel()
         self.hero_panel = self._get_heroes_panel()
+        self.hero_pets_panel = self._get_hero_pets_panel()
         self.troop_panel = self._get_troops_panels()
         self.siege_panel = self._get_sieges_panel()
         self.spell_panel = self._get_spells_panels()
@@ -104,11 +107,32 @@ class ClashStats:
                 frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
                 count += 1
                 if count == 4:
-                    frame += '\n'
+                    frame += "\n"
                     count = 0
             except KeyError:
                 continue
+        frame = frame.rstrip("\n")
         return frame
+
+    def _get_hero_pets_panel(self):
+        frame = "**Hero Pets**\n"
+        count = 0
+        for troop in self.player.troops:
+            if troop.name in HERO_PETS_ORDER:
+                try:
+                    emoji = self.troops[troop.name].emoji
+                    current_lvl = troop.level
+                    max_lvl = self.troops[troop.name].max_level
+                    frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                    count += 1
+                    if count == 4:
+                        frame += "\n"
+                        count = 0
+                except KeyError:
+                    continue
+        frame = frame.rstrip("\n")
+        return frame
+        pass
 
     def _get_sieges_panel(self):
         frame = ''
@@ -129,6 +153,7 @@ class ClashStats:
             _frame = '**Sieges**\n'
             _frame += frame
             return _frame
+        frame = frame.rstrip("\n")
         return frame
 
     def _get_troops_panels(self):
@@ -136,7 +161,7 @@ class ClashStats:
         count = 0
         for troop in self.player.home_troops:
             # Skip the sieges from this panel
-            if troop in self.player.siege_machines:
+            if troop in self.player.siege_machines or troop in HERO_PETS_ORDER:
                 continue
             try:
                 emoji = self.troops[troop.name].emoji
@@ -149,6 +174,7 @@ class ClashStats:
                     count = 0
             except KeyError:
                 continue
+        frame = frame.rstrip("\n")
         return frame
 
     def _get_spells_panels(self):
@@ -166,6 +192,7 @@ class ClashStats:
                     count = 0
             except KeyError:
                 continue
+        frame = frame.rstrip("\n")
         return frame
 
     @property
@@ -198,12 +225,11 @@ class ClashStats:
 
     def display_all(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}\n{self.siege_panel}\n' \
-                  f'{self.troop_panel}\n{self.spell_panel}'
+        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}\n{self.hero_pets_panel}\n' \
+                  f'{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
         return panel_a, panel_b
 
     def display_troops(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'{self.hero_panel}\n{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
+        panel_b = f'{self.hero_panel}\n{self.hero_pets_panel}\n{self.siege_panel}\n{self.troop_panel}\n{self.spell_panel}'
         return panel_a, panel_b
-
