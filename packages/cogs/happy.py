@@ -357,10 +357,9 @@ class Happy(commands.Cog):
             return
 
         async with self.bot.pool.acquire() as con:
-            _json = json.dumps(self.default_dataset)
             sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
             sql2 = "SELECT * FROM happy WHERE panel_name=$1"
-            await con.execute(sql, _json, instance['panel_name'])
+            await con.execute(sql, self.default_dataset, instance['panel_name'])
             instance = await con.fetchrow(sql2, instance['panel_name'])
 
         if instance["active"]:
