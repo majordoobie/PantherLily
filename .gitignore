@@ -20,3 +20,5 @@ archive/
 __init__.py
 *.db
 /packages/private/google_login.json
+*.sql
+*.csv
