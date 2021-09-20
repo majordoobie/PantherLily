@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM python:3.9-buster
 WORKDIR /opt/project
 
 RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
@@ -10,5 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENTRYPOINT ["tail", "-f", "/dev/null"]
-#CMD ["python", "main.py", "--dev" ]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+CMD ["python", "main.py", "--dev" ]
