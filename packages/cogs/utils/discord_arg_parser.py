@@ -1,3 +1,4 @@
+import logging
 import shlex
 
 
@@ -113,6 +114,12 @@ class DiscordArgParse:
         # Parameters
         self.arg_dict = _clean_dict(arg_dict)
         self.arg_string = arg_string
+        self.log = logging.getLogger(__file__)
+
+        # Account for ios quotes
+        arg_string = arg_string.replace('“', '"')
+        arg_string = arg_string.replace('”', '"')
+
         if arg_string:
             self.arg_list = shlex.split(arg_string)
 
