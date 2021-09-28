@@ -91,9 +91,8 @@ class BotClient(commands.Bot, BotExt):
                 return
 
             else:
-                exc = ''.join(
-                    traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-                await self.send(ctx, title='UNKNOWN', color=self.ERROR, description=exc)
+                await self.send(ctx, title='UNKNOWN - Have doobie check the logs', color=self.ERROR, description=error)
+                self.log.error(error, exc_info=True)
                 return
 
 

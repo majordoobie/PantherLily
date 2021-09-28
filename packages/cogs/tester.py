@@ -17,6 +17,11 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, arg_string):
+        
+        
+        
+        
+        return
         HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 
         player_tag = "#822ULGVY"

@@ -117,8 +117,9 @@ class DiscordArgParse:
         self.log = logging.getLogger(__file__)
 
         # Account for ios quotes
-        arg_string = arg_string.replace('“', '"')
-        arg_string = arg_string.replace('”', '"')
+        if isinstance(arg_string, str):
+            arg_string = arg_string.replace('“', '"')
+            arg_string = arg_string.replace('”', '"')
 
         if arg_string:
             self.arg_list = shlex.split(arg_string)
