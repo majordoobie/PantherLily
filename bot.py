@@ -93,8 +93,12 @@ class BotClient(commands.Bot, BotExt):
                 return
 
             else:
-                await self.send(ctx, title='UNKNOWN - Have doobie check the logs', color=self.ERROR, description=error)
-                self.log.error(error, exc_info=True)
+                await self.send(ctx, title='UNKNOWN - Have doobie check the logs', color=self.ERROR, description=str(error))
+                exc = ''.join(
+                    traceback.format_exception(type(error), error,
+                                               error.__traceback__,
+                                               chain=True))
+                self.log.error(exc, exc_info=True)
                 return
 
         # Catch command.Check errors

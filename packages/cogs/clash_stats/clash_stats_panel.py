@@ -3,8 +3,6 @@ from typing import Optional
 from coc import Player
 from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
-HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
-
 
 class ClashStats:
     TOWN_HALLS = {
@@ -191,8 +189,8 @@ class ClashStats:
         count = 0
         for troop in self.player.home_troops:
             # Skip the sieges from this panel
-            if troop in self.player.siege_machines or troop in HERO_PETS_ORDER:
-                continue
+            # if troop in self.player.siege_machines or troop in HERO_PETS_ORDER:
+            #     continue
             try:
                 emoji = self.troops[troop.name].emoji
                 current_lvl = troop.level

@@ -64,7 +64,7 @@ class Settings:
                 'bot_name': 'Panther Dev Shell',
                 'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
-                'version': 'with code',
+                'version': 'beta',
                 'key_name': 'DevShell Keys',
                 'log_name': 'DevShell'
             }

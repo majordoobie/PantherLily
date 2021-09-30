@@ -172,34 +172,17 @@ class UserStats(commands.Cog):
         )
 
         # Create the panels to display
-        player_info_panel, troop_stat_panel = ClashStats(
+        clash_stats = ClashStats(
             player,
             active_player,
             set_lvl=args['display_level']
-        ).display_all
+        )
 
-        # panel_a, panel_b = ClashStats(
-        #     player,
-        #     active_player,
-        #     set_lvl=args['display_level']).display_all()
+        await self._display_panels(ctx, player, *clash_stats.display_all)
 
-        await self._display_panels(ctx, player, player_info_panel, troop_stat_panel)
-
-        # from discord import Embed
-        # clash_stat = ClashStats(player, active_player, set_lvl=['display_level'])
-        # embed = Embed.from_dict(clash_stat.to_dict)
-        # async with self.bot.pool.acquire() as con:
-        #     sql = f"""SELECT discord_user.discord_id from discord_user, clash_account WHERE clash_tag='{player.tag}'
-        #     AND discord_user.discord_id=clash_account.discord_id"""
-        #     member = await con.fetchval(sql)
-        #     member = ctx.guild.get_member(member)
-        #
-        # embed.set_author(name=member.display_name, icon_url=member.avatar_url)
-        # await ctx.send(embed=embed)
-
-    async def _display_panels(self, ctx, player, panel_a, panel_b):
-        await self.bot.send(ctx, panel_a, footnote=False)
-        panel = await self.bot.send(ctx, panel_b, _return=True)
+    async def _display_panels(self, ctx, player, player_info_panel, troop_stat_panel):
+        await self.bot.send(ctx, player_info_panel, footnote=False)
+        panel = await self.bot.send(ctx, troop_stat_panel, _return=True)
         panel = await ctx.send(embed=panel[0])
         await panel.add_reaction(self.bot.settings.emojis['link'])
 
