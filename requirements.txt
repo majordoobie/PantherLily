@@ -6,7 +6,6 @@ backcall==0.2.0
 cachetools==4.2.0
 certifi==2020.6.20
 chardet~=3.0.4
-coc.py==1.0.4
 decorator==4.4.2
 discord.py==1.7.3
 google-api-core==1.24.1

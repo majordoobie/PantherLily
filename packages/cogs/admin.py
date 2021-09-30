@@ -103,8 +103,7 @@ class Administrator(commands.Cog):
         try:
             self.bot.reload_extension(cog)
         except Exception as error:
-            exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-            await ctx.send(exc)
+            await ctx.send("```py\n{}: {}\n```".format(type(error).__name__, str(error)))
             return
         msg = f"""```python\nReloaded '{cog}' successfully```"""
         await ctx.send(msg)

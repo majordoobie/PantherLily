@@ -5,7 +5,7 @@ from packages.private.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION = 'packages.cogs'
-VERSION = '3.3.5'
+VERSION = '3.4.0'
 
 ENABLED_COGS = (
     'admin',
@@ -64,7 +64,7 @@ class Settings:
                 'bot_name': 'Panther Dev Shell',
                 'bot_token': DEV_TOKEN,
                 'bot_prefix': ['dev.', 'd.', 'D.'],
-                'version': 'Panther v3 Beta',
+                'version': 'with code',
                 'key_name': 'DevShell Keys',
                 'log_name': 'DevShell'
             }

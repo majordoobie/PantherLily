@@ -16,8 +16,11 @@ class Tester(commands.Cog):
         await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.command()
-    async def test(self, ctx, arg_string):
-        
+    async def test(self, ctx):
+        player = await self.bot.coc_client.get_player("#PU20QYCJG")
+        print(player)
+        for pet in player.hero_pets:
+            print(pet)
         
         
         

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from coc import Player
 from packages.cogs.clash_stats.clash_stats_levels import get_levels
 
@@ -15,7 +17,8 @@ class ClashStats:
         "8": "<:townhall8:546080798097539082>"
     }
 
-    def __init__(self, player: Player, active_player: dict = None, set_lvl=None):
+    def __init__(self, player: Player, active_player: dict = None,
+                 set_lvl: Optional[int] = None):
         """Display an embedded panel containing user stats"""
         self.player = player
         self.member = active_player
@@ -25,6 +28,22 @@ class ClashStats:
             self.town_hall = str(player.town_hall)
         self.troops = get_levels(int(self.town_hall))
         self._set_panels()
+
+    @property
+    def display_all(self):
+        player_info_panel = f"{self.title}\n{self.administration_panel}\n"
+        troop_stat_panel = " ".join([
+            f"**__Displaying Level:__** `{self.town_hall}`\n",
+            f"{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}",
+            f"{self.troop_panel}{self.spell_panel}"
+        ])
+        return player_info_panel, troop_stat_panel
+
+    @property
+    def display_troops(self):
+        panel_a = f'{self.title}\n{self.administration_panel}\n'
+        panel_b = f'{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}{self.troop_panel}{self.spell_panel}'
+        return panel_a, panel_b
 
     def _get_lvl(self, set_lvl):
         """Private function to get the troop level of a specific level"""
@@ -119,19 +138,19 @@ class ClashStats:
     def _get_hero_pets_panel(self):
         frame = ""
         count = 0
-        for troop in self.player.troops:
-            if troop.name in HERO_PETS_ORDER:
-                try:
-                    emoji = self.troops[troop.name].emoji
-                    current_lvl = troop.level
-                    max_lvl = self.troops[troop.name].max_level
-                    frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                    count += 1
-                    if count == 4:
-                        frame += "\n"
-                        count = 0
-                except KeyError:
-                    continue
+        for pet in self.player.hero_pets:
+            print(pet)
+            try:
+                emoji = self.troops[pet.name].emoji
+                current_lvl = pet.level
+                max_lvl = self.troops[pet.name].max_level
+                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
+                count += 1
+                if count == 4:
+                    frame += "\n"
+                    count = 0
+            except KeyError:
+                continue
 
         if frame:
             _frame = "**Hero Pets**\n"
@@ -222,30 +241,24 @@ class ClashStats:
                 },
                 {
                     'name': '**Heroes**',
-                    'value': '\n'.join(self._get_heroes_panel().split('\n')[1:])
+                    'value': '\n'.join(
+                        self._get_heroes_panel().split('\n')[1:])
                 },
                 {
                     'name': '**Sieges**',
-                    'value': '\n'.join(self._get_sieges_panel().split('\n')[1:])
+                    'value': '\n'.join(
+                        self._get_sieges_panel().split('\n')[1:])
                 },
                 {
                     'name': '**Troops**',
-                    'value': '\n'.join(self._get_troops_panels().split('\n')[1:])
+                    'value': '\n'.join(
+                        self._get_troops_panels().split('\n')[1:])
                 },
                 {
                     'name': '**Spells**',
-                    'value': '\n'.join(self._get_spells_panels().split('\n')[1:])
+                    'value': '\n'.join(
+                        self._get_spells_panels().split('\n')[1:])
                 },
             ]
         }
 
-    def display_all(self):
-        panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}{self.hero_pets_panel}' \
-                  f'{self.siege_panel}{self.troop_panel}{self.spell_panel}'
-        return panel_a, panel_b
-
-    def display_troops(self):
-        panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}{self.troop_panel}{self.spell_panel}'
-        return panel_a, panel_b

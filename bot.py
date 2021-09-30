@@ -14,9 +14,11 @@ from packages.private.settings import Settings
 
 
 class BotClient(commands.Bot, BotExt):
-    def __init__(self, settings: Settings, pool: Pool, coc_client: EventsClient, *args, **kwargs):
+    def __init__(self, settings: Settings, pool: Pool,
+                 coc_client: EventsClient, *args, **kwargs):
         """
-        Inherits the Discord.py bot to create a bot that manages a group of clash of clans players
+        Inherits the Discord.py bot to create a bot that manages a group of
+        clash of clans players
 
         Parameters
         ----------
@@ -94,8 +96,6 @@ class BotClient(commands.Bot, BotExt):
                 await self.send(ctx, title='UNKNOWN - Have doobie check the logs', color=self.ERROR, description=error)
                 self.log.error(error, exc_info=True)
                 return
-
-
 
         # Catch command.Check errors
         if isinstance(error, commands.CheckFailure):
