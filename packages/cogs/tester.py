@@ -17,36 +17,18 @@ class Tester(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        player = await self.bot.coc_client.get_player("#PU20QYCJG")
-        print(player)
-        for pet in player.hero_pets:
-            print(pet)
-        
-        
-        
+        await self.bot.new_send(ctx, "Testing?", title="Some title")
+
+
         return
         HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 
-        player_tag = "#822ULGVY"
-        player = await self.bot.coc_client.get_player(player_tag)
-        print(dir(player))
-        for i in player.home_troops:
-            print(i.name)
-            # if i.name in HERO_PETS_ORDER:
-            #     print(i.name, i.is_max, i.level, i.max_level, i.village, sep="\n")
-        return
-
-        from packages.cogs.utils.utils import get_database_user
-        user = await get_database_user(arg_string.upper(), self.bot.pool)
-        print(user, "\n\n")
-
-        return
 
         from packages.cogs.clash_stats.clash_stats_panel import ClashStats
-        player = await self.bot.coc_client.get_player('L2G9VLUC')
+        player = await self.bot.coc_client.get_player("#PU20QYCJG")
 
         clash_stat = ClashStats(player)
-        panel_a, panel_b = clash_stat.display_all()
+        panel_a, panel_b = clash_stat.display_all
         hero_pane = '\n'.join(clash_stat._get_heroes_panel().split('\n')[1:])
         troop_pane = '\n'.join(clash_stat._get_troops_panels().split('\n')[1:])
         siege_panel = '\n'.join(clash_stat._get_sieges_panel().split('\n')[1:])

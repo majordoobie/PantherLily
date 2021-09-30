@@ -180,11 +180,25 @@ class UserStats(commands.Cog):
 
         await self._display_panels(ctx, player, *clash_stats.display_all)
 
-    async def _display_panels(self, ctx, player, player_info_panel, troop_stat_panel):
+    async def _display_panels(self, ctx, player, player_info_panel, troop_stat_panel) -> None:
+        """
+        Handle formatting the panels to print to discord.
+
+        Parameters
+        ----------
+        player_info_panel: Panel containing the information about the player
+        troop_stat_panel: Panel containing information about the player troops
+
+        Returns
+        -------
+
+        """
         await self.bot.send(ctx, player_info_panel, footnote=False)
-        panel = await self.bot.send(ctx, troop_stat_panel, _return=True)
-        panel = await ctx.send(embed=panel[0])
-        await panel.add_reaction(self.bot.settings.emojis['link'])
+        await self.bot.send(ctx, troop_stat_panel, footnote=False)
+        legend = await self.bot.send(ctx, "Legend", _return=True)
+        # legend = await self.bot.send(ctx, troop_stat_panel, _return=True)
+        legend = await ctx.send(embed=legend[0])
+        await legend.add_reaction(self.bot.settings.emojis['link'])
 
         def check(reaction, user):
             return not user.bot and str(reaction.emoji) == \
