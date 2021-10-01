@@ -1,0 +1,3 @@
+[submodule "packages/private/PantherLily_Keys"]
+	path = packages/private/PantherLily_Keys
+	url = git@github.com:majordoobie/PantherLily_Keys.git
