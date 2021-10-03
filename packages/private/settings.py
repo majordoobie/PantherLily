@@ -1,7 +1,7 @@
 """
 Settings for all libraries especially the Bot
 """
-from packages.private.secrets import *
+from packages.private.PantherLily_Keys.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION = 'packages.cogs'
