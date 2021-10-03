@@ -1,6 +1,7 @@
 version: '3.7'
 services:
   panther_bot:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_bot_dockerfile
@@ -15,10 +16,11 @@ services:
       - panther_network
 
   panther_db:
+    platform: linux/amd64
     image: postgres
     container_name: panther_db
     env_file:
-      - packages/private/database.env
+      - packages/private/PantherLily_Keys/database_docker_compose.env
     volumes:
       - panther_volume:/var/lib/postgresql/data/  # Path is where the container stores sql data
     ports:
@@ -27,6 +29,7 @@ services:
       - panther_network
 
   panther_daemon:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_daemon_dockerfile

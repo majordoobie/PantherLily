@@ -4,7 +4,7 @@ from datetime import datetime
 from discord import member
 
 import psycopg2
-from packages.private.secrets import *
+from packages.private.PantherLily_Keys.secrets import *
 #from secrets import *
 
 var = {
