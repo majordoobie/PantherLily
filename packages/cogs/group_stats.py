@@ -5,7 +5,8 @@ from discord.ext import commands
 import logging
 
 from bot import BotClient
-from .utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered, sql_select_classic_view
+from .utils.bot_sql import sql_select_all_active_users, \
+    sql_select_clash_members_not_registered, sql_select_classic_view
 from .utils.utils import parse_args, get_utc_monday
 
 
@@ -40,7 +41,7 @@ class GroupStats(commands.Cog):
         legend += f'{db} Member is registered with Pantherlily.\n'
         legend += f'{waze} Get realtime location of members.\n'
 
-        await self.bot.send(ctx, legend)
+        # await self.bot.send(ctx, legend)
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
@@ -92,7 +93,9 @@ class GroupStats(commands.Cog):
             count += 1
             panel += f"  **{count:>2}**  {player}\n"
 
-        await self.bot.send(ctx, panel, footnote=False)
+        panel = "\n".join([legend, panel, panel])
+        await self.bot.new_send(ctx, panel)
+        # await self.bot.send(ctx, panel, footnote=False)
 
         strength_panel = f'__**Registered Members**__\n`⠀{"Total members":\u00A0<13}⠀` `⠀{strength_count:>2}⠀`\n'
         levels = [level for level in strength.keys()]

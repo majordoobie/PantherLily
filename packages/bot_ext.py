@@ -1,22 +1,73 @@
 import logging
 from logging import Logger
-from typing import Union, List, Optional
+from typing import Dict, Union, List, Optional
 
 from discord import Embed, Role, Member
 from discord.ext.commands import Context, NotOwner, BadArgument
 
 EMBED_DESCRIPTION_LIMIT = 4096
 EMBED_TITLE_LIMIT = 256
-
+EMBED_CHARACTER_LIMIT = 5400 # Leaving 600 characters as a buffer for titles
+EMBED_FILED_LIMIT = 1024
 
 def within_title_limit(title: str) -> bool:
     if len(title) <= EMBED_TITLE_LIMIT:
         return True
     return False
 
+def get_field(value: str, name: str="\u200b") -> Dict[str, str]:
+    return {"name": name, "value": value}
 
-def split_text(description: str):
-    desc = description[0: EMBED_DESCRIPTION_LIMIT]
+
+def split_text(payload: str):
+    payload_lines = payload.split("\n")
+    description = []
+    field = []
+    embed_char_limit = 0
+    field_limit = 0
+    payload_index = 0
+
+
+    # Iterate over the payload, saving all the characters into the description
+    # list
+    for index, line in enumerate(payload_lines):
+        if len(line) + embed_char_limit > EMBED_DESCRIPTION_LIMIT:
+            break
+
+        description.append(line)
+        embed_char_limit += len(line)
+        payload_index = index + 1
+
+    # Set the description field
+    embed = {"description": "\n".join(description), "fields": []}
+    return embed
+
+    for index, line in enumerate(payload_lines[payload_index:]):
+        if len(line) + field_limit > EMBED_FILED_LIMIT:
+            break
+        field.append(line)
+        embed_char_limit += len(line)
+        field_limit += len(line)
+        payload_index = index + 1
+
+    embed["fields"].append(get_field("\n".join(field)))
+
+    for index, line in enumerate(payload_lines[payload_index:]):
+        if len(line) + field_limit > EMBED_CHARACTER_LIMIT:
+            break
+        field.append(line)
+        embed_char_limit += len(line)
+        field_limit += len(line)
+        payload_index = index + 1
+
+    embed["fields"].append(get_field("\n".join(field)))
+    return embed
+
+
+
+
+
+
 
 
 class BotExt:
@@ -65,7 +116,7 @@ class BotExt:
         if description is None:
             raise BadArgument("No text provided to wrap in a embed")
 
-        # Embed dictionary
+        # Create the base embed
         embed = {"color": color}
 
         # Add title if exists
@@ -83,7 +134,7 @@ class BotExt:
             )
 
         else:
-            split_dict = split_text(description)
+            embed.update(split_text(description))
 
 
         await ctx.send(embed=Embed.from_dict(embed))
