@@ -118,4 +118,7 @@ class BackgroundTasks(commands.Cog):
         await self.bot.wait_until_ready()
 
 def setup(bot):
+    if bot.settings.bot_mode == "dev_mode":
+        print("[!] Skipping adding background tasks because in dev mode")
+        return
     bot.add_cog(BackgroundTasks(bot))
