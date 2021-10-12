@@ -10,6 +10,19 @@ EMBED_TITLE_LIMIT = 256
 EMBED_CHARACTER_LIMIT = 5400 # Leaving 600 characters as a buffer for titles
 EMBED_FILED_LIMIT = 1024
 
+def get_field_batch(payload: List[str]):
+    character_counter = 0
+    batch = []
+    for item in payload:
+        if len(item) + len(batch) + character_counter > EMBED_FILED_LIMIT:
+            yield_batch = batch.copy()
+            batch = []
+            character_counter = 0
+            yield yield_batch
+        character_counter += len(item)
+        batch.append(item)
+    yield batch
+
 def within_title_limit(title: str) -> bool:
     if len(title) <= EMBED_TITLE_LIMIT:
         return True
@@ -21,32 +34,39 @@ def get_field(value: str, name: str="\u200b") -> Dict[str, str]:
 
 def split_text(payload: str):
     payload_lines = payload.split("\n")
+    embed_char_counter = 0
     description = []
+
     field = []
-    embed_char_limit = 0
     field_limit = 0
     payload_index = 0
 
 
-    # Iterate over the payload, saving all the characters into the description
-    # list
+    # Iterate over the payload, saving all the characters
+    # into the description list
     for index, line in enumerate(payload_lines):
-        if len(line) + embed_char_limit > EMBED_DESCRIPTION_LIMIT:
+        new_lines_needed = len(description)
+        projected_description_size = len(line) + embed_char_counter
+        if new_lines_needed + \
+                projected_description_size >= EMBED_DESCRIPTION_LIMIT:
             break
 
         description.append(line)
-        embed_char_limit += len(line)
+        embed_char_counter += len(line)
         payload_index = index + 1
 
     # Set the description field
-    embed = {"description": "\n".join(description), "fields": []}
+    description = "\n".join(description)
+    embed = {"description": description, "fields": []}
+    embed_char_counter = len(description)
+
     return embed
 
     for index, line in enumerate(payload_lines[payload_index:]):
         if len(line) + field_limit > EMBED_FILED_LIMIT:
             break
         field.append(line)
-        embed_char_limit += len(line)
+        embed_char_counter += len(line)
         field_limit += len(line)
         payload_index = index + 1
 
@@ -56,7 +76,7 @@ def split_text(payload: str):
         if len(line) + field_limit > EMBED_CHARACTER_LIMIT:
             break
         field.append(line)
-        embed_char_limit += len(line)
+        embed_char_counter += len(line)
         field_limit += len(line)
         payload_index = index + 1
 
