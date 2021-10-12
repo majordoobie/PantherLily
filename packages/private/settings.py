@@ -5,7 +5,7 @@ from packages.private.PantherLily_Keys.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
 
 COG_LOCATION = 'packages.cogs'
-VERSION = '3.3.5'
+VERSION = '3.4.0'
 
 ENABLED_COGS = (
     'admin',

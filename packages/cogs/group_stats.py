@@ -61,27 +61,32 @@ class GroupStats(commands.Cog):
                 strength[member['town_hall']] = 1
 
             roster[member['clash_name']] = {
-                'in_mother_clan': _in_clan(member['current_clan_tag']),
-                'in_discord': member['in_zulu_server'],
-                'in_database': True
+                "in_mother_clan": _in_clan(member['current_clan_tag']),
+                "in_discord": member['in_zulu_server'],
+                "in_database": True,
+                "clash_tag": member['clash_tag']
             }
+
             clan_location = clan_locations.get(member['current_clan_name'])
             if clan_location:
                 clan_locations[member['current_clan_name']].append({
                     'name': member['clash_name'],
-                    'town_hall': member['town_hall']
+                    'town_hall': member['town_hall'],
+                    "clash_tag": member['clash_tag']
                 })
             else:
                 clan_locations[member['current_clan_name']] = [{
                     'name': member['clash_name'],
-                    'town_hall': member['town_hall']
+                    'town_hall': member['town_hall'],
+                    "clash_tag": member['clash_tag']
                 }]
 
         for player in unregistered_users:
             roster[player['player_name']] = {
                 'in_mother_clan': True,
                 'in_discord': False,
-                'in_database': False
+                'in_database': False,
+                "clash_tag": player['clash_tag']
             }
         # Display the roster panel
         panel = f'{clan}{db}\u0080\n'
@@ -94,6 +99,7 @@ class GroupStats(commands.Cog):
 
         await self.bot.send(ctx, panel, footnote=False)
 
+        # Create the strength panel the tiny one that shows how many there are
         strength_panel = f'__**Registered Members**__\n`⠀{"Total members":\u00A0<13}⠀` `⠀{strength_count:>2}⠀`\n'
         levels = [level for level in strength.keys()]
         levels.sort(reverse=True)
@@ -116,7 +122,8 @@ class GroupStats(commands.Cog):
             for clan, players in clan_locations.items():
                 panel = f'__**{clan}**__\n'
                 for player in players:
-                    panel += f'`⠀{player["town_hall"]:<2}⠀` `⠀{player["name"]:<23.23}⠀`\n'
+                    panel += f"`⠀{player['name']:<14.14} ` `⠀{player['clash_tag']:<12.12} `\n"
+
                 location_panels += panel
             await self.bot.send(ctx, location_panels)
 
