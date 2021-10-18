@@ -22,7 +22,7 @@ class ClashTroopLevel:
 
 def _get_spreadsheet() -> list:
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('/opt/project/packages/private/google_login.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name('/opt/project/packages/private/PantherLily_Keys/google_login.json', scope)
     client = gspread.authorize(creds)
     workbook = client.open('Clash of Clans Troop Levels')
     sheet = workbook.get_worksheet(0)
