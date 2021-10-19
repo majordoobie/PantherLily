@@ -1,6 +1,8 @@
 import asyncio
 from datetime import timedelta
+from typing import List
 
+from asyncpg import Record
 from discord.ext import commands
 import logging
 
@@ -22,8 +24,10 @@ class GroupStats(commands.Cog):
         brief="",
         description='Display clan roster',
         usage='',
-        help='Display users currently registered and all users in the clan. Additionally, display the current location '
-             'of players. This is useful for CWL when the clanmates are scattered.'
+        help="Display users currently registered and all users in the clan. "
+             "Additionally, display the current location "
+             "of players. This is useful for CWL when the classmates "
+             "are scattered."
     )
     async def roster(self, ctx, *, arg_string=None):
         self.bot.log_user_commands(self.log,
@@ -47,15 +51,21 @@ class GroupStats(commands.Cog):
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
-            members_db = await con.fetch(sql_select_all_active_users().format(get_utc_monday()))
-            unregistered_users = await con.fetch(sql_select_clash_members_not_registered())
-        members_db.sort(key=lambda x: x['clash_name'].lower())
+            registered_users = await con.fetch(
+                sql_select_all_active_users().format(get_utc_monday())
+            )
+            unregistered_users = await con.fetch(
+                sql_select_clash_members_not_registered()
+            )
+
+        # Sort the registered users by name
+        registered_users.sort(key=lambda x: x['clash_name'].lower())
 
         roster = {}
         clan_locations = {}
         strength_count = 0
         strength = {}
-        for member in members_db:
+        for member in registered_users:
             strength_count += 1
             town_hall = strength.get(member['town_hall'])
             if town_hall:
@@ -84,6 +94,7 @@ class GroupStats(commands.Cog):
                     "clash_tag": member['clash_tag']
                 }]
 
+        # Parse the unregistered users
         for player in unregistered_users:
             roster[player['player_name']] = {
                 'in_mother_clan': True,
@@ -211,6 +222,38 @@ class GroupStats(commands.Cog):
 
                 frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
                 await ctx.send(frame)
+
+def _get_parsed_roster(registered_users: List[Record],
+                       unregistered_users: List[Record]) -> dict:
+    # Set up base structure
+    roster = {
+        "town_halls": {},
+        "registered_members": {},
+        "player_locations": {},
+        "registered_count": len(registered_users),
+    }
+
+    for user in registered_users:
+        # Get some variables; Some are used more than once
+        users_name = user["clash_name"]
+        users_town_hall = user["town_hall"]
+        users_clash_tag = user["clash_tag"]
+        users_location = user["current_clan_name"]
+        users_in_mother_clan = _in_clan(user["current_clan_tag"])
+        users_in_discord = user["in_zulu_server"]
+
+        # Update the amount of users town halls in the clan
+        if roster["town_halls"].get(users_town_hall):
+            roster["town_halls"][users_town_hall] += 1
+        else:
+            roster["town_halls"][users_town_hall] = 1
+
+        roster["registered_members"][users_name] = _get_member_dict(
+
+        )
+
+
+    return roster
 
 def _in_clan(clan_tag: str) -> bool:
     if clan_tag == '#2Y28CGP8':
