@@ -13,11 +13,13 @@ from .utils.utils import parse_args, get_utc_monday
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger(f'{self.bot.settings.log_name}.GroupStats')
+        self.log = logging.getLogger(
+           f"{self.bot.settings.log_name}.GroupStats"
+        )
 
     @commands.command(
-        aliases=['ro'],
-        brief='',
+        aliases=["ro"],
+        brief="",
         description='Display clan roster',
         usage='',
         help='Display users currently registered and all users in the clan. Additionally, display the current location '

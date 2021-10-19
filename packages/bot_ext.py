@@ -85,11 +85,6 @@ def split_text(payload: str):
 
 
 
-
-
-
-
-
 class BotExt:
     INFO = 0x000080  # blue
     ERROR = 0xff0010  # red
