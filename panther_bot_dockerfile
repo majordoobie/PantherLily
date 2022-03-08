@@ -1,14 +1,31 @@
-FROM python:3.9-buster
-WORKDIR /opt/project
+# https://docs.docker.com/develop/develop-images/multistage-build/
+# Setup build sectio
+FROM python:3.9-buster as build_stage
 
-RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
-COPY requirements.txt requirements.txt
+# Do not buffer stdout/stderr just dump it asap
+ENV PYTHONUNBUFFERED 1
 
-RUN python -m pip install ipython
+WORKDIR /app/
+RUN python -m venv /opt/venv
+# This "enables" venv by adding the venv path to ${PATH}
+# https://stackoverflow.com/questions/48561981/activate-python-virtualenv-in-dockerfile
+ENV PATH="/opt/venv/bin:${PATH}"
+
+COPY ./requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -U -r requirements.txt
 
-COPY . .
 
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
+# Run build section
+FROM python:3.9-buster as run_stage
+RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
+WORKDIR /app/
+COPY --from=build_stage /opt/venv /opt/venv
+
+# Enable venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY . /app/
+
+# Entry point of dev null used for debugging
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
 CMD ["python", "main.py", "--dev" ]
