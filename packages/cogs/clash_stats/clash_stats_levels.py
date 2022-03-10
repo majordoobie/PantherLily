@@ -3,6 +3,7 @@ from sys import argv
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
+from packages.private.settings import ROOT_PATH
 
 class ClashTroopLevel:
     def __init__(self, payload: dict):
@@ -22,7 +23,8 @@ class ClashTroopLevel:
 
 def _get_spreadsheet() -> list:
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('/opt/project/packages/private/PantherLily_Keys/google_login.json', scope)
+    json_path = "/".join([ROOT_PATH, "packages/private/PantherLily_Keys/google_login.json"])
+    creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
     client = gspread.authorize(creds)
     workbook = client.open('Clash of Clans Troop Levels')
     sheet = workbook.get_worksheet(0)
