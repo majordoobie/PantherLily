@@ -1,7 +1,7 @@
 """
 Settings for all libraries especially the Bot
 """
-import sys
+from pathlib import Path
 
 from packages.private.PantherLily_Keys.secrets import *
 from logging import DEBUG, INFO, WARNING, ERROR
@@ -30,7 +30,8 @@ class Settings:
 
         # Paths
         self.cog_path = COG_LOCATION
-        self.proj_path = ROOT_PATH
+        self.proj_path = Path(ROOT_PATH)
+        
         self._set_cogs()
 
         # Logging
@@ -85,7 +86,6 @@ class Settings:
         """Set the project path and enable the cogs"""
         self.cog_path = COG_LOCATION
         self.enabled_cogs = [f'{self.cog_path}.{cog}' for cog in ENABLED_COGS]
-        sys.path.append(self.proj_path)
 
     def _set_logging_settings(self, daemon):
         self.file_log_size = 10000
@@ -100,7 +100,7 @@ class Settings:
             self.web_log_url = WEBHOOK_URL
             self.web_log_name = 'PantherLily Log'
             self.web_log_level = DEBUG
-            self.file_log = "/app/packages/private/panther.log"
+            self.file_log = self.proj_path / "packages/private/panther.log"
             self.file_log_level = DEBUG
 
         if daemon:
@@ -108,7 +108,7 @@ class Settings:
             self.web_log_url = WEBHOOK_DAEMON
             self.web_log_name = 'Panther Daemon'
             self.web_log_level = DEBUG
-            self.file_log = "/app/packages/private/panther_daemon.log"
+            self.file_log = self.proj_path / "packages/private/panther_daemon.log"
             self.file_log_level = DEBUG
 
 

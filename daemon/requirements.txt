@@ -2,3 +2,4 @@ nest_asyncio
 asyncpg
 coc.py
 discord
+requests

@@ -5,7 +5,7 @@ any slowdowns from I/O.
 # Little hack to get the parent packages for the bot working in here
 import sys
 
-sys.path.append('/opt/project/')
+sys.path.append('/opt/code/')
 
 import asyncio
 import nest_asyncio
@@ -134,6 +134,10 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
                 active_members = await conn.fetch(SQL_GET_ACTIVE)
                 for member in active_members:
                     member_diffs = await conn.fetch(SQL_GET_DIFF.format(start_date, end_date, member['clash_tag']))
+                    # If there is no difference then just continue to the commit
+                    if not member_diffs:
+                        continue
+                    
                     if len(member_diffs) == 1:
                         member_diff = dict(member_diffs[0])
                         member_diff['donation_gains'] = 0
