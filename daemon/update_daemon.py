@@ -5,7 +5,7 @@ any slowdowns from I/O.
 # Little hack to get the parent packages for the bot working in here
 import sys
 
-sys.path.append('/opt/project')
+sys.path.append('/opt/project/')
 
 import asyncio
 import nest_asyncio

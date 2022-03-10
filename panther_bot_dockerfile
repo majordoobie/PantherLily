@@ -14,6 +14,7 @@ ENV PATH="/opt/venv/bin:${PATH}"
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -U -r requirements.txt
+RUN pip install -U git+https://github.com/mathsman5133/coc.py@master
 
 
 # Run build section
@@ -27,5 +28,5 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . /app/
 
 # Entry point of dev null used for debugging
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
-CMD ["python", "main.py", "--dev" ]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+CMD ["python", "main.py", "--live" ]
