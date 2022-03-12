@@ -6,7 +6,8 @@ FROM python:3.9-buster as build_stage
 ENV PYTHONUNBUFFERED 1
 
 ARG WORKDIR=/opt/code
-ARG SOURCE_REQ=daemon/requirements.txt
+#ARG SOURCE_REQ=daemon/requirements.txt
+ARG SOURCE_REQ=requirements.txt
 
 WORKDIR ${WORKDIR}
 

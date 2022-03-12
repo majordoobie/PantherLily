@@ -51,3 +51,11 @@ uritemplate==3.0.1
 urllib3==1.26.5
 wcwidth==0.2.5
 yarl==1.6.0
+
+
+discord
+numpy
+asyncpg
+requests
+oauth2client
+gspread
