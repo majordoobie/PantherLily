@@ -37,4 +37,4 @@ COPY . ${WORKDIR}
 
 # Entry point of dev null used for debugging
 #ENTRYPOINT ["tail", "-f", "/dev/null"]
-CMD ["python", "main.py", "--live" ]
+CMD ["python", "daemon/update_daemon.py"]
