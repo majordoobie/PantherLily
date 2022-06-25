@@ -47,7 +47,7 @@ uritemplate==3.0.1
 wcwidth==0.2.5
 yarl==1.6.0
 
-aiohttp~=3.6.2
+aiohttp~=3.8.1
 pip~=21.2.4
 wheel~=0.37.0
 setuptools~=57.5.0
