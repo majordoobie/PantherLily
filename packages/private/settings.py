@@ -4,23 +4,26 @@ Settings for all libraries especially the Bot
 from pathlib import Path
 
 from packages.private.PantherLily_Keys.secrets import *
-from logging import DEBUG, INFO, WARNING, ERROR
+from logging import DEBUG
 
-ROOT_PATH = "/opt/code"
+PANTHER_LOG = "packages/private/panther.log"
+PANTHER_DEBUG_LOG = "packages/private/panther_debug.log"
 COG_LOCATION = "packages.cogs"
 VERSION = "3.4.0"
 
 ENABLED_COGS = (
-    'admin',
-    'leaders',
-    'group_stats',
-    'user_stats',
-    'background_tasks',
-    'happy',
+    "admin",
+    "leaders",
+    "group_stats",
+    "user_stats",
+    "background_tasks",
+    "happy",
 )
 
+
 class Settings:
-    def __init__(self, bot_mode=None, daemon=False):
+    def __init__(self, project_path: Path, bot_mode: str = None, daemon: bool = False):
+        self.project_path = project_path
         self.bot_mode = bot_mode
         self.daemon = daemon
         self.emojis = emoji_dict
@@ -30,8 +33,7 @@ class Settings:
 
         # Paths
         self.cog_path = COG_LOCATION
-        self.proj_path = Path(ROOT_PATH)
-        
+
         self._set_cogs()
 
         # Logging
@@ -46,31 +48,31 @@ class Settings:
 
         # Static Roles
         self.default_roles = {
-            'th11s': 303965664375472128,
-            'th12s': 455572149277687809,
-            'th13s': 653562690937159683,
-            'th14s': 831212009625747518,
-            'CoC Members': 294287799010590720
+            "th11s": 303965664375472128,
+            "th12s": 455572149277687809,
+            "th13s": 653562690937159683,
+            "th14s": 831212009625747518,
+            "CoC Members": 294287799010590720
         }
 
     def get_config(self):
-        if self.bot_mode == 'live_mode':
+        if self.bot_mode == "live_mode":
             return {
-                'bot_name': 'Panther Lily',
-                'bot_token': LIVE_TOKEN,
-                'bot_prefix': ['p.', 'P.', 'Panther.', 'panther.'],
-                'version': f'PantherLily v{VERSION}',
-                'key_name': 'Panther_Bot3 Keys',
-                'log_name': 'PantherLily'
+                "bot_name": "Panther Lily",
+                "bot_token": LIVE_TOKEN,
+                "bot_prefix": ["p.", "P.", "Panther.", "panther."],
+                "version": f"PantherLily v{VERSION}",
+                "key_name": "Panther_Bot3 Keys",
+                "log_name": "PantherLily"
             }
-        elif self.bot_mode == 'dev_mode':
+        elif self.bot_mode == "dev_mode":
             return {
-                'bot_name': 'Panther Dev Shell',
-                'bot_token': DEV_TOKEN,
-                'bot_prefix': ['dev.', 'd.', 'D.'],
-                'version': 'Panther v3 Beta',
-                'key_name': 'DevShell Keys',
-                'log_name': 'DevShell'
+                "bot_name": "Panther Dev Shell",
+                "bot_token": DEV_TOKEN,
+                "bot_prefix": ["dev.", "d.", "D."],
+                "version": "Panther v3 Beta",
+                "key_name": "DevShell Keys",
+                "log_name": "DevShell"
             }
         else:
             self.bot_mode = None
@@ -85,30 +87,30 @@ class Settings:
     def _set_cogs(self):
         """Set the project path and enable the cogs"""
         self.cog_path = COG_LOCATION
-        self.enabled_cogs = [f'{self.cog_path}.{cog}' for cog in ENABLED_COGS]
+        self.enabled_cogs = [f"{self.cog_path}.{cog}" for cog in ENABLED_COGS]
 
     def _set_logging_settings(self, daemon):
         self.file_log_size = 10000
         self.file_log_backups = 1
         self.file_log_format = (
-            '[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Func:%(funcName)s]\n'
-            '[Path:%(pathname)s]\n'
-            'MSG: %(message)s\n'
+            "[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Func:%(funcName)s]\n"
+            "[Path:%(pathname)s]\n"
+            "MSG: %(message)s\n"
         )
         if not daemon:
             self.main_log_level = DEBUG
             self.web_log_url = WEBHOOK_URL
-            self.web_log_name = 'PantherLily Log'
+            self.web_log_name = "PantherLily Log"
             self.web_log_level = DEBUG
-            self.file_log = self.proj_path / "packages/private/panther.log"
+            self.file_log = PANTHER_LOG
             self.file_log_level = DEBUG
 
         if daemon:
             self.main_log_level = DEBUG
             self.web_log_url = WEBHOOK_DAEMON
-            self.web_log_name = 'Panther Daemon'
+            self.web_log_name = "Panther Daemon"
             self.web_log_level = DEBUG
-            self.file_log = self.proj_path / "packages/private/panther_daemon.log"
+            self.file_log = PANTHER_DEBUG_LOG
             self.file_log_level = DEBUG
 
 

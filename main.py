@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from pathlib import Path
+
 import asyncpg
 import argparse
 import json
@@ -19,7 +21,7 @@ def bot_args() -> argparse.ArgumentParser:
     Returns
     -------
     parser: argparser.ArgumentParser
-        Parser object
+        Parser objec
     """
     parser = argparse.ArgumentParser(description="Process arguments for discord bot")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -89,10 +91,11 @@ def main():
     args = parser.parse_args()
 
     settings = None
+    project_path = Path(".").resolve()
     if args.dev_mode:
-        settings = Settings('dev_mode')
+        settings = Settings(project_path, 'dev_mode')
     elif args.live_mode:
-        settings = Settings('live_mode')
+        settings = Settings(project_path, 'live_mode')
 
     BotLogger(settings)
     loop = asyncio.get_event_loop()
