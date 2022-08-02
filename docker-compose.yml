@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: panther_bot_dockerfile
     image: pantherlily:v3.0
-    container_name: panther_bot3
+    container_name: panther_bot
     volumes:
       - .:/opt/code
     dns:
