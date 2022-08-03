@@ -2,7 +2,7 @@ from discord.ext import commands
 from discord import Member
 from asyncpg import UniqueViolationError
 
-from packages.cogs.utils.utils import *
+from packages.utils.utils import *
 from bot import BotClient
 from database.migration import RecordObject
 import sqlite3

@@ -1,15 +1,14 @@
 import logging
-import sys
 import traceback
 
 from asyncpg.pool import Pool
 from coc.events import EventsClient
-from discord import Embed, Status, Game, InvalidData
+from discord import Game, InvalidData, Status
 from discord.errors import Forbidden
 from discord.ext import commands
 
 from packages.bot_ext import BotExt
-from packages.cogs.utils.bot_sql import sql_create_tables
+from packages.utils.bot_sql import sql_create_tables
 from packages.private.settings import Settings
 
 

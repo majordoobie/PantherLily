@@ -1,11 +1,13 @@
+from pathlib import Path
 from sys import argv
 
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
-from packages.private.settings import ROOT_PATH
 
 class ClashTroopLevel:
+    ROOT_PATH = Path("..").resolve() / "/private/PantherLily_Keys/google_login.json"
+
     def __init__(self, payload: dict):
         self.name = payload['name']
         self.town_hall = payload['town_hall']
@@ -23,7 +25,7 @@ class ClashTroopLevel:
 
 def _get_spreadsheet() -> list:
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    json_path = "/".join([ROOT_PATH, "packages/private/PantherLily_Keys/google_login.json"])
+    json_path = ClashTroopLevel.ROOT_PATH
     creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
     client = gspread.authorize(creds)
     workbook = client.open('Clash of Clans Troop Levels')

@@ -7,8 +7,8 @@ import logging
 from coc.utils import correct_tag
 from bot import BotClient
 
-from packages.cogs.utils.bot_sql import *
-from packages.cogs.utils.utils import *
+from packages.utils.bot_sql import *
+from packages.utils.utils import *
 
 
 class Leaders(commands.Cog):

@@ -4,7 +4,7 @@ from discord import Embed
 from coc import utils, NotFound
 from discord import Embed
 # from packages.cogs.utils import embed_print
-from packages.cogs.utils.utils import parse_args
+from packages.utils.utils import parse_args
 
 
 class Tester(commands.Cog):

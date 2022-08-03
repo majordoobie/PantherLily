@@ -5,8 +5,8 @@ from discord.ext import commands
 import logging
 
 from bot import BotClient
-from .utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered, sql_select_classic_view
-from .utils.utils import parse_args, get_utc_monday
+from packages.utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered, sql_select_classic_view
+from packages.utils.utils import parse_args, get_utc_monday
 
 
 class GroupStats(commands.Cog):
