@@ -31,7 +31,7 @@ def bot_args() -> argparse.ArgumentParser:
     return parser
 
 
-async def run(settings: Settings, coc_client: coc):
+async def run(settings: Settings, coc_client: coc, pool: asyncpg.pool):
     """
     Uses the event loop created in main to run the async libraries that need it
 <class 'asyncpg.pool.Pool'>
@@ -44,13 +44,6 @@ async def run(settings: Settings, coc_client: coc):
     coc_client: coc.events.EventsClient
         Clash of Clans client of interacting with the Clash of Clans API
     """
-    try:
-        async def init(con):
-            """Create custom column type, json."""
-            await con.set_type_codec("json", schema="pg_catalog", encoder=json.dumps, decoder=json.loads)
-        pool = await asyncpg.create_pool(settings.dsn, init=init)
-    except Exception as error:
-        exit(error)
     intents = Intents.default()
     intents.members = True
     intents.messages = True
@@ -60,27 +53,20 @@ async def run(settings: Settings, coc_client: coc):
 
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 
+    await bot.start(settings.bot_config["bot_token"])
+
+
+async def _get_pool(settings: Settings):
     try:
-        await bot.start(settings.bot_config["bot_token"])
+        async def init(con):
+            """Create custom column type, json."""
+            await con.set_type_codec("json", schema="pg_catalog",
+                                     encoder=json.dumps, decoder=json.loads)
 
-    except KeyboardInterrupt:
-        log.info("Interrupt detected")
-        pass
-
-    #TODO move this to the proper location
-    finally:
-        try:
-            await coc_client.close()
-        except:
-            pass
-        try:
-            await pool.close()
-        except:
-            pass
-        try:
-            await bot.close()
-        except:
-            pass
+        pool = await asyncpg.create_pool(settings.dsn, init=init)
+        return pool
+    except Exception as error:
+        exit(error)
 
 
 def main():
@@ -100,12 +86,24 @@ def main():
 
     BotLogger(settings)
     loop = asyncio.get_event_loop()
-    coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
-                           key_names=settings.bot_config["key_name"])
+    pool = loop.run_until_complete(_get_pool(settings))
+
+    print("type of loop", type(loop))
+    coc_client = coc.login(
+                settings.coc_user,
+                settings.coc_pass,
+                client=coc.EventsClient,
+                loop=loop,
+                key_names=settings.bot_config["key_name"]
+    )
 
     try:
-        loop.run_until_complete(run(settings, coc_client))
-    finally:
+        loop.run_until_complete(run(settings, coc_client, pool))
+
+    except KeyboardInterrupt:
+        print("Cleanup up resources")
+        await pool.close()
+        coc_client.close()
         loop.close()
 
 
