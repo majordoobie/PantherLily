@@ -8,7 +8,8 @@ from discord.member import Member
 
 from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
-from packages.utils.bot_sql import sql_select_active_account, sql_select_user_donation
+from packages.utils.bot_sql import sql_select_active_account, \
+    sql_select_user_donation
 from packages.utils.utils import get_discord_member, get_utc_monday, parse_args
 
 
@@ -40,12 +41,14 @@ class UserStats(commands.Cog):
 
         if not member:
             user = arg_string if arg_string else ctx.author
-            await self.bot.send(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
+            await self.bot.send(ctx, f"User `{user}` not found.",
+                                color=self.bot.ERROR)
             return
 
         else:
             async with self.bot.pool.acquire() as conn:
-                player = await conn.fetchrow(sql_select_active_account().format(member.id))
+                player = await conn.fetchrow(
+                    sql_select_active_account().format(member.id))
 
             if not player:
                 await self.bot.send(ctx,
@@ -56,12 +59,15 @@ class UserStats(commands.Cog):
 
         week_start = get_utc_monday()
         async with self.bot.pool.acquire() as conn:
-            donation_sql = sql_select_user_donation().format(week_start, player["clash_tag"])
+            donation_sql = sql_select_user_donation().format(week_start,
+                                                             player[
+                                                                 "clash_tag"])
             player_record = await conn.fetchrow(donation_sql)
 
         if not player_record:
-            await self.bot.send(ctx, title="Donation", description="No results return. Please allow 10 minutes "
-                                                                          "to pass to calculate donations")
+            await self.bot.send(ctx, title="Donation",
+                                description="No results return. Please allow 10 minutes "
+                                            "to pass to calculate donations")
             return
 
         week_end = week_start + timedelta(days=7)
@@ -76,17 +82,17 @@ class UserStats(commands.Cog):
         ]
         await self.bot.send(ctx, description=msg, author=author)
 
-
     @commands.command(
-        aliases = ["s"],
-        brief = "",
-        description = "Display Clash of Clans stats",
-        usage = "[-c (str)] [-l (int)]",
-        help = "Display Clash of Clan stats of the caller. You also have the option of providing someone else\'s "
-               "name to get their Clash of Clan stats.\n"
-               "Users are also able to provide a level they would like to display with the -l switch.\n"
-               "Users are able to get Clash of Clan stats by provide ANYONE\'s Clash tag.\n\n"
-               "-c || --clash-tag\n-l || --level"
+        aliases=["s"],
+        brief="",
+        description="Display Clash of Clans stats",
+        usage="[-c (str)] [-l (int)]",
+        help="Display Clash of Clan stats of the caller. You also have the "
+             "option of providing someone else\'s name to get their Clash of "
+             "Clan stats.\nUsers are also able to provide a level they "
+             "would like to display with the -l switch.\nUsers are able "
+             "to get Clash of Clan stats by provide ANYONE\'s Clash tag.\n\n"
+             "-c || --clash-tag\n-l || --level"
     )
     async def stats(self, ctx, *, arg_string=None):
         arg_dict = {
@@ -108,7 +114,8 @@ class UserStats(commands.Cog):
             return
         member: Member
 
-        # If --clash-tag was supplied the search by clash tag directly instead of by user
+        # If --clash-tag was supplied the search by
+        # clash tag directly instead of by user
         if args["clash_tag"]:
             tag = args["clash_tag"]
             if utils.is_valid_tag(tag):
@@ -123,7 +130,8 @@ class UserStats(commands.Cog):
                                         color=self.bot.WARNING)
                     return
 
-        # If clash tag was not used then attempt to get the user by discord accounts
+        # If clash tag was not used then attempt
+        # to get the user by discord accounts
         elif args["positional"]:
             member = await get_discord_member(ctx, args["positional"])
         else:
@@ -131,11 +139,13 @@ class UserStats(commands.Cog):
 
         if not member:
             user = arg_string if arg_string else ctx.author
-            await self.bot.send(ctx, f"User `{user}` not found.", color=self.bot.ERROR)
+            await self.bot.send(ctx, f"User `{user}` not found.",
+                                color=self.bot.ERROR)
             return
 
         async with self.bot.pool.acquire() as conn:
-            active_player = await conn.fetchrow(sql_select_active_account().format(member.id))
+            active_player = await conn.fetchrow(
+                sql_select_active_account().format(member.id))
 
         if not active_player:
             await self.bot.send(ctx,
@@ -146,7 +156,8 @@ class UserStats(commands.Cog):
                                 color=self.bot.ERROR)
             return
 
-        player = await self.bot.coc_client.get_player(active_player["clash_tag"])
+        player = await self.bot.coc_client.get_player(
+            active_player["clash_tag"])
         panel_a, panel_b = ClashStats(player, active_player, set_lvl=args[
             "display_level"]).display_all()
         await self._display_panels(ctx, player, panel_a, panel_b)
@@ -170,7 +181,8 @@ class UserStats(commands.Cog):
         await panel.add_reaction(self.bot.settings.emojis["link"])
 
         def check(reaction, user):
-            return not user.bot and str(reaction.emoji) == self.bot.settings.emojis["link"]
+            return not user.bot and str(reaction.emoji) == \
+                   self.bot.settings.emojis["link"]
 
         try:
             await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
