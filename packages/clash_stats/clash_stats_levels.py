@@ -6,7 +6,7 @@ import gspread
 
 
 class ClashTroopLevel:
-    ROOT_PATH = Path("..").resolve() / "/private/PantherLily_Keys/google_login.json"
+    ROOT_PATH = Path(".").resolve() / "packages/private/PantherLily_Keys/google_login.json"
 
     def __init__(self, payload: dict):
         self.name = payload['name']
