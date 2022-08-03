@@ -6,8 +6,8 @@ from discord.ext import commands, tasks
 from discord import errors
 
 from bot import BotClient
-from packages.cogs.utils.bot_sql import sql_select_all_active_users
-from packages.cogs.utils.utils import get_default_roles, get_utc_monday
+from packages.utils.bot_sql import sql_select_all_active_users
+from packages.utils.utils import get_default_roles, get_utc_monday
 from packages.logging_setup import BotLogger as LoggerSetup
 from packages.private.settings import Settings
 

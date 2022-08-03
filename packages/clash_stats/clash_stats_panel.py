@@ -1,5 +1,5 @@
 from coc import Player
-from packages.cogs.clash_stats.clash_stats_levels import get_levels
+from packages.clash_stats.clash_stats_levels import get_levels
 
 HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 

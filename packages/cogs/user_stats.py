@@ -7,9 +7,9 @@ from discord.ext import commands
 from discord.member import Member
 
 from bot import BotClient
-from .clash_stats.clash_stats_panel import ClashStats
-from .utils.bot_sql import sql_select_active_account, sql_select_user_donation
-from .utils.utils import get_discord_member, get_utc_monday, parse_args
+from packages.clash_stats.clash_stats_panel import ClashStats
+from packages.utils.bot_sql import sql_select_active_account, sql_select_user_donation
+from packages.utils.utils import get_discord_member, get_utc_monday, parse_args
 
 
 class UserStats(commands.Cog):

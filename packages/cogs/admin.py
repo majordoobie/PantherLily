@@ -2,7 +2,7 @@ from discord.ext import commands
 import logging
 import traceback
 
-from packages.cogs.utils.utils import *
+from packages.utils.utils import *
 from bot import BotClient
 
 

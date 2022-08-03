@@ -12,9 +12,9 @@ from discord import Role, Guild
 import discord
 
 from packages.private.settings import *
-from packages.cogs.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
+from packages.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
 from packages.bot_ext import BotExt
-from packages.cogs.utils.bot_sql import sql_select_member_find
+from packages.utils.bot_sql import sql_select_member_find
 
 
 async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Optional[Member]:

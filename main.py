@@ -25,9 +25,9 @@ def bot_args() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description="Process arguments for discord bot")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--live', help='Run bot with Panther shell', action='store_true', dest='live_mode',
+    group.add_argument("--live", help="Run bot with Panther shell", action="store_true", dest="live_mode",
                        default=False)
-    group.add_argument('--dev', help='Run in dev shell', action='store_true', dest='dev_mode', default=False)
+    group.add_argument("--dev", help="Run in dev shell", action="store_true", dest="dev_mode", default=False)
     return parser
 
 
@@ -47,7 +47,7 @@ async def run(settings: Settings, coc_client: coc):
     try:
         async def init(con):
             """Create custom column type, json."""
-            await con.set_type_codec('json', schema='pg_catalog', encoder=json.dumps, decoder=json.loads)
+            await con.set_type_codec("json", schema="pg_catalog", encoder=json.dumps, decoder=json.loads)
         pool = await asyncpg.create_pool(settings.dsn, init=init)
     except Exception as error:
         exit(error)
@@ -56,17 +56,18 @@ async def run(settings: Settings, coc_client: coc):
     intents.messages = True
     intents.reactions = True
     bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
-                    command_prefix=settings.bot_config['bot_prefix'], intents=intents)
+                    command_prefix=settings.bot_config["bot_prefix"], intents=intents)
 
-    log = logging.getLogger(f'{settings.bot_config["log_name"]}.Main')
+    log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 
     try:
-        await bot.start(settings.bot_config['bot_token'])
+        await bot.start(settings.bot_config["bot_token"])
 
     except KeyboardInterrupt:
         log.info("Interrupt detected")
         pass
 
+    #TODO move this to the proper location
     finally:
         try:
             await coc_client.close()
@@ -93,14 +94,14 @@ def main():
     settings = None
     project_path = Path(".").resolve()
     if args.dev_mode:
-        settings = Settings(project_path, 'dev_mode')
+        settings = Settings(project_path, "dev_mode")
     elif args.live_mode:
-        settings = Settings(project_path, 'live_mode')
+        settings = Settings(project_path, "live_mode")
 
     BotLogger(settings)
     loop = asyncio.get_event_loop()
     coc_client = coc.login(settings.coc_user, settings.coc_pass, client=coc.EventsClient, loop=loop,
-                           key_names=settings.bot_config['key_name'])
+                           key_names=settings.bot_config["key_name"])
 
     try:
         loop.run_until_complete(run(settings, coc_client))
@@ -108,5 +109,5 @@ def main():
         loop.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

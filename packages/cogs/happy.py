@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord import RawReactionActionEvent, Message
 
 from bot import BotClient
-from packages.cogs.utils.utils import parse_args
+from packages.utils.utils import parse_args
 
 EMOJI_REACTIONS = (
     'h1',
