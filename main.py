@@ -85,16 +85,27 @@ def _get_coc_client(settings: Settings) -> coc.Client:
     )
 
 
-async def main(settings: Settings, client: coc.Client) -> None:
+async def main() -> None:
     """
     Sets up the environment for the bot
 
-    :param settings: configuration for the bot
-    :type settings: settings
-    :param client: Configured CoC Client class
-    :type client: coc.Client
     :return: None
     """
+
+    # Get args
+    args = _bot_args()
+
+    # Get settings based on args mode
+    project_path = Path.cwd().resolve()
+    settings = None
+
+    if args.dev_mode:
+        settings = Settings(project_path, "dev_mode")
+    elif args.live_mode:
+        settings = Settings(project_path, "live_mode")
+
+    # Get a coc client to call into
+    client = _get_coc_client(settings)
 
     BotLogger(settings)
 
@@ -129,22 +140,8 @@ async def main(settings: Settings, client: coc.Client) -> None:
 
 
 if __name__ == "__main__":
-    # Get args
-    args = _bot_args()
-
-    # Get settings based on args mode
-    project_path = Path(".").resolve()
-    _settings = None
-    if args.dev_mode:
-        _settings = Settings(project_path, "dev_mode")
-    elif args.live_mode:
-        _settings = Settings(project_path, "live_mode")
-
-    # Get a coc client to call into
-    _client = _get_coc_client(_settings)
-
     # Run bot loop. Ignore keyboard interupt errors
     try:
-        asyncio.run(main(_settings, _client))
+        asyncio.run(main())
     except KeyboardInterrupt:
         pass
