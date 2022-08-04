@@ -1,8 +1,8 @@
 import logging
 import traceback
 
+import coc
 from asyncpg.pool import Pool
-from coc.events import EventsClient
 from discord import Game, InvalidData, Status
 from discord.errors import Forbidden
 from discord.ext import commands
@@ -13,7 +13,7 @@ from packages.private.settings import Settings
 
 
 class BotClient(commands.Bot, BotExt):
-    def __init__(self, settings: Settings, pool: Pool, coc_client: EventsClient, *args, **kwargs):
+    def __init__(self, settings: Settings, pool: Pool, coc_client: coc.Client, *args, **kwargs):
         """
         Inherits the Discord.py bot to create a bot that manages a group of clash of clans players
 

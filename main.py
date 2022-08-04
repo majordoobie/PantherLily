@@ -1,11 +1,11 @@
+import argparse
 import asyncio
+import json
 import logging
+from asyncio import CancelledError, shield
 from pathlib import Path
 
 import asyncpg
-import argparse
-import json
-
 import coc
 from discord import Intents
 
@@ -14,49 +14,49 @@ from packages.logging_setup import BotLogger
 from packages.private.settings import Settings
 
 
-def bot_args() -> argparse.ArgumentParser:
+def _bot_args() -> argparse.Namespace:
     """
-    Sets up the arguments to run the bot.
+    Creates mutually exclusive arguments that dictates how the bot should run.
 
-    Returns
-    -------
-    parser: argparser.ArgumentParser
-        Parser objec
+    The settings change the db that is connected, the bot logged into and
+    the logs to use
+
+    :return: Namespace of parsed arguments
+    :rtype: argparse.Namespace
     """
-    parser = argparse.ArgumentParser(description="Process arguments for discord bot")
+    parser = argparse.ArgumentParser(
+        description="Process arguments for discord bot")
+
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--live", help="Run bot with Panther shell", action="store_true", dest="live_mode",
-                       default=False)
-    group.add_argument("--dev", help="Run in dev shell", action="store_true", dest="dev_mode", default=False)
-    return parser
+
+    group.add_argument(
+        "--live",
+        help="Run bot with Panther shell",
+        action="store_true",
+        dest="live_mode",
+        default=False)
+
+    group.add_argument(
+        "--dev",
+        help="Run in dev shell",
+        action="store_true",
+        dest="dev_mode",
+        default=False)
+
+    return parser.parse_args()
 
 
-async def run(settings: Settings, coc_client: coc, pool: asyncpg.pool):
+async def _get_pool(settings: Settings) -> asyncpg.pool.Pool:
     """
-    Uses the event loop created in main to run the async libraries that need it
-<class 'asyncpg.pool.Pool'>
-<class 'coc.events.EventsClient'>
+    Creates a conection pool to the database. Before it does that it sets
+    a custom json encoder for the database pool
 
-    Parameters
-    ----------
-    settings: Settings
-        Configuration for the mode given
-    coc_client: coc.events.EventsClient
-        Clash of Clans client of interacting with the Clash of Clans API
+    :param settings: configuration for the bot
+    :type settings: settings
+    :return: Connection pool
+    :rtype: asyncpg.pool.Pool
     """
-    intents = Intents.default()
-    intents.members = True
-    intents.messages = True
-    intents.reactions = True
-    bot = BotClient(settings=settings, pool=pool, coc_client=coc_client,
-                    command_prefix=settings.bot_config["bot_prefix"], intents=intents)
 
-    log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
-
-    await bot.start(settings.bot_config["bot_token"])
-
-
-async def _get_pool(settings: Settings):
     try:
         async def init(con):
             """Create custom column type, json."""
@@ -69,43 +69,82 @@ async def _get_pool(settings: Settings):
         exit(error)
 
 
-def main():
+def _get_coc_client(settings: Settings) -> coc.Client:
     """
-    Sets up the environment for the bot. Uses .env for any sensitive information and puts them
-    in the Settings class. Then uses the information to instantiate the bot.
+    Init the Client class with custom settings
+
+    :param settings: configuration for the bot
+    :type settings: settings
+    :return: Configured Client class
     """
-    parser = bot_args()
-    args = parser.parse_args()
-
-    settings = None
-    project_path = Path(".").resolve()
-    if args.dev_mode:
-        settings = Settings(project_path, "dev_mode")
-    elif args.live_mode:
-        settings = Settings(project_path, "live_mode")
-
-    BotLogger(settings)
-    loop = asyncio.get_event_loop()
-    pool = loop.run_until_complete(_get_pool(settings))
-
-    print("type of loop", type(loop))
-    coc_client = coc.login(
-                settings.coc_user,
-                settings.coc_pass,
-                client=coc.EventsClient,
-                loop=loop,
-                key_names=settings.bot_config["key_name"]
+    return coc.Client(
+        key_count=4,
+        throttler_limit=30,
+        client=coc.EventsClient,
+        key_names=settings.bot_config["key_name"],
     )
 
-    try:
-        loop.run_until_complete(run(settings, coc_client, pool))
 
-    except KeyboardInterrupt:
-        print("Cleanup up resources")
+async def main(settings: Settings, client: coc.Client) -> None:
+    """
+    Sets up the environment for the bot
+
+    :param settings: configuration for the bot
+    :type settings: settings
+    :param client: Configured CoC Client class
+    :type client: coc.Client
+    :return: None
+    """
+
+    BotLogger(settings)
+
+    # Get the db connection pool for the bot
+    pool = await _get_pool(settings)
+
+    # Log into coc client
+    await client.login(settings.coc_user, settings.coc_pass)
+
+    intents = Intents.default()
+    intents.members = True
+    intents.messages = True
+    intents.reactions = True
+
+    bot = BotClient(
+        settings=settings,
+        pool=pool,
+        coc_client=client,
+        command_prefix=settings.bot_config["bot_prefix"], intents=intents
+    )
+
+    log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
+
+    # Shield catches the keyboard interupt giving time to cleanup
+    try:
+        await shield(bot.start(settings.bot_config["bot_token"]))
+    except CancelledError:
+        msg = "Closing db connection pool before exiting"
+        log.debug(msg)
+        print(msg)
         await pool.close()
-        coc_client.close()
-        loop.close()
 
 
 if __name__ == "__main__":
-    main()
+    # Get args
+    args = _bot_args()
+
+    # Get settings based on args mode
+    project_path = Path(".").resolve()
+    _settings = None
+    if args.dev_mode:
+        _settings = Settings(project_path, "dev_mode")
+    elif args.live_mode:
+        _settings = Settings(project_path, "live_mode")
+
+    # Get a coc client to call into
+    _client = _get_coc_client(_settings)
+
+    # Run bot loop. Ignore keyboard interupt errors
+    try:
+        asyncio.run(main(_settings, _client))
+    except KeyboardInterrupt:
+        pass
