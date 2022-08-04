@@ -1,9 +1,9 @@
 import logging
 from random import choice
 
-from discord import Member, Activity, ActivityType, Status, Game
-from discord.ext import commands, tasks
-from discord import errors
+from disnake import Member, Activity, ActivityType, Status, Game
+from disnake.ext import commands, tasks
+from disnake import errors
 
 from bot import BotClient
 from packages.utils.bot_sql import sql_select_all_active_users

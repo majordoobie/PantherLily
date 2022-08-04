@@ -3,8 +3,8 @@ import json
 import logging
 from typing import Union, Optional, Tuple
 
-from discord.ext import commands
-from discord import RawReactionActionEvent, Message
+from disnake.ext import commands
+from disnake import RawReactionActionEvent, Message
 
 from bot import BotClient
 from packages.utils.utils import parse_args

@@ -2,8 +2,8 @@ import logging
 from logging import Logger
 from typing import Union, List, Optional
 
-from discord import Embed, Role, Member
-from discord.ext.commands import Context, NotOwner, BadArgument
+from disnake import Embed, Role, Member
+from disnake.ext.commands import Context, NotOwner, BadArgument
 
 
 class BotExt:

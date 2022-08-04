@@ -1,8 +1,5 @@
-from discord import Member
-from discord.ext import commands
-from discord import Embed
-from coc import utils, NotFound
-from discord import Embed
+from disnake.ext import commands
+from disnake import Embed
 # from packages.cogs.utils import embed_print
 from packages.utils.utils import parse_args
 

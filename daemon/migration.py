@@ -1,9 +1,8 @@
 import sqlite3
 import re
 from datetime import datetime
-from discord import member
+from disnake import member
 
-import psycopg2
 from packages.private.PantherLily_Keys.secrets import *
 #from secrets import *
 

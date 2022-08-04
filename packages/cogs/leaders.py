@@ -1,7 +1,8 @@
 from asyncio import TimeoutError
 import traceback
 
-from discord.ext import commands
+from disnake.ext import commands
+import disnake
 import logging
 
 from coc.utils import correct_tag
@@ -73,7 +74,7 @@ class Leaders(commands.Cog):
             exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
             await self.bot.send(ctx, exc, title='Unable to change users nickname', color=self.bot.ERROR)
 
-    async def _remove_defaults(self, member: discord.member) -> None:
+    async def _remove_defaults(self, member: disnake.member) -> None:
         """
         Function used to remove the default roles
         Parameters

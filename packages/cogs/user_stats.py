@@ -3,8 +3,8 @@ import logging
 from datetime import datetime, timedelta
 
 from coc import utils
-from discord.ext import commands
-from discord.member import Member
+from disnake.ext import commands
+from disnake.member import Member
 
 from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
@@ -78,7 +78,7 @@ class UserStats(commands.Cog):
               f"{day} days {time[0]} hours {time[1]} minutes"
         author = [
             member.display_name,
-            member.avatar_url
+            member.avatar.url
         ]
         await self.bot.send(ctx, description=msg, author=author)
 

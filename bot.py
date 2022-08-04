@@ -3,9 +3,9 @@ import traceback
 
 import coc
 from asyncpg.pool import Pool
-from discord import Game, InvalidData, Status
-from discord.errors import Forbidden
-from discord.ext import commands
+from disnake import Game, InvalidData, Status
+from disnake.errors import Forbidden
+from disnake.ext import commands
 
 from packages.bot_ext import BotExt
 from packages.utils.bot_sql import sql_create_tables

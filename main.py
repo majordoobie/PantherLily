@@ -7,7 +7,7 @@ from pathlib import Path
 
 import asyncpg
 import coc
-from discord import Intents
+import disnake
 
 from bot import BotClient
 from packages.logging_setup import BotLogger
@@ -115,9 +115,9 @@ async def main() -> None:
     # Log into coc client
     await client.login(settings.coc_user, settings.coc_pass)
 
-    intents = Intents.default()
+    intents = disnake.Intents.default()
+    intents.message_content = True
     intents.members = True
-    intents.messages = True
     intents.reactions = True
 
     bot = BotClient(
