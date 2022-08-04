@@ -1,5 +1,4 @@
-from discord.ext import commands
-from discord import Member
+from disnake.ext import commands
 from asyncpg import UniqueViolationError
 
 from packages.utils.utils import *

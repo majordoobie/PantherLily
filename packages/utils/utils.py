@@ -5,11 +5,11 @@ from asyncpg import Record
 from coc import NotFound, EventsClient, Player
 from coc.utils import is_valid_tag
 from datetime import datetime, timedelta
-from discord.member import Member
-from discord.ext.commands import NotOwner
-from discord.ext.commands import Context
-from discord import Role, Guild
-import discord
+from disnake.member import Member
+from disnake.ext.commands import NotOwner
+from disnake.ext.commands import Context
+from disnake import Role, Guild
+import disnake
 
 from packages.private.settings import *
 from packages.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError

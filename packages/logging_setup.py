@@ -2,7 +2,7 @@ import atexit
 import logging
 from logging.handlers import QueueListener, QueueHandler
 from queue import Queue
-from discord import Webhook, RequestsWebhookAdapter, Embed
+from disnake import Webhook, SyncWebhook, Embed
 
 from packages.private.settings import Settings
 from packages.bot_ext import BotExt
@@ -105,7 +105,7 @@ class DiscordWebhookHandler(logging.Handler):
             40: 0xFF8000,  # Error Org  | User caused an affect
             50: 0xFF0000  # Critical   | All errors will go here
         }
-        webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
+        webhook = SyncWebhook.from_url(self.webhook_url)
 
         if record.exc_info:
             msg = f'{record.msg}\n\n{record.exc_text}'

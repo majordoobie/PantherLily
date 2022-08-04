@@ -1,7 +1,7 @@
 import asyncio
 from datetime import timedelta
 
-from discord.ext import commands
+from disnake.ext import commands
 import logging
 
 from bot import BotClient
