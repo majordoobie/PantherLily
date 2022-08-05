@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from typing import Optional
 
 from coc import utils
+import disnake
 from disnake.ext import commands
-from disnake.member import Member
 
 from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
@@ -18,64 +19,64 @@ class UserStats(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger(f"{self.bot.settings.log_name}.UserStats")
 
-    @commands.command(
-        aliases=["d"],
-        brief="",
-        description="View current donation gains",
-        usage="(user name)",
-        help="Display the current donation gains for the weeks cycle. "
-             "You also have the option of providing another users name as an "
-             "argument to display their donation gains."
+    @commands.slash_command(
+        auto_sync=True,
+        name="donation",
+        dm_permission=False,
     )
-    async def donation(self, ctx, *, arg_string=None):
+    async def donation(self, ctx, member: disnake.Member = None):
+        """
+        Display the current donation gains for the weeks cycle
+
+        Parameters
+        ----------
+        ctx:
+        member: Optional discord member to specify
+        """
         self.bot.log_user_commands(self.log,
                                    user=ctx.author.display_name,
                                    command="donation",
                                    args=None,
-                                   arg_string=arg_string)
-        member: Member
-        if arg_string:
-            member = await get_discord_member(ctx, arg_string)
-        else:
-            member = await get_discord_member(ctx, ctx.author.id)
+                                   arg_string=member)
 
-        if not member:
-            user = arg_string if arg_string else ctx.author
-            await self.bot.send(ctx, f"User `{user}` not found.",
-                                color=self.bot.ERROR)
+        # If command was ran without a user argument then set the caller
+        # as the users argument
+        if member is None:
+            member = ctx.author
+
+        async with self.bot.pool.acquire() as conn:
+            player = await conn.fetchrow(
+                sql_select_active_account().format(member.id))
+
+        if not player:
+            await self.bot.send(
+                ctx,
+                f"User `{member.display_name}` is no longer an active member",
+                color=self.bot.WARNING)
             return
-
-        else:
-            async with self.bot.pool.acquire() as conn:
-                player = await conn.fetchrow(
-                    sql_select_active_account().format(member.id))
-
-            if not player:
-                await self.bot.send(ctx,
-                                    f"User `{member.display_name}` is no "
-                                    f"longer an active member",
-                                    color=self.bot.WARNING)
-                return
 
         week_start = get_utc_monday()
         async with self.bot.pool.acquire() as conn:
-            donation_sql = sql_select_user_donation().format(week_start,
-                                                             player[
-                                                                 "clash_tag"])
+            donation_sql = sql_select_user_donation().format(
+                week_start,
+                player["clash_tag"])
             player_record = await conn.fetchrow(donation_sql)
 
         if not player_record:
-            await self.bot.send(ctx, title="Donation",
-                                description="No results return. Please allow 10 minutes "
-                                            "to pass to calculate donations")
+            await self.bot.send(
+                ctx,
+                title="Donation",
+                description="No results return. Please allow 10 minutes to "
+                            "pass to calculate donations")
             return
 
         week_end = week_start + timedelta(days=7)
         time_remaining = week_end - datetime.utcnow()
         day = time_remaining.days
         time = str(timedelta(seconds=time_remaining.seconds)).split(":")
-        msg = f"**Donation Stat:**\n{player_record['donation_gains']} | 300\n**Time Remaining:**\n" \
-              f"{day} days {time[0]} hours {time[1]} minutes"
+        msg = (f"**Donation Stat:**\n{player_record['donation_gains']} "
+               f"| 300\n**Time Remaining:**\n{day} days {time[0]} "
+               f"hours {time[1]} minutes")
         author = [
             member.display_name,
             member.avatar.url
@@ -112,7 +113,7 @@ class UserStats(commands.Cog):
                                    arg_string=arg_string)
         if not args:
             return
-        member: Member
+        member: disnake.Member
 
         # If --clash-tag was supplied the search by
         # clash tag directly instead of by user
