@@ -23,7 +23,8 @@ async def get_discord_member(
         print_prt=None,
         _return=False) -> Optional[Member]:
     """
-    Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
+    Attempt to get a member object with the string provided. Converters are
+    ignored they do not ignore case
 
     Parameters
     ----------

@@ -1,5 +1,6 @@
 from coc import Player
 from packages.clash_stats.clash_stats_levels import get_levels
+from packages.private.settings import LEVEL_MAX, LEVEL_MIN
 
 HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 
@@ -29,14 +30,14 @@ class ClashStats:
     def _get_lvl(self, set_lvl):
         """Private function to get the troop level of a specific level"""
         if isinstance(set_lvl, int):
-            if set_lvl in range(8, 15):
+            if set_lvl in range(LEVEL_MIN, LEVEL_MAX):
                 return str(set_lvl)
             else:
                 return str(self.player.town_hall)
         elif isinstance(set_lvl, str):
             if set_lvl.isdigit():
                 set_lvl = int(set_lvl)
-                if set_lvl in range(8, 15):
+                if set_lvl in range(LEVEL_MIN, LEVEL_MAX):
                     return str(set_lvl)
             else:
                 return str(self.player.town_hall)

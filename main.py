@@ -124,7 +124,9 @@ async def main() -> None:
         settings=settings,
         pool=pool,
         coc_client=client,
-        command_prefix=settings.bot_config["bot_prefix"], intents=intents
+        command_prefix=settings.bot_config["bot_prefix"],
+        intents=intents,
+        sync_command_debug=True
     )
 
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")

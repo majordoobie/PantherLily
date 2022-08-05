@@ -133,12 +133,12 @@ class BotExt:
         -------
         None
         """
+        #TODO: Fix me
         msg = f'''
 ```
 User:        {kwargs["user"]}               
 Executed:    {kwargs["command"]}
-Arg Passed:  {kwargs["arg_string"]}
-Args Parsed: {kwargs["args"]}
 ```
+
 '''
         log.warning(msg)
