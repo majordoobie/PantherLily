@@ -17,7 +17,11 @@ from packages.bot_ext import BotExt
 from packages.utils.bot_sql import sql_select_member_find
 
 
-async def get_discord_member(ctx: Context, disco_id: Union[str, int], print_prt=None, _return=False) -> Optional[Member]:
+async def get_discord_member(
+        ctx: disnake.ApplicationCommandInteraction,
+        disco_id: Union[str, int],
+        print_prt=None,
+        _return=False) -> Optional[Member]:
     """
     Attempt to get a member object with the string provided. Converters are ignored they do not ignore case
 

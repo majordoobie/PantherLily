@@ -2,7 +2,7 @@ import logging
 from logging import Logger
 from typing import Union, List, Optional
 
-from disnake import Embed, Role, Member
+import disnake
 from disnake.ext.commands import Context, NotOwner, BadArgument
 
 
@@ -16,19 +16,27 @@ class BotExt:
         self.settings = settings
         self.log = logging.getLogger('root.bot_ext')
 
-    async def send(self, ctx: Union[Context, None], description, title='', color=INFO, code_block=False, _return=False,
-                   footnote=True, author: Union[list, None] = None) -> Optional[list]:
+    async def send(
+            self,
+            ctx: disnake.ApplicationCommandInteraction,
+            description,
+            title='',
+            color=INFO,
+            code_block=False,
+            _return=False,
+            footnote=True,
+            author: Union[list, None] = None) -> Optional[list]:
         if not description:
             raise BadArgument("No value to encapsulate in a embed")
 
         blocks = await self.text_splitter(description, code_block)
-        embed_list = [Embed(
+        embed_list = [disnake.Embed(
             title=f'{title}',
             description=blocks[0],
             color=color
         )]
         for i in blocks[1:]:
-            embed_list.append(Embed(
+            embed_list.append(disnake.Embed(
                 description=i,
                 color=color
             ))
@@ -50,7 +58,7 @@ class BotExt:
         blocks = []
         block = ''
         for i in text.split('\n'):
-            if (len(i) + len(block)) > 1960:
+            if (len(i) + len(block)) > 1800:
                 block = block.rstrip('\n')
                 if code_block:
                     print("got it ")
@@ -74,7 +82,11 @@ class BotExt:
             raise NotOwner("Please ask a developer to run this command")
 
     @staticmethod
-    def log_role_change(member: Member, role: Union[List[Role], Role], log: Logger, removed: bool = False) -> None:
+    def log_role_change(
+            member: disnake.Member,
+            role: Union[List[disnake.Role], disnake.Role],
+            log: Logger,
+            removed: bool = False) -> None:
         """
         Simple centralized place to log role changes. The input will either be a list of roles or
         a single role

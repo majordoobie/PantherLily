@@ -127,7 +127,7 @@ class DiscordWebhookHandler(logging.Handler):
         blocks = []
         block = ''
         for i in text.split('\n'):
-            if (len(i) + len(block)) > 1960:
+            if (len(i) + len(block)) > 1850:
                 block = block.rstrip('\n')
                 blocks.append(block)
                 block = f'{i}\n'
