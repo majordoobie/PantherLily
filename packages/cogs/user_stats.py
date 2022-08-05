@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from coc import utils
+import coc
 import disnake
 from disnake.ext import commands
 
@@ -12,6 +12,8 @@ from packages.clash_stats.clash_stats_panel import ClashStats
 from packages.utils.bot_sql import sql_select_active_account, \
     sql_select_user_donation
 from packages.utils.utils import get_discord_member, get_utc_monday, parse_args
+
+from packages.private.settings import LEVEL_MIN, LEVEL_MAX
 
 
 class UserStats(commands.Cog):
@@ -23,6 +25,7 @@ class UserStats(commands.Cog):
         auto_sync=True,
         name="donation",
         dm_permission=False,
+        sync_commands_debug=True
     )
     async def donation(self, ctx, member: disnake.Member = None):
         """
@@ -30,19 +33,17 @@ class UserStats(commands.Cog):
 
         Parameters
         ----------
-        ctx:
+        ctx: disnake.ApplicationCommandInteraction
         member: Optional discord member to specify
         """
+        if member is None:
+            member = ctx.author
+
         self.bot.log_user_commands(self.log,
                                    user=ctx.author.display_name,
                                    command="donation",
                                    args=None,
                                    arg_string=member)
-
-        # If command was ran without a user argument then set the caller
-        # as the users argument
-        if member is None:
-            member = ctx.author
 
         async with self.bot.pool.acquire() as conn:
             player = await conn.fetchrow(
@@ -83,99 +84,93 @@ class UserStats(commands.Cog):
         ]
         await self.bot.send(ctx, description=msg, author=author)
 
-    @commands.command(
-        aliases=["s"],
-        brief="",
-        description="Display Clash of Clans stats",
-        usage="[-c (str)] [-l (int)]",
-        help="Display Clash of Clan stats of the caller. You also have the "
-             "option of providing someone else\'s name to get their Clash of "
-             "Clan stats.\nUsers are also able to provide a level they "
-             "would like to display with the -l switch.\nUsers are able "
-             "to get Clash of Clan stats by provide ANYONE\'s Clash tag.\n\n"
-             "-c || --clash-tag\n-l || --level"
+    @commands.slash_command(
+        auto_sync=True,
+        name="stats",
+        dm_permission=False,
     )
-    async def stats(self, ctx, *, arg_string=None):
-        arg_dict = {
-            "clash_tag": {
-                "flags": ["-c", "--clash_tag"],
-            },
-            "display_level": {
-                "flags": ["-l", "--level"],
-                "type": "int",
-            }
-        }
-        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
+    async def stats(
+        self,
+        ctx,
+        member: disnake.Member = None,
+        clash_tag: str = None,
+        display_level: commands.Range[LEVEL_MIN, LEVEL_MAX] = 0
+    ) -> None:
+        """
+        Display the stats of the Clash of Clans caller or specified user
+
+        Parameters
+        ----------
+        ctx: disnake.ApplicationCommandInteraction
+        member: Optional discord member to specify
+        clash_tag: Optional clash of clans tag to retrieve
+        display_level: Optional level to display useful for viewing a level up
+        """
+
+        # Goal of parameters it to fetch a valid player
+        # object to display data from
+        player: Optional[coc.Player] = None
+
+        # Normalize the parameters if defaults are set
+        if member is None and clash_tag is not None:
+            clash_tag = coc.utils.correct_tag(clash_tag)
+            if coc.utils.is_valid_tag(clash_tag):
+
+                try:
+                    player = await self.bot.coc_client.get_player(clash_tag)
+                except coc.errors.NotFound:
+                    pass
+
+                if not player:
+                    await self.bot.send(
+                        ctx,
+                        description=f"User with the tag of {clash_tag} "
+                                    f"was not found",
+                        color=self.bot.WARNING)
+            else:
+                await self.bot.send(
+                    ctx,
+                    description=f"{clash_tag} is an invalid tag",
+                    color=self.bot.WARNING)
+
+        else:
+            if member is None:
+                member = ctx.author
+            async with self.bot.pool.acquire() as conn:
+                active_player = await conn.fetchrow(
+                    sql_select_active_account().format(member.id))
+                if not active_player:
+                    await self.bot.send(
+                        ctx,
+                        f"User `{member.display_name}` is no longer "
+                        f"an active member. You could query their "
+                        f"stats using their clash tag instead if you "
+                        f"like.",
+                        color=self.bot.ERROR)
+                else:
+                    player = await self.bot.coc_client.get_player(
+                        active_player["clash_tag"])
+
+        if display_level == 0:
+            display_level = player.town_hall
+
+        # Log the user command
         self.bot.log_user_commands(self.log,
                                    user=ctx.author.display_name,
                                    command="stats",
-                                   args=args,
-                                   arg_string=arg_string)
-        if not args:
-            return
-        member: disnake.Member
+                                   member=member,
+                                   clash_tag=clash_tag,
+                                   display_level=display_level
+                                   )
+        panel_a, panel_b = ClashStats(player,
+                                      active_player,
+                                      set_lvl=display_level
+                                      ).display_all()
 
-        # If --clash-tag was supplied the search by
-        # clash tag directly instead of by user
-        if args["clash_tag"]:
-            tag = args["clash_tag"]
-            if utils.is_valid_tag(tag):
-                player = await self.bot.coc_client.get_player(tag)
-                if player:
-                    panel_a, panel_b = ClashStats(player).display_troops()
-                    await self._display_panels(ctx, player, panel_a, panel_b)
-                    return
-                else:
-                    await self.bot.send(ctx,
-                                        description=f"User with the tag of {tag} was not found",
-                                        color=self.bot.WARNING)
-                    return
-
-        # If clash tag was not used then attempt
-        # to get the user by discord accounts
-        elif args["positional"]:
-            member = await get_discord_member(ctx, args["positional"])
-        else:
-            member = await get_discord_member(ctx, ctx.author.id)
-
-        if not member:
-            user = arg_string if arg_string else ctx.author
-            await self.bot.send(ctx, f"User `{user}` not found.",
-                                color=self.bot.ERROR)
-            return
-
-        async with self.bot.pool.acquire() as conn:
-            active_player = await conn.fetchrow(
-                sql_select_active_account().format(member.id))
-
-        if not active_player:
-            await self.bot.send(ctx,
-                                f"User `{member.display_name}` is no longer "
-                                f"an active member. You could query their "
-                                f"stats using their clash tag instead if you "
-                                f"like.",
-                                color=self.bot.ERROR)
-            return
-
-        player = await self.bot.coc_client.get_player(
-            active_player["clash_tag"])
-        panel_a, panel_b = ClashStats(player, active_player, set_lvl=args[
-            "display_level"]).display_all()
         await self._display_panels(ctx, player, panel_a, panel_b)
 
-        # from discord import Embed
-        # clash_stat = ClashStats(player, active_player, set_lvl=['display_level'])
-        # embed = Embed.from_dict(clash_stat.to_dict)
-        # async with self.bot.pool.acquire() as con:
-        #     sql = f"""SELECT discord_user.discord_id from discord_user, clash_account WHERE clash_tag='{player.tag}'
-        #     AND discord_user.discord_id=clash_account.discord_id"""
-        #     member = await con.fetchval(sql)
-        #     member = ctx.guild.get_member(member)
-        #
-        # embed.set_author(name=member.display_name, icon_url=member.avatar_url)
-        # await ctx.send(embed=embed)
-
     async def _display_panels(self, ctx, player, panel_a, panel_b):
+        # TODO: Fix the reaction
         await self.bot.send(ctx, panel_a, footnote=False)
         panel = await self.bot.send(ctx, panel_b, _return=True)
         panel = await ctx.send(embed=panel[0])
