@@ -30,14 +30,14 @@ class ClashStats:
     def _get_lvl(self, set_lvl):
         """Private function to get the troop level of a specific level"""
         if isinstance(set_lvl, int):
-            if set_lvl in range(LEVEL_MIN, LEVEL_MAX):
+            if set_lvl in range(LEVEL_MIN, LEVEL_MAX + 1):
                 return str(set_lvl)
             else:
                 return str(self.player.town_hall)
         elif isinstance(set_lvl, str):
             if set_lvl.isdigit():
                 set_lvl = int(set_lvl)
-                if set_lvl in range(LEVEL_MIN, LEVEL_MAX):
+                if set_lvl in range(LEVEL_MIN, LEVEL_MAX + 1):
                     return str(set_lvl)
             else:
                 return str(self.player.town_hall)
