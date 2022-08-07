@@ -11,10 +11,27 @@ from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
 from packages.utils.bot_sql import sql_select_active_account, \
     sql_select_user_donation
-from packages.utils.utils import get_discord_member, get_utc_monday, parse_args
+from packages.utils.utils import EmbedColor, get_discord_member, \
+    get_utc_monday, parse_args
 
 from packages.private.settings import LEVEL_MIN, LEVEL_MAX
 
+
+# # Define a simple View that gives us a confirmation menu
+# class Confirm(disnake.ui.View):
+#     def __init__(self):
+#         super().__init__()
+#         self.value = None
+#
+#     # When the confirm button is pressed, set the inner value to `True` and
+#     # stop the View from listening to more input.
+#     # We also send the user an ephemeral message that we're confirming their choice.
+#     @disnake.ui.button(label="Clash Link", style=disnake.ButtonStyle.green)
+#     async def confirm(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+#         await interaction.response.send_message("Confirming", ephemeral=True)
+#         self.value = True
+#         self.stop()
+#
 
 class UserStats(commands.Cog):
     def __init__(self, bot: BotClient):
@@ -53,7 +70,7 @@ class UserStats(commands.Cog):
             await self.bot.send(
                 ctx,
                 f"User `{member.display_name}` is no longer an active member",
-                color=self.bot.WARNING)
+                color=EmbedColor.WARNING)
             return
 
         week_start = get_utc_monday()
@@ -126,12 +143,12 @@ class UserStats(commands.Cog):
                         ctx,
                         description=f"User with the tag of {clash_tag} "
                                     f"was not found",
-                        color=self.bot.WARNING)
+                        color=EmbedColor.WARNING)
             else:
                 await self.bot.send(
                     ctx,
                     description=f"{clash_tag} is an invalid tag",
-                    color=self.bot.WARNING)
+                    color=EmbedColor.WARNING)
 
         else:
             if member is None:
@@ -146,7 +163,7 @@ class UserStats(commands.Cog):
                         f"an active member. You could query their "
                         f"stats using their clash tag instead if you "
                         f"like.",
-                        color=self.bot.ERROR)
+                        color=EmbedColor.ERROR)
                 else:
                     player = await self.bot.coc_client.get_player(
                         active_player["clash_tag"])
@@ -171,20 +188,7 @@ class UserStats(commands.Cog):
 
     async def _display_panels(self, ctx, player, panel_a, panel_b):
         # TODO: Fix the reaction
-        await self.bot.send(ctx, panel_a, footnote=False)
-        panel = await self.bot.send(ctx, panel_b, _return=True)
-        panel = await ctx.send(embed=panel[0])
-        await panel.add_reaction(self.bot.settings.emojis["link"])
-
-        def check(reaction, user):
-            return not user.bot and str(reaction.emoji) == \
-                   self.bot.settings.emojis["link"]
-
-        try:
-            await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
-            await ctx.send(player.share_link)
-        except asyncio.TimeoutError:
-            pass
+        await self.bot.inter_send(ctx, panels=[panel_a, panel_b], title="Test")
 
 
 def setup(bot):

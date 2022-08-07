@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional, Union, List
 
 from asyncpg.pool import Pool
@@ -13,8 +14,14 @@ import disnake
 
 from packages.private.settings import *
 from packages.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
-from packages.bot_ext import BotExt
 from packages.utils.bot_sql import sql_select_member_find
+
+
+class EmbedColor(Enum):
+    INFO = 0x000080  # blued
+    ERROR = 0xff0010  # red
+    SUCCESS = 0x00ff00  # green
+    WARNING = 0xff8000  # orange
 
 
 async def get_discord_member(
@@ -67,7 +74,7 @@ async def get_discord_member(
             return None
 
         if print_prt:
-            await print_prt(ctx, f'Discord member: {disco_id} was not found', color=BotExt.WARNING)
+            await print_prt(ctx, f'Discord member: {disco_id} was not found', color=EmbedColor.WARNING)
             return None
         else:
             print(f'Discord member: {disco_id} was not found')
@@ -164,13 +171,13 @@ async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient
 
     if not is_valid_tag(player_tag):
         await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",
-                        color=BotExt.WARNING)
+                        color=EmbedColor.WARNING)
         return None
     try:
         player = await coc_client.get_player(player_tag)
     except NotFound:
         await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided [`{player_tag}`] tag does "
-                                                               f"not exist"), color=BotExt.WARNING)
+                                                               f"not exist"), color=EmbedColor.WARNING)
         return None
 
     return player
@@ -281,9 +288,10 @@ async def parse_args(ctx: Context, settings: Settings, arg_dict: dict, arg_strin
         parsed_args = DiscordArgParse(arg_dict, arg_string)
         return parsed_args
     except DiscoArgParseException as error:
-        bot_ext = BotExt(settings)
-        await bot_ext.send(ctx=ctx, title=error.base_name, description=error.msg, color=BotExt.ERROR)
-        return None
+        pass
+        # bot_ext = BotExt(settings)
+        # await bot_ext.send(ctx=ctx, title=error.base_name, description=error.msg, color=EmbedColor.ERROR)
+        # return None
 
 
 def get_utc_monday() -> datetime:

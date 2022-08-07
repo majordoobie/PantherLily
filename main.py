@@ -119,6 +119,9 @@ async def main() -> None:
     intents.message_content = True
     intents.members = True
     intents.reactions = True
+    intents.emojis = True
+
+    intents = disnake.Intents.all()
 
     bot = BotClient(
         settings=settings,
