@@ -84,7 +84,6 @@ def _get_coc_client(settings: Settings) -> coc.Client:
         key_names=settings.bot_config["key_name"],
     )
 
-
 async def main() -> None:
     """
     Sets up the environment for the bot
@@ -121,8 +120,6 @@ async def main() -> None:
     intents.reactions = True
     intents.emojis = True
 
-    intents = disnake.Intents.all()
-
     bot = BotClient(
         settings=settings,
         pool=pool,
@@ -131,6 +128,10 @@ async def main() -> None:
         intents=intents,
         sync_command_debug=True
     )
+
+    @bot.event
+    async def on_error(a, *b, **c):
+        print("GOT IT")
 
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 

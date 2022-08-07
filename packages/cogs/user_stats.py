@@ -44,7 +44,11 @@ class UserStats(commands.Cog):
         dm_permission=False,
         sync_commands_debug=True
     )
-    async def donation(self, ctx, member: disnake.Member = None):
+    async def donation(
+            self,
+            inter: disnake.ApplicationCommandInteraction,
+            member: disnake.Member = commands.Param(lambda inter: inter.author)
+                       ) -> None:
         """
         Display the current donation gains for the weeks cycle
 
@@ -53,11 +57,8 @@ class UserStats(commands.Cog):
         ctx: disnake.ApplicationCommandInteraction
         member: Optional discord member to specify
         """
-        if member is None:
-            member = ctx.author
-
         self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
+                                   user=inter.author.display_name,
                                    command="donation",
                                    args=None,
                                    arg_string=member)
@@ -68,7 +69,7 @@ class UserStats(commands.Cog):
 
         if not player:
             await self.bot.send(
-                ctx,
+                inter,
                 f"User `{member.display_name}` is no longer an active member",
                 color=EmbedColor.WARNING)
             return
@@ -82,7 +83,7 @@ class UserStats(commands.Cog):
 
         if not player_record:
             await self.bot.send(
-                ctx,
+                inter,
                 title="Donation",
                 description="No results return. Please allow 10 minutes to "
                             "pass to calculate donations")
@@ -95,11 +96,8 @@ class UserStats(commands.Cog):
         msg = (f"**Donation Stat:**\n{player_record['donation_gains']} "
                f"| 300\n**Time Remaining:**\n{day} days {time[0]} "
                f"hours {time[1]} minutes")
-        author = [
-            member.display_name,
-            member.avatar.url
-        ]
-        await self.bot.send(ctx, description=msg, author=author)
+
+        await self.bot.inter_send(inter, panels=[msg], author=member)
 
     @commands.slash_command(
         auto_sync=True,
@@ -108,8 +106,8 @@ class UserStats(commands.Cog):
     )
     async def stats(
         self,
-        ctx,
-        member: disnake.Member = None,
+        inter: disnake.ApplicationCommandInteraction,
+        member: disnake.Member = commands.Param(lambda inter: inter.author),
         clash_tag: str = None,
         display_level: commands.Range[LEVEL_MIN, LEVEL_MAX] = 0
     ) -> None:
@@ -118,7 +116,7 @@ class UserStats(commands.Cog):
 
         Parameters
         ----------
-        ctx: disnake.ApplicationCommandInteraction
+        inter: disnake.ApplicationCommandInteraction
         member: Optional discord member to specify
         clash_tag: Optional clash of clans tag to retrieve
         display_level: Optional level to display useful for viewing a level up
@@ -129,7 +127,7 @@ class UserStats(commands.Cog):
         player: Optional[coc.Player] = None
 
         # Normalize the parameters if defaults are set
-        if member is None and clash_tag is not None:
+        if clash_tag is not None:
             clash_tag = coc.utils.correct_tag(clash_tag)
             if coc.utils.is_valid_tag(clash_tag):
 
@@ -140,30 +138,30 @@ class UserStats(commands.Cog):
 
                 if not player:
                     await self.bot.send(
-                        ctx,
+                        inter,
                         description=f"User with the tag of {clash_tag} "
                                     f"was not found",
                         color=EmbedColor.WARNING)
+                    return
             else:
                 await self.bot.send(
-                    ctx,
+                    inter,
                     description=f"{clash_tag} is an invalid tag",
                     color=EmbedColor.WARNING)
 
         else:
-            if member is None:
-                member = ctx.author
             async with self.bot.pool.acquire() as conn:
                 active_player = await conn.fetchrow(
                     sql_select_active_account().format(member.id))
                 if not active_player:
                     await self.bot.send(
-                        ctx,
+                        inter,
                         f"User `{member.display_name}` is no longer "
                         f"an active member. You could query their "
                         f"stats using their clash tag instead if you "
                         f"like.",
-                        color=EmbedColor.ERROR)
+                        color=EmbedColor.WARNING)
+                    return
                 else:
                     player = await self.bot.coc_client.get_player(
                         active_player["clash_tag"])
@@ -173,7 +171,7 @@ class UserStats(commands.Cog):
 
         # Log the user command
         self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
+                                   user=inter.author.display_name,
                                    command="stats",
                                    member=member,
                                    clash_tag=clash_tag,
@@ -184,11 +182,7 @@ class UserStats(commands.Cog):
                                       set_lvl=display_level
                                       ).display_all()
 
-        await self._display_panels(ctx, player, panel_a, panel_b)
-
-    async def _display_panels(self, ctx, player, panel_a, panel_b):
-        # TODO: Fix the reaction
-        await self.bot.inter_send(ctx, panels=[panel_a, panel_b], title="Test")
+        await self.bot.inter_send(inter, panels=[panel_a, panel_b])
 
 
 def setup(bot):

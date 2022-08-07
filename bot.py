@@ -1,5 +1,6 @@
 import logging
 import traceback
+from typing import Any
 
 import coc
 from asyncpg.pool import Pool
@@ -53,6 +54,8 @@ class BotClient(commands.Bot, BotExt):
     async def on_ready(self):
         print("Connected")
         self.log.debug('Established connection')
+
+        #TODO: Move this to the bot building area
         await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
 
         # create tables if they do no exit
@@ -66,7 +69,13 @@ class BotClient(commands.Bot, BotExt):
     async def on_command(self, ctx):
         await ctx.trigger_typing()
 
-    async def on_command_error(self, ctx, error):
+    async def on_error(self,
+                       event_method: str,
+                       *args: Any,
+                       **kwargs: Any) -> None:
+        print("Where you here??")
+        return
+
         if self.debug:
             exc = ''.join(
                 traceback.format_exception(type(error), error, error.__traceback__, chain=True))
