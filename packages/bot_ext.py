@@ -5,12 +5,17 @@ from typing import Union, List, Optional
 import disnake
 from disnake.ext.commands import Context, NotOwner, BadArgument
 
+from packages.utils.utils import EmbedColor
+
 
 class BotExt:
-    INFO = 0x000080  # blued
-    ERROR = 0xff0010  # red
-    SUCCESS = 0x00ff00  # green
-    WARNING = 0xff8000  # orange
+
+    # limits
+    EMBED_TITLE = 256
+    EMBED_DESCRIPTION = 4096
+    EMBED_FOOTER = 2048
+    EMBED_AUTHOR = 256
+    EMBED_TOTAL = 6000
 
     def __init__(self, settings):
         self.settings = settings
@@ -21,7 +26,7 @@ class BotExt:
             ctx: disnake.ApplicationCommandInteraction,
             description,
             title='',
-            color=INFO,
+            color: EmbedColor = EmbedColor.INFO,
             code_block=False,
             _return=False,
             footnote=True,
@@ -33,12 +38,12 @@ class BotExt:
         embed_list = [disnake.Embed(
             title=f'{title}',
             description=blocks[0],
-            color=color
+            color=color.value
         )]
         for i in blocks[1:]:
             embed_list.append(disnake.Embed(
                 description=i,
-                color=color
+                color=color.value
             ))
         if footnote:
             embed_list[-1].set_footer(text=self.settings.bot_config['version'])
@@ -52,16 +57,82 @@ class BotExt:
                 await ctx.send(embed=i)
         return
 
+    async def inter_send(self,
+                         inter: disnake.ApplicationCommandInteraction,
+                         panels: List[str],
+                         title: str = "",
+                         color: EmbedColor = EmbedColor.INFO,
+                         code_block: bool = False,
+                         footer: str = "",
+                         author: disnake.Member = None
+                         ):
+        """
+        Limits:
+
+        :param author:
+        :param footer:
+        :param code_block:
+        :param color:
+        :param title:
+        :param inter:
+        :param panels:
+        :return:
+        """
+        total_panels = []
+        for panel in panels:
+            for sub_panel in await self.text_splitter(panel, code_block):
+                total_panels.append(sub_panel)
+
+        last = len(total_panels)
+        total_embeds = []
+        embeds = []
+        author_set = False
+        for index, panel in enumerate(total_panels):
+            embed = disnake.Embed(
+                description=panel,
+                color=color.value,
+                title=title if index == 0 else ""
+            )
+
+            if index == 0:
+                if author and not author_set:
+                    author_set = True
+                    embed.set_author(
+                        name=author.display_name,
+                        icon_url=author.avatar.url
+                    )
+
+            if index == last - 1:
+                if footer != "":
+                    embed.set_footer(text=footer)
+
+            # If the current embed is going to make the embeds block exceed
+            # to send size, then create a new embed block
+            embeds_size = sum(len(embed) for embed in embeds)
+            if embeds_size + len(embed) > BotExt.EMBED_TOTAL:
+                total_embeds.append(embeds.copy())
+                embeds = []
+
+            embeds.append(embed)
+
+        if embeds:
+            total_embeds.append(embeds)
+
+        for embeds in total_embeds:
+            await inter.send(embeds=embeds)
+
+
+
+
     @staticmethod
-    async def text_splitter(text: str, code_block: bool) -> list:
+    async def text_splitter(text: str, code_block: bool) -> list[str]:
         """Split text into blocks and return a list of blocks"""
         blocks = []
         block = ''
         for i in text.split('\n'):
-            if (len(i) + len(block)) > 1800:
+            if (len(i) + len(block)) > BotExt.EMBED_DESCRIPTION:
                 block = block.rstrip('\n')
                 if code_block:
-                    print("got it ")
                     blocks.append(f'```{block}```')
                 else:
                     blocks.append(block)
