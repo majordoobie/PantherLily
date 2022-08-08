@@ -68,6 +68,12 @@ class BotClient(commands.Bot, BotExt):
     async def on_slash_command(self,
                                inter: disnake.ApplicationCommandInteraction
                                ) -> None:
+        """
+        Function logs all the commands made by the users
+
+        :param inter: disnake.ApplicationCommandInteraction
+        :return:
+        """
 
         space = 0
         if inter.options:
@@ -99,6 +105,12 @@ class BotClient(commands.Bot, BotExt):
             inter: disnake.ApplicationCommandInteraction,
             error: commands.CommandError
     ) -> None:
+        """
+        Log all errors made by slash commands
+
+        :param inter: disnake.ApplicationCommandInteraction
+        :return:
+        """
 
         if self.debug:
             exc = "".join(
