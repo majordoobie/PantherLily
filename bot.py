@@ -75,13 +75,14 @@ class BotClient(commands.Bot, BotExt):
 
         space = 0
         if inter.options:
-            space = max(len(option) for option in inter.options.keys())
+            space = max(len(option) + 1 for option in inter.options.keys())
 
         if space < 9:
             space = 9  # Length of the 'Command: ' key
 
+        name = f"{inter.author.name}#{inter.author.discriminator}"
         msg = (
-            f"{'User:' :<{space}} {inter.author.display_name}\n"
+            f"{'User:':<{space}} {name}\n"
             f"{'Command:':<{space}} {inter.data.name}\n"
         )
 
@@ -89,9 +90,11 @@ class BotClient(commands.Bot, BotExt):
             option = f"{option}:"
 
             if isinstance(data, disnake.Member):
-                msg += f"{option:<{space}} {data.display_name}\n"
+                data: disnake.Member
+                name = f"{data.name}#{data.discriminator}"
+                msg += f"{option:<{space}} {name}\n"
             else:
-                msg += f"{option:<{space}} {space} {data}\n"
+                msg += f"{option:<{space}} {data}\n"
 
         self.log.warning(f"```{msg}```")
 

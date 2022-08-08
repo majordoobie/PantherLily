@@ -22,7 +22,8 @@ ENABLED_COGS = (
 
 # Global level rangers for parameters
 LEVEL_MIN = 8
-LEVEL_MAX = 15
+LEVEL_MAX = 14
+
 
 class Settings:
     def __init__(self, project_path: Path, bot_mode: str = None, daemon: bool = False):
