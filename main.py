@@ -132,7 +132,7 @@ async def main() -> None:
 
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 
-    # Shield catches the keyboard interupt giving time to cleanup
+    # Shield catches the keyboard interrupt giving time to clean up
     try:
         await shield(bot.start(settings.bot_config["bot_token"]))
     except CancelledError:
@@ -143,7 +143,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    # Run bot loop. Ignore keyboard interupt errors
+    # Run bot loop. Ignore keyboard interrupt errors
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
