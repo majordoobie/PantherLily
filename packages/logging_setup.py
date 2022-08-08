@@ -28,12 +28,23 @@ class BotLogger:
         # Set up file logging
         self._set_file_logging()
 
+        # Set up terminal handler
+        self._set_stdout_logging()
+
         root = logging.getLogger(self.settings.log_name)
         root.setLevel(settings.main_log_level)
         root.addHandler(QueueListenerHandler(self.log_handlers))
 
     def _set_webhook_logging(self):
         self.log_handlers.append(DiscordWebhookHandler(self.settings))
+
+    def _set_stdout_logging(self):
+        """Only log error leve and above to stdout for debugging"""
+        logger_handler = logging.StreamHandler()
+        formatter = logging.Formatter(self.settings.file_log_format, "%d %b %H:%M:%S")
+        logger_handler.setFormatter(formatter)
+        logger_handler.setLevel(logging.ERROR)
+        self.log_handlers.append(logger_handler)
 
     def _set_file_logging(self):
         logger_handler = logging.handlers.RotatingFileHandler(

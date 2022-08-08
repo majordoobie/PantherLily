@@ -39,7 +39,7 @@ def get_levels(level: int) -> dict:
     results_obj = {}
 
     for troop in clash_data:
-        if troop[town_hall]:
+        if troop.get(town_hall):
             if isinstance(troop['Object'], str):
                 results_obj[troop['Object']] = ClashTroopLevel({
                     'name': troop['Object'],
