@@ -59,7 +59,8 @@ class BotExt:
 
     async def inter_send(self,
                          inter: disnake.ApplicationCommandInteraction,
-                         panels: List[str],
+                         panel: str = "",
+                         panels: List[str] = [],
                          title: str = "",
                          color: EmbedColor = EmbedColor.INFO,
                          code_block: bool = False,
@@ -69,6 +70,7 @@ class BotExt:
         """
         Limits:
 
+        :param panel:
         :param author:
         :param footer:
         :param code_block:
@@ -79,6 +81,10 @@ class BotExt:
         :return:
         """
         total_panels = []
+
+        if panel:
+            total_panels.append(panel)
+
         for panel in panels:
             for sub_panel in await self.text_splitter(panel, code_block):
                 total_panels.append(sub_panel)

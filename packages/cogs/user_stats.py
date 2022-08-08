@@ -125,6 +125,7 @@ class UserStats(commands.Cog):
         # Goal of parameters it to fetch a valid player
         # object to display data from
         player: Optional[coc.Player] = None
+        active_player = None
 
         # Normalize the parameters if defaults are set
         if clash_tag is not None:
@@ -148,6 +149,7 @@ class UserStats(commands.Cog):
                     inter,
                     description=f"{clash_tag} is an invalid tag",
                     color=EmbedColor.WARNING)
+                return
 
         else:
             async with self.bot.pool.acquire() as conn:
@@ -169,14 +171,6 @@ class UserStats(commands.Cog):
         if display_level == 0:
             display_level = player.town_hall
 
-        # Log the user command
-        self.bot.log_user_commands(self.log,
-                                   user=inter.author.display_name,
-                                   command="stats",
-                                   member=member,
-                                   clash_tag=clash_tag,
-                                   display_level=display_level
-                                   )
         panel_a, panel_b = ClashStats(player,
                                       active_player,
                                       set_lvl=display_level

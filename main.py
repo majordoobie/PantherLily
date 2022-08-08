@@ -129,10 +129,6 @@ async def main() -> None:
         sync_command_debug=True
     )
 
-    @bot.event
-    async def on_error(a, *b, **c):
-        print("GOT IT")
-
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 
     # Shield catches the keyboard interupt giving time to cleanup
