@@ -57,10 +57,6 @@ class BotClient(commands.Bot, BotExt):
         print("Connected")
         self.log.debug("Established connection")
 
-        #TODO: Move this to the bot building area
-        await self.change_presence(status=Status.online,
-                                   activity=Game(name=self.settings.bot_config["version"]))
-
         # create tables if they do no exit
         async with self.pool.acquire() as con:
             for sql_table in sql_create_tables():
