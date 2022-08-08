@@ -1,14 +1,19 @@
 from disnake.ext import commands
 
+from packages.utils.utils import is_leader
+
 
 class Tester(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(description="Tester")
+    @commands.check(is_leader)
+    @commands.slash_command(
+        auto_sync=True,
+        description="Tester")
     async def error(self, ctx):
-        await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
         print([][10])
+        await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
 
 def setup(bot):

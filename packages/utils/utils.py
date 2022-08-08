@@ -220,6 +220,7 @@ def is_owner(ctx):
 
 
 def is_leader(ctx):
+    print("Checked")
     if ctx.author.id == OWNER:
         return True
     for role in ctx.author.roles:
