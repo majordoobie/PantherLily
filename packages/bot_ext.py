@@ -65,11 +65,13 @@ class BotExt:
                          color: EmbedColor = EmbedColor.INFO,
                          code_block: bool = False,
                          footer: str = "",
-                         author: disnake.Member = None
+                         author: disnake.Member = None,
+                         view: disnake.ui.View = None
                          ):
         """
         Limits:
 
+        :param view:
         :param panel:
         :param author:
         :param footer:
@@ -89,7 +91,7 @@ class BotExt:
             for sub_panel in await self.text_splitter(panel, code_block):
                 total_panels.append(sub_panel)
 
-        last = len(total_panels)
+        last_index = len(total_panels) - 1
         total_embeds = []
         embeds = []
         author_set = False
@@ -108,7 +110,7 @@ class BotExt:
                         icon_url=author.avatar.url
                     )
 
-            if index == last - 1:
+            if index == last_index:
                 if footer != "":
                     embed.set_footer(text=footer)
 
@@ -124,11 +126,12 @@ class BotExt:
         if embeds:
             total_embeds.append(embeds)
 
-        for embeds in total_embeds:
-            await inter.send(embeds=embeds)
-
-
-
+        last_embed = len(total_embeds) - 1
+        for index, embeds in enumerate(total_embeds):
+            if last_embed == index and view:
+                await inter.send(embeds=embeds, view=view)
+            else:
+                await inter.send(embeds=embeds)
 
     @staticmethod
     async def text_splitter(text: str, code_block: bool) -> list[str]:
