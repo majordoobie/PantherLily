@@ -51,6 +51,9 @@ class BotClient(commands.Bot, BotExt):
                 print(f"Failed to load cog {cog}\n{error}")
                 self.log.critical(f"Failed to load cog {cog}", exc_info=True)
 
+        if self.settings.bot_mode == "dev_mode":
+            self.load_extension("packages.cogs.tester")
+
         print("cogs loaded")
 
     async def on_ready(self):
@@ -111,6 +114,7 @@ class BotClient(commands.Bot, BotExt):
         :param inter: disnake.ApplicationCommandInteraction
         :return:
         """
+        print("Did I get an error")
 
         if self.debug:
             exc = "".join(
@@ -145,8 +149,10 @@ class BotClient(commands.Bot, BotExt):
                                                          error.__traceback__,
                                                          chain=True))
                 await self.inter_send(inter,
+                                      panel=err,
                                       title="UNKNOWN - Have doobie check the "
-                                            "logs", color=EmbedColor.ERROR)
+                                            "logs",
+                                      color=EmbedColor.ERROR)
 
                 self.log.error(err, exc_info=True)
                 return
