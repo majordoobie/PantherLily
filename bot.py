@@ -117,9 +117,7 @@ class BotClient(commands.Bot, BotExt):
                 traceback.format_exception(type(error), error,
                                            error.__traceback__, chain=True))
 
-            await self.inter_send(inter,
-                                  panel=f"{exc}",
-                                  title="DEBUG ENABLED",
+            await self.inter_send(inter, panel=f"{exc}", title="DEBUG ENABLED",
                                   color=EmbedColor.WARNING, code_block=True)
 
         # Catch all errors within command logic
@@ -135,10 +133,9 @@ class BotClient(commands.Bot, BotExt):
             # Catch permission issues
             elif isinstance(original, Forbidden):
                 await self.inter_send(inter,
-                                      panel=
-                                      "Even with proper permissions, the "
-                                      "target user must be lower in the "
-                                      "role hierarchy of this bot.",
+                                      panel="Even with proper permissions, the "
+                                            "target user must be lower in the "
+                                            "role hierarchy of this bot.",
                                       title="FORBIDDEN",
                                       color=EmbedColor.ERROR)
                 return
@@ -149,8 +146,7 @@ class BotClient(commands.Bot, BotExt):
                                                          chain=True))
                 await self.inter_send(inter,
                                       title="UNKNOWN - Have doobie check the "
-                                            "logs",
-                                      color=EmbedColor.ERROR)
+                                            "logs", color=EmbedColor.ERROR)
 
                 self.log.error(err, exc_info=True)
                 return
@@ -160,19 +156,18 @@ class BotClient(commands.Bot, BotExt):
         if isinstance(error, commands.CheckFailure):
             try:
                 if error.args[0] == "Not owner":
-                    await self.inter_send(inter,
+                    await self.inter_send(inter, panel="Only doobie can run "
+                                                       "this command",
                                           title="COMMAND FORBIDDEN",
-                                          color=EmbedColor.ERROR,
-                                          panel="Only doobie can run "
-                                                "this command")
+                                          color=EmbedColor.ERROR)
                     return
             except:
                 pass
             await self.inter_send(inter,
-                                  title="COMMAND FORBIDDEN",
-                                  color=EmbedColor.ERROR,
                                   panel="Only `CoC Leadership` are permitted "
-                                        "to use this command")
+                                        "to use this command",
+                                  title="COMMAND FORBIDDEN",
+                                  color=EmbedColor.ERROR)
             return
 
         # Catch all
@@ -180,9 +175,7 @@ class BotClient(commands.Bot, BotExt):
         title = error.__class__.__name__
         if title is None:
             title = "Command Error"
-        await self.inter_send(inter,
-                              title=title,
-                              panel=str(error),
+        await self.inter_send(inter, panel=str(error), title=title,
                               color=EmbedColor.ERROR)
 
         self.log.error(err, exc_info=True)

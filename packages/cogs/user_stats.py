@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
@@ -9,29 +8,29 @@ from disnake.ext import commands
 
 from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
+from packages.private.settings import LEVEL_MAX, LEVEL_MIN
 from packages.utils.bot_sql import sql_select_active_account, \
     sql_select_user_donation
-from packages.utils.utils import EmbedColor, get_discord_member, \
-    get_utc_monday, parse_args
-
-from packages.private.settings import LEVEL_MIN, LEVEL_MAX
+from packages.utils.utils import EmbedColor, get_utc_monday
 
 
-# # Define a simple View that gives us a confirmation menu
-# class Confirm(disnake.ui.View):
-#     def __init__(self):
-#         super().__init__()
-#         self.value = None
-#
-#     # When the confirm button is pressed, set the inner value to `True` and
-#     # stop the View from listening to more input.
-#     # We also send the user an ephemeral message that we're confirming their choice.
-#     @disnake.ui.button(label="Clash Link", style=disnake.ButtonStyle.green)
-#     async def confirm(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
-#         await interaction.response.send_message("Confirming", ephemeral=True)
-#         self.value = True
-#         self.stop()
-#
+class CoCAccountLink(disnake.ui.View):
+    def __init__(self, player: coc.Player):
+        super().__init__()
+        self.player = player
+        self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.primary,
+                                        label="Game Account Link",
+                                        url=self.player.share_link))
+
+        self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.primary,
+                                        label="Clash of Stats",
+                                        url=self.clash_of_stats))
+
+    @property
+    def clash_of_stats(self):
+        user = f"{self.player.name}-{self.player.tag.lstrip('#')}"
+        return f"https://www.clashofstats.com/players/{user}/summary"
+
 
 class UserStats(commands.Cog):
     def __init__(self, bot: BotClient):
@@ -97,7 +96,7 @@ class UserStats(commands.Cog):
                f"| 300\n**Time Remaining:**\n{day} days {time[0]} "
                f"hours {time[1]} minutes")
 
-        await self.bot.inter_send(inter, panels=[msg], author=member)
+        await self.bot.inter_send(inter, panel=msg, author=member)
 
     @commands.slash_command(
         auto_sync=True,
@@ -176,7 +175,10 @@ class UserStats(commands.Cog):
                                       set_lvl=display_level
                                       ).display_all()
 
-        await self.bot.inter_send(inter, panels=[panel_a, panel_b])
+        await self.bot.inter_send(inter,
+                                  panels=[panel_a, panel_b],
+                                  view=CoCAccountLink(player)
+                                  )
 
 
 def setup(bot):
