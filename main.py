@@ -126,7 +126,8 @@ async def main() -> None:
         coc_client=client,
         command_prefix=settings.bot_config["bot_prefix"],
         intents=intents,
-        sync_command_debug=True
+        sync_command_debug=True,
+        activity=disnake.Game(name=settings.bot_config.get("version"))
     )
 
     log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
