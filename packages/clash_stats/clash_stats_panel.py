@@ -1,4 +1,6 @@
-from coc import Player
+from typing import Optional
+
+import coc
 from packages.clash_stats.clash_stats_levels import get_levels
 from packages.private.settings import LEVEL_MAX, LEVEL_MIN
 
@@ -16,8 +18,17 @@ class ClashStats:
         "8": "<:townhall8:546080798097539082>"
     }
 
-    def __init__(self, player: Player, active_player: dict = None, set_lvl=None):
-        """Display an embedded panel containing user stats"""
+    def __init__(self,
+                 player: coc.Player,
+                 active_player: Optional[dict] = None,
+                 set_lvl=None):
+        """
+        Create the panel used to display the users stats
+
+        :param player: The CoC Player object
+        :param active_player: Optional database object of the registered player
+        :param set_lvl: Level to set the user display
+        """
         self.player = player
         self.member = active_player
         if set_lvl:
