@@ -12,7 +12,6 @@ class Tester(commands.Cog):
         auto_sync=True,
         description="Tester")
     async def error(self, ctx):
-        print([][10])
         await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
 

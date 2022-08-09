@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional, Union, List
 
+import coc
 from asyncpg.pool import Pool
 from asyncpg import Record
 from coc import NotFound, EventsClient, Player
@@ -24,11 +25,10 @@ class EmbedColor(Enum):
     WARNING = 0xff8000  # orange
 
 
-async def get_discord_member(
-        ctx: disnake.ApplicationCommandInteraction,
-        disco_id: Union[str, int],
-        print_prt=None,
-        _return=False) -> Optional[Member]:
+async def get_discord_member(inter: disnake.ApplicationCommandInteraction,
+                             disco_id: Union[str, int],
+                             print_prt=None,
+                             _return=False) -> Optional[Member]:
     """
     Attempt to get a member object with the string provided. Converters are
     ignored they do not ignore case
@@ -143,7 +143,10 @@ def get_default_roles(guild: Guild, settings: Settings, level: int) -> Union[Lis
     return None
 
 
-async def get_coc_player(ctx: Context, player_tag: str, coc_client: EventsClient, print_ptr) -> Optional[Player]:
+async def get_coc_player(ctx: disnake.ApplicationCommandInteraction,
+                         player_tag: str,
+                         coc_client: coc.Client,
+                         print_ptr) -> Optional[Player]:
     """
     Wrapper for querying for a player object to avoid duplicating code
     Parameters
@@ -220,7 +223,6 @@ def is_owner(ctx):
 
 
 def is_leader(ctx):
-    print("Checked")
     if ctx.author.id == OWNER:
         return True
     for role in ctx.author.roles:

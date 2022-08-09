@@ -111,11 +111,10 @@ class BotClient(commands.Bot, BotExt):
         """
         Log all errors made by slash commands
 
+        :param error:
         :param inter: disnake.ApplicationCommandInteraction
         :return:
         """
-        print("Did I get an error")
-
         if self.debug:
             exc = "".join(
                 traceback.format_exception(type(error), error,

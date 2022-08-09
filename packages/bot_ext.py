@@ -185,7 +185,7 @@ class BotExt:
         -------
         None
         """
-        if isinstance(role, Role):
+        if isinstance(role, disnake.Role):
             msg = 'lost role' if removed else 'received role'
             log.info(f'`{member.display_name}` {msg} `{role.name}`')
 
