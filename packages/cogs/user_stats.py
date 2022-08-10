@@ -9,8 +9,8 @@ from disnake.ext import commands
 from bot import BotClient
 from packages.clash_stats.clash_stats_panel import ClashStats
 from packages.private.settings import LEVEL_MAX, LEVEL_MIN
-from packages.utils.bot_sql import sql_select_active_account, \
-    sql_select_user_donation
+from packages.utils.bot_sql import select_active_account, \
+    select_user_donation
 from packages.utils.utils import EmbedColor, get_utc_monday
 
 
@@ -64,7 +64,7 @@ class UserStats(commands.Cog):
 
         async with self.bot.pool.acquire() as conn:
             player = await conn.fetchrow(
-                sql_select_active_account().format(member.id))
+                select_active_account().format(member.id))
 
         if not player:
             await self.bot.send(
@@ -75,7 +75,7 @@ class UserStats(commands.Cog):
 
         week_start = get_utc_monday()
         async with self.bot.pool.acquire() as conn:
-            donation_sql = sql_select_user_donation().format(
+            donation_sql = select_user_donation().format(
                 week_start,
                 player["clash_tag"])
             player_record = await conn.fetchrow(donation_sql)
@@ -153,7 +153,7 @@ class UserStats(commands.Cog):
         else:
             async with self.bot.pool.acquire() as conn:
                 active_player = await conn.fetchrow(
-                    sql_select_active_account().format(member.id))
+                    select_active_account().format(member.id))
                 if not active_player:
                     await self.bot.send(
                         inter,

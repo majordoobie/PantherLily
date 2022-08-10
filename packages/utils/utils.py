@@ -16,7 +16,7 @@ import disnake
 
 from packages.private.settings import *
 from packages.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
-from packages.utils.bot_sql import sql_select_member_find
+from packages.utils.bot_sql import select_member_find
 
 
 class EmbedColor(Enum):
@@ -102,7 +102,7 @@ async def get_database_user(user_token: Union[str, int], pool: asyncpg.Pool) -> 
         Returns a error message followed by the list of list of users hist
         followed by all the records returned
     """
-    sql = sql_select_member_find()
+    sql = select_member_find()
 
     if isinstance(user_token, int):
         user_token = str(user_token)
