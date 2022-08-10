@@ -1,13 +1,12 @@
-from asyncio import TimeoutError
+import logging
 import traceback
+from asyncio import TimeoutError
+from typing import Tuple
 
 import asyncpg
 from disnake.ext import commands
-import logging
 
-from coc.utils import correct_tag
 from bot import BotClient
-
 from packages.utils.bot_sql import *
 from packages.utils.utils import *
 
@@ -17,7 +16,8 @@ class Leaders(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger(f"{self.bot.settings.log_name}.Leaders")
 
-    async def _get_updates(self, member_id: int) -> tuple:
+    async def _get_updates(self, member_id: int) -> Tuple[
+        asyncpg.Record, List[asyncpg.Record]]:
         """Method gets the most up to date user information - this code is
         repeated a lot in this class """
         async with self.bot.pool.acquire() as con:
@@ -70,7 +70,7 @@ class Leaders(commands.Cog):
                 # if the user added the flag then add the new clash account
                 # and set it to primary
             else:
-                await con.execute(sql_update_discord_user_is_active(),
+                await con.execute(sql_update_discord_user_set_active(),
                                   True,
                                   member.id)
 
@@ -162,7 +162,7 @@ class Leaders(commands.Cog):
 
     async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
         async with self.bot.pool.acquire() as con:
-            await con.execute(sql_update_discord_user_is_active(), False,
+            await con.execute(sql_update_discord_user_set_active(), False,
                               member_id)
             db_member, db_coc = await self._get_updates(member_id)
             if kick_message:
@@ -327,11 +327,11 @@ class Leaders(commands.Cog):
         :param member:
         :return:
         """
-        # Get user objects
+        # Get the coc player object. If it fails it will print a message
         player = await get_coc_player(inter,
                                       clash_tag,
                                       self.bot.coc_client,
-                                      self.bot.send)
+                                      self.bot.inter_send)
         if not player or not member:
             return
 
@@ -348,21 +348,26 @@ class Leaders(commands.Cog):
             player.tag,
             member.id,
         )
+        """
+        ['discord_id', 'discord_name', 'discord_nickname', 
+        'discord_discriminator', 'guild_join_date', 'global_join_date', 
+        'db_join_date', 'in_zulu_base_planning', 'in_zulu_server', 'is_active']
+        """
 
         async with self.bot.pool.acquire() as con:
             # Attempt to pull data for that user
-            db_member, db_coc = await self._get_updates(member.id)
+            db_member, db_accs = await self._get_updates(member.id)
 
             # Add a brand-new user that is not in the database at all
-            if db_member is None and len(db_coc) == 0:
+            if db_member is None and len(db_accs) == 0:
                 self.log.error(f"Adding new user {member.name} "
                                f"with clash of {player.tag}")
 
                 await con.execute(sql_insert_discord_user(), *discord_record)
                 await con.execute(sql_insert_clash_account(), *coc_record)
-                db_member, db_coc = await self._get_updates(member.id)
+                db_member, db_accs = await self._get_updates(member.id)
 
-                msg = account_panel(db_member, db_coc, "New user added")
+                msg = account_panel(db_member, db_accs, "New user added")
                 await con.execute(sql_insert_user_note(),
                                   member.id,
                                   player.tag,
@@ -389,15 +394,15 @@ class Leaders(commands.Cog):
 
                 # If they have 0 clash accounts then their main account was
                 # probably removed so just add one and move on
-                if len(db_coc) == 0:
-                    await con.execute(sql_update_discord_user_is_active(),
+                if len(db_accs) == 0:
+                    await con.execute(sql_update_discord_user_set_active(),
                                       True,
                                       member.id)
 
                     await con.execute(sql_insert_clash_account(), *coc_record)
 
-                    db_member, db_coc = await self._get_updates(member.id)
-                    msg = account_panel(db_member, db_coc, "User enabled")
+                    db_member, db_accs = await self._get_updates(member.id)
+                    msg = account_panel(db_member, db_accs, "User enabled")
                     await self._set_user(
                         con,
                         inter,
@@ -408,11 +413,11 @@ class Leaders(commands.Cog):
 
                 # If they have one account - then we need to see if the
                 # clash tag they are adding is the same
-                elif len(db_coc) == 1:
+                elif len(db_accs) == 1:
                     # If the clash tag arg is the same that is in
                     # the database then we are just enabling their account
-                    if db_coc[0]["clash_tag"] == player.tag:
-                        await con.execute(sql_update_discord_user_is_active(),
+                    if db_accs[0]["clash_tag"] == player.tag:
+                        await con.execute(sql_update_discord_user_set_active(),
                                           True,
                                           member.id)
                         await con.execute(
@@ -422,8 +427,8 @@ class Leaders(commands.Cog):
                             player.tag
                         )
 
-                        db_member, db_coc = await self._get_updates(member.id)
-                        msg = account_panel(db_member, db_coc, "User enabled")
+                        db_member, db_accs = await self._get_updates(member.id)
+                        msg = account_panel(db_member, db_accs, "User enabled")
                         self.log.error(msg)
 
                         await self.bot.inter_send(inter,
@@ -452,11 +457,11 @@ class Leaders(commands.Cog):
                                                         set_alternate
                                                         )
 
-                elif len(db_coc) > 1:
-                    for clash_account in db_coc:
+                elif len(db_accs) > 1:
+                    for clash_account in db_accs:
                         if clash_account["clash_tag"] == player.tag:
                             await con.execute(
-                                sql_update_discord_user_is_active(), True,
+                                sql_update_discord_user_set_active(), True,
                                 member.id)
                             await con.execute(
                                 sql_update_clash_account_coc_alt_cascade(),
@@ -464,10 +469,10 @@ class Leaders(commands.Cog):
                             await con.execute(
                                 sql_update_clash_account_coc_alt_primary(),
                                 True, member.id, player.tag)
-                            db_member, db_coc = await self._get_updates(
+                            db_member, db_accs = await self._get_updates(
                                 member.id)
                             msg = account_panel(db_member,
-                                                db_coc,
+                                                db_accs,
                                                 "User enabled")
 
                             await self._set_user(
@@ -483,11 +488,11 @@ class Leaders(commands.Cog):
                                                     player, set_alternate)
 
             elif db_member["is_active"]:
-                if len(db_coc) == 0:
+                if len(db_accs) == 0:
                     await con.execute(sql_insert_clash_account(), *coc_record)
-                    db_member, db_coc = await self._get_updates(
+                    db_member, db_accs = await self._get_updates(
                         member.id)
-                    msg = account_panel(db_member, db_coc,
+                    msg = account_panel(db_member, db_accs,
                                         "Clash account assigned")
                     await self._set_user(
                         con,
@@ -497,11 +502,11 @@ class Leaders(commands.Cog):
                         player
                     )
 
-                elif len(db_coc) == 1:
-                    if db_coc[0]["clash_tag"] == player.tag:
-                        if db_coc[0]["is_primary_account"]:
+                elif len(db_accs) == 1:
+                    if db_accs[0]["clash_tag"] == player.tag:
+                        if db_accs[0]["is_primary_account"]:
                             msg = account_panel(db_member,
-                                                db_coc,
+                                                db_accs,
                                                 "No action taken")
                             self.log.error(msg)
                             await self.bot.inter_send(inter, panel=msg)
@@ -510,10 +515,10 @@ class Leaders(commands.Cog):
                             await con.execute(
                                 sql_update_clash_account_coc_alt_primary(),
                                 True, member.id, player.tag)
-                            db_member, db_coc = await self._get_updates(
+                            db_member, db_accs = await self._get_updates(
                                 member.id)
                             msg = account_panel(db_member,
-                                                db_coc,
+                                                db_accs,
                                                 "Clash account set")
                             await self._set_user(
                                 con,
@@ -529,31 +534,31 @@ class Leaders(commands.Cog):
                                                         player,
                                                         set_alternate)
 
-                elif len(db_coc) > 1:
-                    for clash_account in db_coc:
-                        if clash_account["clash_tag"] == player.tag:
-                            await con.execute(
-                                sql_update_discord_user_is_active(), True,
-                                member.id)
-                            await con.execute(
-                                sql_update_clash_account_coc_alt_cascade(),
-                                False, member.id)
-                            await con.execute(
-                                sql_update_clash_account_coc_alt_primary(),
-                                True, member.id, player.tag)
-                            db_member, db_coc = await self._get_updates(
-                                member.id)
-                            msg = account_panel(db_member,
-                                                db_coc,
-                                                "Clash account set")
-                            await self._set_user(
-                                con,
-                                inter,
-                                msg,
-                                member,
-                                player
-                            )
-                            return
+                elif len(db_accs) > 1:
+                    # for clash_account in db_accs:
+                    #     if clash_account["clash_tag"] == player.tag:
+                    #         await con.execute(
+                    #             sql_update_discord_user_set_active(), True,
+                    #             member.id)
+                    #         await con.execute(
+                    #             sql_update_clash_account_coc_alt_cascade(),
+                    #             False, member.id)
+                    #         await con.execute(
+                    #             sql_update_clash_account_coc_alt_primary(),
+                    #             True, member.id, player.tag)
+                    #         db_member, db_accs = await self._get_updates(
+                    #             member.id)
+                    #         msg = account_panel(db_member,
+                    #                             db_accs,
+                    #                             "Clash account set")
+                    #         await self._set_user(
+                    #             con,
+                    #             inter,
+                    #             msg,
+                    #             member,
+                    #             player
+                    #         )
+                    #         return
 
                     await self._multi_account_logic(inter, coc_record, member,
                                                     player, set_alternate)
@@ -564,7 +569,8 @@ class Leaders(commands.Cog):
         brief="",
         description="Remove a Clash of Clans account from a Users account",
         usage="[-c] [-d]",
-        help="Delete the link between a Clash of Clans account and a Panther Lily account.\n\n"
+        help="Delete the link between a Clash of Clans account and a Panther "
+             "Lily account.\n\n"
              "-c || --clash-tag\n-d || --discord-id"
     )
     async def del_coc(self, ctx, *, arg_string=None):
@@ -601,7 +607,7 @@ class Leaders(commands.Cog):
         except RuntimeError as error:
             member = None
             records: Record = error.args[-1]
-            fixed_tag = correct_tag(args["coc_tag"])
+            fixed_tag = coc.correct_tag(args["coc_tag"])
             for record in records:
                 if record["clash_tag"] == fixed_tag:
                     member = record
@@ -725,8 +731,19 @@ class Leaders(commands.Cog):
                     await ctx.send(embed=embeds)
 
 
-def account_panel(discord_member: dict, coc_accounts: list,
+def account_panel(discord_member: asyncpg.Record,
+                  coc_accounts: List[asyncpg.Record],
                   title: str = "") -> str:
+    """
+    Create the panel that is used to confirmed that the leader action has
+    completed like a user was added, modified or removed.
+
+    :param discord_member: db discord record
+    :param coc_accounts: List of db coc records
+    :param title: Optional string to print
+    :return: Formatted string to print
+    """
+
     coc_panel = f"`{'Clash Tag':<15}` `{'Primary Acc':<15}`\n"
     for coc_account in coc_accounts:
         coc_bool = "True" if coc_account["is_primary_account"] else "False"
@@ -750,7 +767,7 @@ def account_panel(discord_member: dict, coc_accounts: list,
 def alternate_account(discord_member: dict, coc_accounts: list) -> str:
     title = f"User `{discord_member['discord_name']}` already has a clash " \
             f"account. If you would like to set an alternate then please " \
-            f"ass the **set_alternate** flag`"
+            f"ass the **set_alternate** flag"
     return account_panel(discord_member, coc_accounts, title)
 
 

@@ -30,7 +30,7 @@ def sql_insert_discord_user() -> str:
                     $1, $2, $3, $4, $5, $6, $7, false, true, true)'''
 
 
-def sql_update_discord_user_is_active() -> str:
+def sql_update_discord_user_set_active() -> str:
     return '''UPDATE discord_user SET is_active = $1 WHERE discord_id = $2'''
 
 

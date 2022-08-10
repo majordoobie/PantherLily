@@ -60,7 +60,7 @@ class Administrator(commands.Cog):
             self.log.critical("Could not close coc connection", exc_info=True)
 
         try:
-            await self.bot.logout()
+            await self.bot.close()
         except Exception as error:
             self.log.critical("Could not close coc connection", exc_info=True)
 

@@ -143,7 +143,7 @@ def get_default_roles(guild: Guild, settings: Settings, level: int) -> Union[Lis
     return None
 
 
-async def get_coc_player(ctx: disnake.ApplicationCommandInteraction,
+async def get_coc_player(inter: disnake.ApplicationCommandInteraction,
                          player_tag: str,
                          coc_client: coc.Client,
                          print_ptr) -> Optional[Player]:
@@ -151,7 +151,7 @@ async def get_coc_player(ctx: disnake.ApplicationCommandInteraction,
     Wrapper for querying for a player object to avoid duplicating code
     Parameters
     ----------
-    ctx: Context
+    inter: Context
         Bot context
 
     player_tag: str
@@ -173,14 +173,21 @@ async def get_coc_player(ctx: disnake.ApplicationCommandInteraction,
     player_tag = player_tag.upper()
 
     if not is_valid_tag(player_tag):
-        await print_ptr(ctx, title="Invalid Tag", description=f"`{player_tag}` is a invalid Clash Of Clans tag",
+        await print_ptr(inter,
+                        title="Invalid Tag",
+                        panel=f"`{player_tag}` is a invalid "
+                              f"Clash Of Clans tag",
                         color=EmbedColor.WARNING)
         return None
     try:
         player = await coc_client.get_player(player_tag)
     except NotFound:
-        await print_ptr(ctx, title="Invalid Tag", description=(f"Player with provided [`{player_tag}`] tag does "
-                                                               f"not exist"), color=EmbedColor.WARNING)
+        await print_ptr(inter,
+                        title="Invalid Tag",
+                        panel=(
+                            f"Player with provided [`{player_tag}`] tag does "
+                            f"not exist"),
+                        color=EmbedColor.WARNING)
         return None
 
     return player
