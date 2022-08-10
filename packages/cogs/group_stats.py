@@ -5,7 +5,7 @@ from disnake.ext import commands
 import logging
 
 from bot import BotClient
-from packages.utils.bot_sql import sql_select_all_active_users, sql_select_clash_members_not_registered, sql_select_classic_view
+from packages.utils.bot_sql import select_all_active_users, select_clash_members_not_registered, select_classic_view
 from packages.utils.utils import parse_args, get_utc_monday
 
 
@@ -44,8 +44,8 @@ class GroupStats(commands.Cog):
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
-            members_db = await con.fetch(sql_select_all_active_users().format(get_utc_monday()))
-            unregistered_users = await con.fetch(sql_select_clash_members_not_registered())
+            members_db = await con.fetch(select_all_active_users().format(get_utc_monday()))
+            unregistered_users = await con.fetch(select_clash_members_not_registered())
         members_db.sort(key=lambda x: x['clash_name'].lower())
 
         roster = {}
@@ -179,7 +179,7 @@ class GroupStats(commands.Cog):
         data_blocks = []
         async with self.bot.pool.acquire() as con:
             for date in dates:
-                players = await con.fetch(sql_select_classic_view().format(date))
+                players = await con.fetch(select_classic_view().format(date))
                 data_blocks.append(players)
 
         if not donation:

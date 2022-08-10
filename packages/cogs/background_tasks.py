@@ -6,7 +6,7 @@ from disnake.ext import commands, tasks
 from disnake import errors
 
 from bot import BotClient
-from packages.utils.bot_sql import sql_select_all_active_users
+from packages.utils.bot_sql import select_all_active_users
 from packages.utils.utils import get_default_roles, get_utc_monday
 from packages.logging_setup import BotLogger as LoggerSetup
 from packages.private.settings import Settings
@@ -17,6 +17,7 @@ class BackgroundTasks(commands.Cog):
         self.bot = bot
         self._setup_logging()
         self.sync_clash_discord.start()
+        self.sync_discord_names.start()
         #self.update_presence.start()
 
     def _setup_logging(self):
@@ -57,11 +58,15 @@ class BackgroundTasks(commands.Cog):
         except Exception:
             self.log.critical(f'Could not change presence with {activity}', exc_info=True)
 
+    @tasks.loop(seconds=20)
+    async def sync_discord_names(self):
+        guild = self.bot.get_guild(293943534028062721)
+
     @tasks.loop(seconds=600)
     async def sync_clash_discord(self):
         self.log.debug('Starting discord loop')
         async with self.bot.pool.acquire() as conn:
-            active_users = await conn.fetch(sql_select_all_active_users().format(get_utc_monday()))
+            active_users = await conn.fetch(select_all_active_users().format(get_utc_monday()))
 
         # Counter for how many changes were done
         update_count = 0

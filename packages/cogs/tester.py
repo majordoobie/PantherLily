@@ -17,6 +17,13 @@ class Tester(commands.Cog):
         await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.slash_command(auto_sync=True)
+    async def sync_thing(self, inter):
+        guild: disnake.Guild = self.bot.get_guild(293943534028062721)
+        for member in guild.members:
+            if member.id == 265368254761926667:
+                print(member.name, member.display_name, member.nick, member.discriminator, member.tag)
+
+    @commands.slash_command(auto_sync=True)
     async def create_tag(self, inter: disnake.CommandInteraction):
         # Sends a modal using a high level implementation.
         await inter.response.send_modal(modal=MyModal())

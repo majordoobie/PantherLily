@@ -10,7 +10,7 @@ from disnake.errors import Forbidden
 from disnake.ext import commands
 
 from packages.bot_ext import BotExt
-from packages.utils.bot_sql import sql_create_tables
+import packages.utils.bot_sql as sql
 from packages.private.settings import Settings
 from packages.utils.utils import EmbedColor
 
@@ -62,7 +62,7 @@ class BotClient(commands.Bot, BotExt):
 
         # create tables if they do no exit
         async with self.pool.acquire() as con:
-            for sql_table in sql_create_tables():
+            for sql_table in sql.create_tables():
                 await con.execute(sql_table)
 
     async def on_resume(self):
