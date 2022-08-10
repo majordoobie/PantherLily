@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional, Union, List
 
+import asyncpg
 import coc
 from asyncpg.pool import Pool
 from asyncpg import Record
@@ -53,11 +54,11 @@ async def get_discord_member(inter: disnake.ApplicationCommandInteraction,
     """
     member = None
     if isinstance(disco_id, int):
-        for guild_member in ctx.guild.members:
+        for guild_member in inter.guild.members:
             if guild_member.id == disco_id:
                 member = guild_member
     else:
-        for guild_member in ctx.guild.members:
+        for guild_member in inter.guild.members:
             if str(guild_member.id) == disco_id:
                 member = guild_member
             elif guild_member.name.lower() == disco_id.lower():
@@ -74,13 +75,13 @@ async def get_discord_member(inter: disnake.ApplicationCommandInteraction,
             return None
 
         if print_prt:
-            await print_prt(ctx, f'Discord member: {disco_id} was not found', color=EmbedColor.WARNING)
+            await print_prt(inter, f'Discord member: {disco_id} was not found', color=EmbedColor.WARNING)
             return None
         else:
             print(f'Discord member: {disco_id} was not found')
 
 
-async def get_database_user(user_token: str, pool: Pool) -> Optional[Record]:
+async def get_database_user(user_token: Union[str, int], pool: asyncpg.Pool) -> Optional[asyncpg.Record]:
     """
     Search the database for the user string. The string will be casted to upper.
     Parameters
@@ -98,17 +99,26 @@ async def get_database_user(user_token: str, pool: Pool) -> Optional[Record]:
     Raises
     ------
     RuntimeError:
-        Returns a error message followed by the list of list of users hist followed by all the records returned
+        Returns a error message followed by the list of list of users hist
+        followed by all the records returned
     """
     sql = sql_select_member_find()
+
+    if isinstance(user_token, int):
+        user_token = str(user_token)
+
     integer_id = int(user_token) if user_token.isdigit() else -1
+
     async with pool.acquire() as con:
         members = await con.fetch(sql, user_token.upper(), integer_id)
     if len(members) > 1:
         records = [f"{record['discord_name']}" for record in members]
-        raise RuntimeError("The query used resulted in more than one result which should not happen. "
-                           "Please use a different string to query and let doobie know about this "
-                           "situation.", records, members)
+        raise RuntimeError(
+            "The query used resulted in more than one result which should not "
+            "happen. Please use a different string to query and let doobie "
+            "know about this situation.",
+            records,
+            members)
     elif not members:
         return None
 

@@ -181,6 +181,10 @@ class Leaders(commands.Cog):
         async with self.bot.pool.acquire() as con:
             await con.execute(sql_update_discord_user_set_active(), False,
                               member_id)
+
+            await con.execute(sql_update_clash_account_coc_alt_primary(),
+                              False, member_id, clash_tag)
+
             db_member, db_coc = await self._get_updates(member_id)
             if kick_message:
                 msg = _get_account_panel(db_member,
@@ -194,44 +198,41 @@ class Leaders(commands.Cog):
                               datetime.now(), ctx.author.id, msg)
 
     @commands.check(is_leader)
-    @commands.command(
-        aliases=["remove_user"],
-        brief="",
-        description="Remover user from Panther Lily",
-        usage="[-m str]",
-        help="Removing user from Panther Lily does not delete them, it "
-             "only sets their trackers off. Their "
-             "data, especially their admin notes, will "
-             "remain for later access.\n\n"
-             "You are able to use this with or without the -m switch.\n\n"
-             "-m || --message"
+    @commands.slash_command(
+        auto_sync=True,
+        name="remove_user",
+        dm_permission=False,
     )
-    async def remove(self, inter, *, arg_string=None):
-        arg_dict = {
-            "kick_message": {
-                "flags": ["-m", "--message"],
-            }
-        }
+    async def remove(self,
+                     inter: disnake.ApplicationCommandInteraction,
+                     member: disnake.Member = None,
+                     player: Optional[str] = None,
+                     set_message: bool = True):
+        """
+        Remove user from Pantherlily. Set the "set_message" to False to avoid
+        having to submit a message
 
-        args = await parse_args(inter, self.bot.settings, arg_dict, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=inter.author.display_name,
-                                   command="remove",
-                                   args=args,
-                                   arg_string=arg_string)
+        Parameters
+        -----------
 
-        if not args["positional"]:
-            await self.bot.inter_send(inter,
-                                      panel=("You must provide the discord "
-                                             "user as an argument"),
-                                      color=EmbedColor.WARNING)
+        member: Member is the discord mention of the user
+        player: Any data attribute; coc_tag, discord_id, nick, etc
+        set_message: Set False to prevent modal from opening
+        """
+
+        if player is None and member is None:
+            await self.bot.inter_send(
+                inter,
+                title="Option Missing",
+                panel="**Player** or **Member** option must be used",
+                color=EmbedColor.ERROR)
             return
 
         # Get the database user object
-        db_member: Record
+        db_member: asyncpg.Record
+        query = member.id if member else player
         try:
-            db_member = await get_database_user(args["positional"],
-                                                self.bot.pool)
+            db_member = await get_database_user(query, self.bot.pool)
         except RuntimeError as error:
             records: Record = error.args[-1]
             discord_id = records[0]["discord_id"]
@@ -248,16 +249,20 @@ class Leaders(commands.Cog):
                           f"Try using a different query term to attempt to " \
                           f"resolve. Otherwise, let doobie know about " \
                           f"this issue.\n{users_string}"
-                    await self.bot.send(inter, title="Multiple Results",
-                                        description=msg,
-                                        color=EmbedColor.WARNING)
+
+                    await self.bot.inter_send(inter,
+                                              title="Multiple Results",
+                                              panel=msg,
+                                              color=EmbedColor.WARNING)
                     return
             db_member = records[0]
 
         if db_member is None:
-            await self.bot.send(inter,
-                                f"Database user [{args['positional']}] "
-                                f"was not found")
+            await self.bot.inter_send(
+                inter,
+                title="User not found",
+                panel=f"Database user [{query}] was not found",
+                color=EmbedColor.WARNING)
             return
 
         # Fetch all the clash account
@@ -275,54 +280,19 @@ class Leaders(commands.Cog):
 
         # If database user object exists, then
         # attempt to get the discord member object
-        member = await get_discord_member(inter, db_member["discord_id"],
+        member = await get_discord_member(inter,
+                                          db_member["discord_id"],
                                           self.bot.send, _return=True)
 
-        if args["kick_message"]:
-            await self._remove_user(inter, db_member["discord_id"], clash_tag,
-                                    kick_message=args["kick_message"])
-            if member:
-                await self._remove_defaults(member)
-        else:
-            def check(reaction, user):
-                if user == inter.author:
-                    if reaction.emoji.name in ["check", "delete"]:
-                        return True
-
-            msg = "You are about to remove user without a reason " \
-                  "message. Click the check box to continue otherwise " \
-                  f"use the following:" \
-                  f"\n\n `p.remove {arg_string}`\n`-m \"User note message\""
-            raw_embeds = await self.bot.send(inter, msg, _return=True)
-            embed_object = ""
-            for embed in raw_embeds:
-                embed_object = await inter.send(embed=embed)
-            await embed_object.add_reaction(self.bot.settings.emojis["check"])
-            await embed_object.add_reaction(self.bot.settings.emojis["delete"])
-
-            reaction, user = None, None
-            try:
-                reaction, user = await self.bot.wait_for("reaction_add",
-                                                         timeout=30,
-                                                         check=check)
-            except TimeoutError:
-                pass
-            finally:
-                await embed_object.clear_reactions()
-
-            if reaction.emoji.name == "delete":
-                return
-
-            else:
-                await self._remove_user(inter, db_member["discord_id"],
-                                        clash_tag)
-                if member:
-                    await self._remove_defaults(member)
+        await self._remove_user(inter, db_member["discord_id"], clash_tag,
+                                    kick_message="test message")
+        if member:
+            await self._remove_defaults(member)
 
     @commands.check(is_leader)
     @commands.slash_command(
         auto_sync=True,
-        name="add",
+        name="add_user",
         dm_permission=False,
     )
     async def add(
