@@ -511,31 +511,6 @@ class Leaders(commands.Cog):
                                                         set_alternate)
 
                 elif len(db_accs) > 1:
-                    # for clash_account in db_accs:
-                    #     if clash_account["clash_tag"] == player.tag:
-                    #         await con.execute(
-                    #             sql_update_discord_user_set_active(), True,
-                    #             member.id)
-                    #         await con.execute(
-                    #             sql_update_clash_account_coc_alt_cascade(),
-                    #             False, member.id)
-                    #         await con.execute(
-                    #             sql_update_clash_account_coc_alt_primary(),
-                    #             True, member.id, player.tag)
-                    #         db_member, db_accs = await self._get_updates(
-                    #             member.id)
-                    #         msg = account_panel(db_member,
-                    #                             db_accs,
-                    #                             "Clash account set")
-                    #         await self._set_user(
-                    #             con,
-                    #             inter,
-                    #             msg,
-                    #             member,
-                    #             player
-                    #         )
-                    #         return
-
                     await self._multi_account_logic(inter,
                                                     coc_record,
                                                     member,
