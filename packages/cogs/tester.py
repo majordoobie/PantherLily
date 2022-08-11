@@ -1,9 +1,10 @@
+import asyncpg
 from disnake.ext import commands
 import disnake
 import asyncio
 
 from packages.utils.utils import is_leader
-
+import packages.utils.bot_sql as sql
 
 class Tester(commands.Cog):
     def __init__(self, bot):
@@ -18,10 +19,38 @@ class Tester(commands.Cog):
 
     @commands.slash_command(auto_sync=True)
     async def sync_thing(self, inter):
-        guild: disnake.Guild = self.bot.get_guild(293943534028062721)
-        for member in guild.members:
-            if member.id == 265368254761926667:
-                print(member.name, member.display_name, member.nick, member.discriminator, member.tag)
+
+        guild = self.bot.get_guild(293943534028062721)
+        member_ids = {member.id: member for member in guild.members}
+
+        async with self.bot.pool.acquire() as conn:
+            conn: asyncpg.Connection
+            users = await conn.fetch(sql.select_discord_users(),
+                                     list(member_ids.keys()))
+
+            member: disnake.Member
+            for user in users:
+                if user["discord_id"] != 265368254761926667:
+                    continue
+
+                if not (member := member_ids.get(user["discord_id"])):
+                    continue
+
+                update_user = False
+                if member.name != user["discord_name"]:
+                    update_user = True
+                elif member.discriminator != user["discord_discriminator"]:
+                    update_user = True
+                elif member.display_name != user["discord_nickname"]:
+                    update_user = True
+
+                if update_user:
+                    await conn.execute(sql.update_discord_user_names(),
+                                       member.id,
+                                       member.name,
+                                       member.discriminator,
+                                       member.display_name)
+
 
     @commands.slash_command(auto_sync=True)
     async def create_tag(self, inter: disnake.CommandInteraction):
