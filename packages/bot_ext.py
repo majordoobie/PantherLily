@@ -52,6 +52,7 @@ class BotExt:
 
         if _return:
             return embed_list
+
         else:
             for i in embed_list:
                 await ctx.send(embed=i)
@@ -66,11 +67,13 @@ class BotExt:
                          code_block: bool = False,
                          footer: str = "",
                          author: disnake.Member = None,
-                         view: disnake.ui.View = None
-                         ):
+                         view: disnake.ui.View = None,
+                         return_embed: bool = False
+                         ) -> Optional[List[disnake.Embed]]:
         """
         Limits:
 
+        :param return_embed:
         :param view:
         :param panel:
         :param author:
@@ -125,6 +128,9 @@ class BotExt:
 
         if embeds:
             total_embeds.append(embeds)
+
+        if return_embed:
+            return total_embeds
 
         last_embed = len(total_embeds) - 1
         for index, embeds in enumerate(total_embeds):
