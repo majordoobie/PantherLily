@@ -445,7 +445,8 @@ class Leaders(commands.Cog):
 
                 if new_account:
                     try:
-                        await con.execute(sql.insert_clash_account(), *coc_record)
+                        await con.execute(sql.insert_clash_account(),
+                                          *coc_record)
                     except asyncpg.UniqueViolationError as err:
                         msg = str(err) + "\n\nClash tag already exists. If " \
                                          "you still want to assign this tag " \
@@ -550,37 +551,20 @@ class Leaders(commands.Cog):
                     color=EmbedColor.ERROR
                 )
 
-
     @commands.check(is_leader)
-    @commands.command(
-        aliases=["v", "view_account"],
-        brief="",
-        description="View players account information",
-        usage="(user_name)",
-        help="Display the users information such as all the Clash of Clans "
-             " 1account associated with them."
-             "The command takes a users name or clash tag as a argument."
+    @commands.slash_command(
+        auto_sync=True,
+        name="view",
+        dm_permission=False
     )
-    async def view(self, inter, *, arg_string=None):
-        arg_dict = {}
-        args = await parse_args(inter, self.bot.settings, arg_dict, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=inter.author.display_name,
-                                   command="view",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def view(
+            self,
+            inter: disnake.ApplicationCommandInteraction,
+            member: disnake.Member = commands.Param(lambda inter: inter.author)
+    ) -> None:
 
-        if args["positional"]:
-            member = await get_discord_member(inter, args["positional"],
-                                              self.bot.send)
-            if not member:
-                return
-        else:
-            member = inter.author
-
-        db_discord_member, db_clash_accounts = await self._get_updates(
-            member.id)
-        msg = _get_account_panel(db_discord_member, db_clash_accounts)
+        db_member, db_cocs = await self._get_updates(member.id)
+        msg = _get_account_panel(db_member, db_cocs)
         await self.bot.inter_send(inter, msg, color=EmbedColor.SUCCESS)
 
     @commands.check(is_leader)
