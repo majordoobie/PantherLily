@@ -69,7 +69,7 @@ class BotExt:
                          author: disnake.Member = None,
                          view: disnake.ui.View = None,
                          return_embed: bool = False
-                         ) -> Optional[List[disnake.Embed]]:
+                         ) -> Optional[List[List[disnake.Embed]]]:
         """
         Limits:
 
