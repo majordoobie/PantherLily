@@ -14,6 +14,9 @@ from packages.utils.utils import get_default_roles, get_utc_monday
 
 class BackgroundTasks(commands.Cog):
     def __init__(self, bot: BotClient):
+        if bot.settings.bot_mode == "dev_mode":
+            return
+
         self.bot = bot
         self._setup_logging()
         self.sync_clash_discord.start()
