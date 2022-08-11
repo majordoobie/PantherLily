@@ -5,6 +5,7 @@ from asyncio import TimeoutError
 from typing import Tuple
 
 import asyncpg
+import coc.utils
 from disnake.ext import commands
 
 from bot import BotClient
@@ -75,6 +76,7 @@ class Leaders(commands.Cog):
                 await self.bot.inter_send(inter, panel=msg,
                                           title="Multiple clash accounts",
                                           color=EmbedColor.WARNING)
+                return
                 # if the user added the flag then add the new clash account
                 # and set it to primary
             else:
@@ -424,76 +426,48 @@ class Leaders(commands.Cog):
             # active state is set to false
             elif not db_member["is_active"]:
                 self.log.error(f"Discord member `{member.name}:{member.id}` "
-                               f"already exits, but `is_active` "
+                               f"already exists, but `is_active` "
                                f"attribute is set to `false`. Attempting to "
                                f"enable")
 
-                # If they have 0 clash accounts then their main account was
-                # probably removed so just add one and move on
-                if len(db_accs) == 0:
-                    await update_active_user(member, con, True)
-
-                    await con.execute(sql.insert_clash_account(), *coc_record)
-                    await self._enable_user(con,
-                                            inter,
-                                            "User enabled",
-                                            member,
-                                            player)
-
-                # If they have one account - then we need to see if the
-                # clash tag they are adding is the same
-                elif len(db_accs) == 1:
-                    # If the clash tag arg is the same that is in
-                    # the database then we are just enabling their account
-                    if db_accs[0]["clash_tag"] == player.tag:
-                        await update_active_user(member, con, True)
+                # Check if the clash account is already there
+                new_account = True
+                msg = "User enabled"
+                for db_acc in db_accs:
+                    if db_acc["clash_tag"] == player.tag:
+                        new_account = False
                         await con.execute(
                             sql.update_clash_account_coc_alt_primary(),
                             True,
                             member.id,
                             player.tag
                         )
-                        await self._enable_user(con,
-                                                inter,
-                                                "User enabled",
-                                                member,
-                                                player)
 
-                    # If the clash arg that they are using does not match
-                    # then look for the coc_alternate flag in the
-                    # command if it's not there then fail out and tell them
-                    else:
-                        await self._multi_account_logic(inter,
-                                                        coc_record,
-                                                        member,
-                                                        player,
-                                                        set_alternate
-                                                        )
+                if new_account:
+                    try:
+                        await con.execute(sql.insert_clash_account(), *coc_record)
+                    except asyncpg.UniqueViolationError as err:
+                        msg = str(err) + "\n\nClash tag already exists. If " \
+                                         "you still want to assign this tag " \
+                                         "then you must delete the tag first " \
+                                         "with **/delete_clash_account**"
+                        await self.bot.inter_send(
+                            inter,
+                            title="Unique Key Violation Error",
+                            panel=msg,
+                            color=EmbedColor.ERROR
+                        )
+                        return
 
-                elif len(db_accs) > 1:
-                    for clash_account in db_accs:
-                        if clash_account["clash_tag"] == player.tag:
-                            await update_active_user(member, con, True)
+                    msg = "New clash account added"
 
-                            await con.execute(
-                                sql.update_clash_account_coc_alt_cascade(),
-                                False, member.id)
+                await update_active_user(member, con, True)
+                await self._enable_user(con,
+                                        inter,
+                                        msg,
+                                        member,
+                                        player)
 
-                            await con.execute(
-                                sql.update_clash_account_coc_alt_primary(),
-                                True, member.id, player.tag)
-
-                            await self._enable_user(
-                                con,
-                                inter,
-                                "User enabled",
-                                member,
-                                player
-                            )
-                            return
-
-                    await self._multi_account_logic(inter, coc_record, member,
-                                                    player, set_alternate)
 
             elif db_member["is_active"]:
                 if len(db_accs) == 0:
@@ -542,76 +516,40 @@ class Leaders(commands.Cog):
                                                     set_alternate)
 
     @commands.check(is_leader)
-    @commands.command(
-        aliases=["delete-coc-link", "delete_coc_link"],
-        brief="",
-        description="Remove a Clash of Clans account from a Users account",
-        usage="[-c] [-d]",
-        help="Delete the link between a Clash of Clans account and a Panther "
-             "Lily account.\n\n"
-             "-c || --clash-tag\n-d || --discord-id"
+    @commands.slash_command(
+        auto_sync=True,
+        name="delete_clash_account",
+        dm_permission=False
     )
-    async def del_coc(self, ctx, *, arg_string=None):
-        arg_dict = {
-            "coc_tag": {
-                "flags": ["--clash-tag", "-c"],
-                "required": True
-            },
-            "discord_id": {
-                "flags": ["--discord-id", "-d"],
-                "required": True,
-            }
-        }
-        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.log.warning(
-            f"`{ctx.author.display_name}` ran `del_coc` with {args}")
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="del_coc",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def del_coc(self,
+                      inter: disnake.ApplicationCommandInteraction,
+                      clash_tag: str) -> None:
 
-        if not args:
+        clash_tag = coc.utils.correct_tag(clash_tag)
+        if not coc.utils.is_valid_tag(clash_tag):
+            await self.bot.inter_send(
+                inter,
+                title=f"[{clash_tag}] is an invalid tag",
+                color=EmbedColor.ERROR
+            )
             return
 
-        player: Player = await get_coc_player(ctx, args["coc_tag"],
-                                              self.bot.coc_client,
-                                              self.bot.send)
-        if player is None:
-            return
-        member: Optional[Record]
-        try:
-            member = await get_database_user(args["discord_id"], self.bot.pool)
-        except RuntimeError as error:
-            member = None
-            records: Record = error.args[-1]
-            fixed_tag = coc.correct_tag(args["coc_tag"])
-            for record in records:
-                if record["clash_tag"] == fixed_tag:
-                    member = record
+        conn: asyncpg.Pool
+        async with self.bot.pool.acquire() as conn:
+            try:
+                await conn.execute(sql.delete_clash_account_record(),
+                                   clash_tag)
+                await self.bot.inter_send(inter,
+                                          panel=f"Deleted [{clash_tag}]",
+                                          color=EmbedColor.SUCCESS)
+            except Exception as error:
+                await self.bot.inter_send(
+                    inter,
+                    title="Unknown error",
+                    panel=str(error),
+                    color=EmbedColor.ERROR
+                )
 
-            if member is None:
-                raise RuntimeError(error.args[0], error.args[1])
-
-        async with self.bot.pool.acquire() as con:
-            discord_member = await con.fetchrow(sql.select_discord_user_id(),
-                                                member["discord_id"])
-            clash_accounts = await con.fetch(
-                sql.select_clash_account_discord_id(), member["discord_id"])
-            for clash_account in clash_accounts:
-                if clash_account["clash_tag"] == player.tag:
-                    await con.execute(sql.delete_clash_account_record(),
-                                      player.tag, member["discord_id"])
-                    clash_accounts = await con.fetch(
-                        sql.select_clash_account_discord_id(),
-                        member["discord_id"])
-                    msg = f"Removed `{player.tag}` from `{member['discord_name']}:{member['discord_id']}`\n" \
-                          f"{_get_account_panel(discord_member, clash_accounts)}"
-                    self.log.error(msg)
-                    await self.bot.send(ctx, msg, color=EmbedColor.SUCCESS)
-                    return
-            await self.bot.send(ctx,
-                                f"Nothing to delete, check commands\n{_get_account_panel(discord_member, clash_accounts)}")
 
     @commands.check(is_leader)
     @commands.command(
