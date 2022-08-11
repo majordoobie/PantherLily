@@ -3,15 +3,13 @@ from random import choice
 
 import asyncpg
 import disnake
-from disnake import Member, Activity, ActivityType, Status, Game
-from disnake.ext import commands, tasks
+from disnake import Activity, ActivityType, Game, Member, Status
 from disnake import errors
+from disnake.ext import commands, tasks
 
-from bot import BotClient
 import packages.utils.bot_sql as sql
+from bot import BotClient
 from packages.utils.utils import get_default_roles, get_utc_monday
-from packages.logging_setup import BotLogger as LoggerSetup
-from packages.private.settings import Settings
 
 
 class BackgroundTasks(commands.Cog):
@@ -20,7 +18,7 @@ class BackgroundTasks(commands.Cog):
         self._setup_logging()
         self.sync_clash_discord.start()
         self.sync_discord_names.start()
-        #self.update_presence.start()
+        self.update_presence.start()
 
     def _setup_logging(self):
         """Setup custom logging for the background tasks"""
@@ -32,11 +30,10 @@ class BackgroundTasks(commands.Cog):
 
     def cog_unload(self):
         self.sync_clash_discord.cancel()
-        #self.update_presence.cancel()
+        self.update_presence.cancel()
 
     @tasks.loop(seconds=60)
     async def update_presence(self):
-        self.log.debug("Changing presence...")
         messages = [
             (ActivityType.playing, "Spotify"),
             (ActivityType.playing, "Overwatch"),
@@ -44,7 +41,7 @@ class BackgroundTasks(commands.Cog):
             (ActivityType.playing, "with cat nip~"),
             (ActivityType.watching, "Fairy Tail"),
             (ActivityType.playing, "I'm not a cat!"),
-            (ActivityType.watching, "p.help"),
+            (ActivityType.watching, "/help"),
             (ActivityType.playing, "p.top --trophy"),
             (ActivityType.playing, "p.t --weeks 3"),
             (ActivityType.watching, "Dragon Ball Z"),
@@ -54,11 +51,11 @@ class BackgroundTasks(commands.Cog):
         activity_obj = Activity(type=activity[0], name=activity[1])
         activity = Game(activity[1])
         try:
-            self.log.debug(f"Attempting to change activity to {activity}")
-            print(dir(self.bot))
-            await self.bot.change_presence(status=Status.online, activity=activity_obj)
+            await self.bot.change_presence(status=Status.online,
+                                           activity=activity_obj)
         except Exception:
-            self.log.critical(f'Could not change presence with {activity}', exc_info=True)
+            self.log.critical(f'Could not change presence with '
+                              f'{activity}', exc_info=True)
 
     @tasks.loop(seconds=600)
     async def sync_discord_names(self):
@@ -77,7 +74,6 @@ class BackgroundTasks(commands.Cog):
 
             member: disnake.Member
             for user in users:
-
                 if not (member := member_ids.get(user["discord_id"])):
                     continue
 
