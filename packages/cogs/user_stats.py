@@ -175,10 +175,8 @@ class UserStats(commands.Cog):
                                       set_lvl=display_level
                                       ).display_all()
 
-        await self.bot.inter_send(inter,
-                                  panels=[panel_a, panel_b],
-                                  view=CoCAccountLink(player)
-                                  )
+        await self.bot.inter_send(inter, panels=[panel_a, panel_b],
+                                  view=CoCAccountLink(player))
 
 
 def setup(bot):

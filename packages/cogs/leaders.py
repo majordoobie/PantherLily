@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import traceback
 from asyncio import TimeoutError
@@ -51,9 +52,7 @@ class Leaders(commands.Cog):
 
         self.log.error(panel)
 
-        await self.bot.inter_send(inter,
-                                  panel=panel,
-                                  color=EmbedColor.SUCCESS)
+        await self.bot.inter_send(inter, panel=panel, color=EmbedColor.SUCCESS)
 
         await self._set_defaults(inter, member,
                                  player.town_hall,
@@ -72,8 +71,7 @@ class Leaders(commands.Cog):
             if not set_alternate:
                 msg = _get_alternate_warning_panel(db_member, db_coc)
                 self.log.error(msg)
-                await self.bot.inter_send(inter,
-                                          panel=msg,
+                await self.bot.inter_send(inter, panel=msg,
                                           title="Multiple clash accounts",
                                           color=EmbedColor.WARNING)
                 # if the user added the flag then add the new clash account
@@ -121,9 +119,7 @@ class Leaders(commands.Cog):
             msg = f"Unable to retrieve `th{clash_level}s` role or `CoC " \
                   f"Members` role. please make sure it " \
                   f"exits for me to automatically assign it to users."
-            await self.bot.inter_send(inter,
-                                      panel=msg,
-                                      title="Role not found",
+            await self.bot.inter_send(inter, panel=msg, title="Role not found",
                                       color=EmbedColor.ERROR)
         else:
             try:
@@ -135,8 +131,7 @@ class Leaders(commands.Cog):
                 exc = "".join(traceback.format_exception(type(error), error,
                                                          error.__traceback__,
                                                          chain=True))
-                await self.bot.inter_send(inter,
-                                          panel=exc,
+                await self.bot.inter_send(inter, panel=exc,
                                           title="User role change error",
                                           color=EmbedColor.ERROR)
 
@@ -151,8 +146,7 @@ class Leaders(commands.Cog):
             exc = "".join(traceback.format_exception(type(error), error,
                                                      error.__traceback__,
                                                      chain=True))
-            await self.bot.inter_send(inter,
-                                      panel=exc,
+            await self.bot.inter_send(inter, panel=exc,
                                       title="Unable to change users nickname",
                                       color=EmbedColor.ERROR)
 
@@ -176,7 +170,7 @@ class Leaders(commands.Cog):
         for role in remove_roles:
             self.bot.log_role_change(member, role, log=self.log, removed=True)
 
-    async def _remove_user(self, ctx, member_id, clash_tag, kick_message=None):
+    async def _remove_user(self, ctx, member_id, clash_tag, return_msg: bool = False, kick_message=None):
         async with self.bot.pool.acquire() as con:
 
             await con.execute(sql.update_discord_user_activity_only(), False,
@@ -189,14 +183,19 @@ class Leaders(commands.Cog):
             if kick_message:
                 msg = _get_account_panel(db_member,
                                          db_coc,
-                                         f"Kick Message:\n{kick_message}")
+                                         f"__**Kick Message:**__\n{kick_message}")
             else:
                 msg = _get_account_panel(db_member, db_coc,
                                          "User set to inactive")
             self.log.error(msg)
-            await self.bot.send(ctx, msg, color=EmbedColor.SUCCESS)
             await con.execute(sql.insert_user_note(), member_id, clash_tag,
                               datetime.now(), ctx.author.id, msg)
+
+            if return_msg:
+                return msg
+            else:
+                await self.bot.send(ctx, msg, color=EmbedColor.SUCCESS)
+
 
     @commands.check(is_leader)
     @commands.slash_command(
@@ -222,11 +221,10 @@ class Leaders(commands.Cog):
         """
 
         if player is None and member is None:
-            await self.bot.inter_send(
-                inter,
-                title="Option Missing",
-                panel="**Player** or **Member** option must be used",
-                color=EmbedColor.ERROR)
+            await self.bot.inter_send(inter,
+                                      panel="**Player** or **Member** option must be used",
+                                      title="Option Missing",
+                                      color=EmbedColor.ERROR)
             return
 
         # Get the database user object
@@ -251,19 +249,17 @@ class Leaders(commands.Cog):
                           f"resolve. Otherwise, let doobie know about " \
                           f"this issue.\n{users_string}"
 
-                    await self.bot.inter_send(inter,
+                    await self.bot.inter_send(inter, panel=msg,
                                               title="Multiple Results",
-                                              panel=msg,
                                               color=EmbedColor.WARNING)
                     return
             db_member = records[0]
 
         if db_member is None:
-            await self.bot.inter_send(
-                inter,
-                title="User not found",
-                panel=f"Database user [{query}] was not found",
-                color=EmbedColor.WARNING)
+            await self.bot.inter_send(inter,
+                                      panel=f"Database user [{query}] was not found",
+                                      title="User not found",
+                                      color=EmbedColor.WARNING)
             return
 
         # Fetch all the clash account
@@ -285,8 +281,43 @@ class Leaders(commands.Cog):
                                           db_member["discord_id"],
                                           self.bot.send, _return=True)
 
-        await self._remove_user(inter, db_member["discord_id"], clash_tag,
-                                kick_message="test message")
+        if set_message:
+            await inter.response.send_modal(
+                title="Kick Message",
+                custom_id="kick_message",
+                components=[
+                    disnake.ui.TextInput(
+                        label="Kick Message",
+                        placeholder="Leave blank to omit kick message",
+                        custom_id="kick_message_text",
+                        style=disnake.TextInputStyle.paragraph,
+                    )
+                ]
+            )
+
+            try:
+                modal_inter: disnake.ModalInteraction = await self.bot.wait_for(
+                    "modal_submit",
+                    check=lambda x: x.custom_id == "kick_message" and x.author.id == inter.author.id,
+                    timeout = 300
+                )
+            except asyncio.TimeoutError:
+                return
+
+            print(modal_inter.text_values.keys())
+            msg = await self._remove_user(
+                inter,
+                db_member["discord_id"],
+                clash_tag,
+                return_msg=True,
+                kick_message=modal_inter.text_values.get("kick_message_text"))
+
+            embeds = await self.bot.inter_send(inter, panel=msg, return_embed=True)
+            await modal_inter.response.send_message(embeds=embeds[0])
+
+        else:
+            await self._remove_user(inter, db_member["discord_id"], clash_tag)
+
         if member:
             await self._remove_defaults(member)
 

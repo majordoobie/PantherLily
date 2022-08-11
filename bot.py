@@ -147,11 +147,9 @@ class BotClient(commands.Bot, BotExt):
                 err = "".join(traceback.format_exception(type(error), error,
                                                          error.__traceback__,
                                                          chain=True))
-                await self.inter_send(inter,
-                                      panel=err,
+                await self.inter_send(inter, panel=err,
                                       title="UNKNOWN - Have doobie check the "
-                                            "logs",
-                                      color=EmbedColor.ERROR)
+                                            "logs", color=EmbedColor.ERROR)
 
                 self.log.error(err, exc_info=True)
                 return
