@@ -27,6 +27,7 @@ class Leaders(commands.Cog):
 
             db_clash_accounts = await con.fetch(
                 sql.select_clash_account_discord_id(), member_id)
+
         return db_discord_member, db_clash_accounts
 
     async def _enable_user(
@@ -87,6 +88,13 @@ class Leaders(commands.Cog):
                                 color=EmbedColor.WARNING)
                             return
 
+                await con.execute(sql.update_discord_user_names(),
+                                  member.id,
+                                  member.name,
+                                  member.discriminator,
+                                  player.name
+                                  )
+
                 await con.execute(sql.update_discord_user_activity_only(),
                                   True,
                                   member.id)
@@ -106,6 +114,14 @@ class Leaders(commands.Cog):
                     await con.execute(
                         sql.update_clash_account_coc_alt_primary(),
                         True, member.id, player.tag)
+
+                await self._remove_defaults(member)
+                await self._set_defaults(
+                    inter,
+                    member,
+                    player.town_hall,
+                    player.name
+                )
 
                 await self._enable_user(
                     con,
@@ -180,7 +196,8 @@ class Leaders(commands.Cog):
         for role in remove_roles:
             self.bot.log_role_change(member, role, log=self.log, removed=True)
 
-    async def _remove_user(self, ctx, member_id, clash_tag, return_msg: bool = False, kick_message=None):
+    async def _remove_user(self, ctx, member_id, clash_tag,
+                           return_msg: bool = False, kick_message=None):
         async with self.bot.pool.acquire() as con:
 
             await con.execute(sql.update_discord_user_activity_only(), False,
@@ -205,7 +222,6 @@ class Leaders(commands.Cog):
                 return msg
             else:
                 await self.bot.send(ctx, msg, color=EmbedColor.SUCCESS)
-
 
     @commands.check(is_leader)
     @commands.slash_command(
@@ -308,8 +324,9 @@ class Leaders(commands.Cog):
             try:
                 modal_inter: disnake.ModalInteraction = await self.bot.wait_for(
                     "modal_submit",
-                    check=lambda x: x.custom_id == "kick_message" and x.author.id == inter.author.id,
-                    timeout = 300
+                    check=lambda
+                        x: x.custom_id == "kick_message" and x.author.id == inter.author.id,
+                    timeout=300
                 )
             except asyncio.TimeoutError:
                 return
@@ -321,7 +338,8 @@ class Leaders(commands.Cog):
                 return_msg=True,
                 kick_message=modal_inter.text_values.get("kick_message_text"))
 
-            embeds = await self.bot.inter_send(inter, panel=msg, return_embed=True)
+            embeds = await self.bot.inter_send(inter, panel=msg,
+                                               return_embed=True)
             await modal_inter.response.send_message(embeds=embeds[0])
 
         else:
