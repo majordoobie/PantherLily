@@ -83,7 +83,7 @@ def update_clash_account_coc_alt_primary() -> str:
 
 
 def delete_clash_account_record() -> str:
-    return '''DELETE FROM clash_account WHERE clash_tag = $1 AND discord_id = $2'''
+    return "DELETE FROM clash_account WHERE clash_tag = $1"
 
 
 #
