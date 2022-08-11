@@ -18,7 +18,20 @@ def create_tables() -> List[str]:
 # Manipulate discord_user
 #
 def select_discord_user_id() -> str:
-    return 'SELECT * FROM discord_user WHERE discord_id = $1'
+    return "SELECT * FROM discord_user WHERE discord_id = $1"
+
+
+def select_discord_users() -> str:
+    return "SELECT * FROM discord_user WHERE discord_id = any($1::bigint[])"
+
+
+def update_discord_user_names() -> str:
+    return """ UPDATE discord_user SET 
+                        discord_name = $2,
+                        discord_discriminator = $3,
+                        discord_nickname = $4
+                WHERE discord_id = $1
+    """
 
 
 def insert_discord_user() -> str:
