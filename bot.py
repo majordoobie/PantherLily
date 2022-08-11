@@ -34,6 +34,7 @@ class BotClient(commands.Bot, BotExt):
         self.settings = settings
         self.pool = pool
         self.coc_client = coc_client
+        self.space = "\u00A0"
 
         self.log = logging.getLogger(f"{self.settings.log_name}.BotClient")
 

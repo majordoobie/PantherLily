@@ -584,30 +584,22 @@ class Leaders(commands.Cog):
         await self.bot.inter_send(inter, msg, color=EmbedColor.SUCCESS)
 
     @commands.check(is_leader)
-    @commands.command(
-        aliases=["re"],
-        brief="",
-        description="View donation report",
-        usage="[-w (int)]",
-        help="Show the donation report of all users in the clan. "
-             "You are also able to display previous weeks"
-             "by providing the number of weeks to display.\n\n"
-             "-w || --weeks"
+    @commands.slash_command(
+        auto_sync=True,
+        name="report",
+        dm_permission=False,
     )
-    async def report(self, ctx, *, arg_string=None):
-        arg_dict = {
-            "weeks": {
-                "flags": ["-w", "--weeks"],
-                "type": "int",
-                "default": 1
-            }
-        }
-        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="report",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def report(self,
+                     inter: disnake.ApplicationCommandInteraction,
+                     weeks: int = 1) -> None:
+        """
+        Show the donation report of all users in the clan. By default only
+        one week is shown.
+
+        Parameters
+        ----------
+        weeks: Number of weeks to show. By default, it is one week.
+        """
 
         true = self.bot.settings.emojis["true"]
         false = self.bot.settings.emojis["false"]
@@ -616,7 +608,7 @@ class Leaders(commands.Cog):
         # Get the amount of weeks to pull back
         dates = []
         current_week = get_utc_monday()
-        for i in range(0, args["weeks"]):
+        for i in range(0, weeks):
             dates.append(get_utc_monday() - timedelta(days=(i * 7)))
 
         # Get report blocks based on dates
@@ -625,26 +617,21 @@ class Leaders(commands.Cog):
                 players = await con.fetch(
                     sql.select_classic_view().format(date))
                 players.sort(key=lambda x: x["donation_gains"], reverse=True)
-                data_block = f"`\u00A0\u00A0\u00A0 {'Player':<14}⠀` `⠀{'Donation'}⠀`\n"
+                data_block = f"`{self.bot.space * 3} {'Player':<14} ` ` {'Donation'} `\n"
                 for player in players:
                     donation = player["donation_gains"]
                     emoji = true if donation >= 300 else false
                     if date == current_week:
                         if not player["guild_join_date"] < current_week:
                             emoji = warning
-                    data_block += f"{emoji}\u00A0`⠀" \
+                    data_block += f"{emoji}{self.bot.space}`⠀" \
                                   f"{player['clash_name']:<17.17}⠀` `⠀{donation:⠀>5}⠀`\n"
 
-                embeds = await self.bot.send(ctx, data_block, _return=True,
-                                             footnote=False)
-                date = f"Week of: {date.strftime('%Y-%m-%d')} (GMT)"
-                if isinstance(embeds, list):
-                    embeds[-1].set_footer(text=date)
-                    for embed in embeds:
-                        await ctx.send(embed=embed)
-                else:
-                    # embeds.set_footer(text=date)
-                    await ctx.send(embed=embeds)
+                await self.bot.inter_send(
+                    inter,
+                    panel=data_block,
+                    footer=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)"
+                )
 
 
 def _get_account_panel(discord_member: asyncpg.Record,
