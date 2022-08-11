@@ -64,12 +64,12 @@ class Leaders(commands.Cog):
             coc_record: tuple,
             member: disnake.Member,
             player: coc.Player,
-            set_alternate: bool):
+            set_alternate: bool) -> None:
         """Repeated code in add_user"""
         async with self.bot.pool.acquire() as con:
-            db_member, db_coc = await self._get_updates(member.id)
+            db_member, db_cocs = await self._get_updates(member.id)
             if not set_alternate:
-                msg = _get_alternate_warning_panel(db_member, db_coc)
+                msg = _get_alternate_warning_panel(db_member, db_cocs)
                 self.log.error(msg)
                 await self.bot.inter_send(inter, panel=msg,
                                           title="Multiple clash accounts",
@@ -77,7 +77,17 @@ class Leaders(commands.Cog):
                 # if the user added the flag then add the new clash account
                 # and set it to primary
             else:
-                await con.execute(sql.update_discord_user_set_active(),
+                for db_acc in db_cocs:
+                    if db_acc["clash_tag"] == player.tag:
+                        if db_acc["is_primary_account"]:
+                            await self.bot.inter_send(
+                                inter,
+                                panel=f"Clash [{player.tag}] is already set to primary",
+                                title="No action taken",
+                                color=EmbedColor.WARNING)
+                            return
+
+                await con.execute(sql.update_discord_user_activity_only(),
                                   True,
                                   member.id)
 
@@ -86,7 +96,7 @@ class Leaders(commands.Cog):
                                   member.id)
 
                 new_coc = True
-                for coc_record in db_coc:
+                for coc_record in db_cocs:
                     if coc_record["clash_tag"] == coc_record[0]:
                         new_coc = False
 
@@ -94,7 +104,7 @@ class Leaders(commands.Cog):
                     await con.execute(sql.insert_clash_account(), *coc_record)
                 else:
                     await con.execute(
-                        sql_update_clash_account_coc_alt_primary(),
+                        sql.update_clash_account_coc_alt_primary(),
                         True, member.id, player.tag)
 
                 await self._enable_user(
@@ -304,7 +314,6 @@ class Leaders(commands.Cog):
             except asyncio.TimeoutError:
                 return
 
-            print(modal_inter.text_values.keys())
             msg = await self._remove_user(
                 inter,
                 db_member["discord_id"],
