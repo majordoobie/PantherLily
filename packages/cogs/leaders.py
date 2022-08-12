@@ -663,7 +663,7 @@ class Leaders(commands.Cog):
                 players = await con.fetch(
                     sql.select_classic_view().format(date))
                 players.sort(key=lambda x: x["donation_gains"], reverse=True)
-                data_block = f"`{self.bot.space * 1}{'Player':<14}`{self.bot.space}`{'Donation'} `\n"
+                data_block = f"`{self.bot.space * 3}{'Player':<14}{self.bot.space}{'Donation'}`\n"
                 for player in players:
                     donation = player["donation_gains"]
                     emoji = true if donation >= 300 else false
@@ -671,7 +671,7 @@ class Leaders(commands.Cog):
                         if not player["guild_join_date"] < current_week:
                             emoji = warning
                     data_block += f"{emoji}{self.bot.space}`" \
-                                  f"{player['clash_name']:<17.17}`{self.bot.space}`{donation:⠀>5}⠀`\n"
+                                  f"{player['clash_name']:<17.17}`{self.bot.space}`{donation:>5}`\n"
 
                 await self.bot.inter_send(inter, panel=data_block,
                                           footer=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)")

@@ -7,7 +7,7 @@ from disnake.ext import commands
 from disnake import RawReactionActionEvent, Message
 
 from bot import BotClient
-from packages.utils.utils import parse_args
+from packages.utils.utils import EmbedColor, parse_args
 
 EMOJI_REACTIONS = (
     'h1',
@@ -178,7 +178,7 @@ class Happy(commands.Cog):
         if not panel_name:
             await self.bot.send(ctx, "Please provide a panel name to delete. You can use the `Panther.Happy "
                                      "list` command to view all the panels available to you.",
-                                color=self.bot.WARNING)
+                                EmbedColor.WARNING)
             return None
 
         panel_name = panel_name.title()
@@ -189,7 +189,7 @@ class Happy(commands.Cog):
 
         if not row:
             await self.bot.send(ctx, f'Could not find a panel with the name of `{panel_name}`',
-                                color=self.bot.WARNING)
+                                EmbedColor.WARNING)
             return None
 
         else:
@@ -239,7 +239,7 @@ class Happy(commands.Cog):
         async with self.bot.pool.acquire() as conn:
             sql = "DELETE FROM happy WHERE panel_name=$1"
             await conn.execute(sql, panel_name['panel_name'])
-        await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', color=self.bot.SUCCESS, footnote=False)
+        await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', EmbedColor.SUCCESS, footnote=False)
 
     @happy.command(
         name='create',
@@ -265,18 +265,18 @@ class Happy(commands.Cog):
             panel_name = panel_name.title()
             if not panel_rows.isdigit():
                 msg = f'The second argument must be an integer between 1 and 10. You provided `{panel_rows}`'
-                await self.bot.send(ctx, msg, color=self.bot.ERROR)
+                await self.bot.send(ctx, msg, color=EmbedColor.ERROR)
                 return
             else:
                 panel_rows = int(panel_rows)
                 if not 1 <= panel_rows <= 10:
                     msg = f'The number of rows you provided does not fall within 1 and 10.'
-                    await self.bot.send(ctx, msg, color=self.bot.ERROR)
+                    await self.bot.send(ctx, msg, EmbedColor.ERROR)
                     return
         except ValueError:
             msg = f'Too many arguments provided. Args: `{args["positional"]}`\nCommand only takes 2. A name ' \
                   f'followed by the number of rows to populate.'
-            await self.bot.send(ctx, msg, color=self.bot.ERROR)
+            await self.bot.send(ctx, msg, EmbedColor.ERROR)
             self.log.error(f'{ctx.author.display_name} provided too many arguments to command: {args}')
             return
 
@@ -286,7 +286,7 @@ class Happy(commands.Cog):
             ($1, $2, $3, $4, $5, $6, $7)"""
 
             if await conn.fetchrow(sql, panel_name):
-                await self.bot.send(ctx, f'Panel `{panel_name}` already exists.', color=self.bot.WARNING)
+                await self.bot.send(ctx, f'Panel `{panel_name}` already exists.', EmbedColor.WARNING)
             else:
                 await conn.execute(
                     sql2,
@@ -298,7 +298,7 @@ class Happy(commands.Cog):
                     0,
                     self.default_dataset
                 )
-                await self.bot.send(ctx, f'Panel `{panel_name}` created!', color=self.bot.SUCCESS, footnote=False)
+                await self.bot.send(ctx, f'Panel `{panel_name}` created!', EmbedColor.SUCCESS, footnote=False)
 
     @happy.command(
         name='view',
@@ -321,7 +321,7 @@ class Happy(commands.Cog):
 
         if instance["active"]:
             msg = f'Panel `{instance["panel_name"]}` is already open. Please close it first.'
-            await self.bot.send(ctx, msg, color=self.bot.WARNING)
+            await self.bot.send(ctx, msg, EmbedColor.WARNING)
             return
 
         instance = dict(instance)
@@ -368,7 +368,7 @@ class Happy(commands.Cog):
                 return
             await self._refresh_panel(instance, message)
         else:
-            await self.bot.send(ctx, 'Cleared panel', color=self.bot.SUCCESS, footnote=False)
+            await self.bot.send(ctx, 'Cleared panel', EmbedColor.SUCCESS, footnote=False)
 
     @happy.command(
         name='stop',
@@ -401,7 +401,7 @@ class Happy(commands.Cog):
         instance["active"] = False
         await self._refresh_panel(instance, message)
         await message.clear_reactions()
-        await self.bot.send(ctx, 'Stopped panel from running.', color=self.bot.SUCCESS, footnote=False)
+        await self.bot.send(ctx, 'Stopped panel from running.', EmbedColor.SUCCESS, footnote=False)
 
     @happy.command(
         name='list',
@@ -457,19 +457,19 @@ class Happy(commands.Cog):
             try:
                 operator, integer = string_objects[1][0], string_objects[1][1:]
             except:
-                await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.', color=self.bot.ERROR)
+                await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.', EmbedColor.ERROR)
                 return
         else:
             operator, integer = string_objects[1], string_objects[2]
 
         if operator not in ['+', '-']:
-            await self.bot.send(ctx, 'Invalid operators used', color=self.bot.ERROR)
+            await self.bot.send(ctx, 'Invalid operators used', EmbedColor.ERROR)
             return
         if not integer.isdigit():
-            await self.bot.send(ctx, 'Invalid integer provided', color=self.bot.ERROR)
+            await self.bot.send(ctx, 'Invalid integer provided', EmbedColor.ERROR)
             return
         elif int(integer) not in range(0, 11):
-            await self.bot.send(ctx, 'Invalid integer range provided', color=self.bot.ERROR)
+            await self.bot.send(ctx, 'Invalid integer range provided', EmbedColor.ERROR)
             return
 
         if operator == '+':
@@ -477,7 +477,7 @@ class Happy(commands.Cog):
         else:
             new_rows = instance["panel_rows"] - int(integer)
         if new_rows not in range(0, 11):
-            await self.bot.send(ctx, 'New row count exceeds range of 0 to 10', color=self.bot.ERROR)
+            await self.bot.send(ctx, 'New row count exceeds range of 0 to 10', EmbedColor.ERROR)
             return
 
         async with self.bot.pool.acquire() as con:
@@ -486,7 +486,7 @@ class Happy(commands.Cog):
 
         instance = await self._panel_exists(ctx, instance["panel_name"])
         message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
-        await self.bot.send(ctx, 'Panel edited', color=self.bot.SUCCESS, footnote=False)
+        await self.bot.send(ctx, 'Panel edited', EmbedColor.SUCCESS, footnote=False)
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
