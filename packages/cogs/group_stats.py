@@ -1,33 +1,64 @@
 import asyncio
 from datetime import timedelta
 
+import disnake
 from disnake.ext import commands
 import logging
 
 from bot import BotClient
-from packages.utils.bot_sql import select_all_active_users, select_clash_members_not_registered, select_classic_view
+from packages.utils.bot_sql import select_all_active_users, \
+    select_clash_members_not_registered, select_classic_view
 from packages.utils.utils import parse_args, get_utc_monday
+
+
+class RosterSearch(disnake.ui.View):
+    def __init__(self, bot: BotClient,
+                 inter: disnake.ApplicationCommandInteraction,
+                 clan_locations: dict):
+        super().__init__()
+        self.bot = bot
+        self.inter = inter
+        self.clan = clan_locations
+
+    @disnake.ui.button(label="Show Locations",
+                       style=disnake.ButtonStyle.blurple)
+    async def confirm(self,
+                      button: disnake.Button,
+                      inter: disnake.MessageInteraction):
+        location_panels = ''
+        for clan, players in self.clan.items():
+            panel = f'__**{clan}**__\n'
+            for player in players:
+                panel += f"`⠀{player['name']:<14.14} ` `⠀{player['clash_tag']:<12.12} `\n"
+
+            location_panels += panel
+
+        await self.bot.inter_send(inter, location_panels)
+        self.stop()
 
 
 class GroupStats(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.log = logging.getLogger(f'{self.bot.settings.log_name}.GroupStats')
+        self.log = logging.getLogger(
+            f'{self.bot.settings.log_name}.GroupStats')
 
-    @commands.command(
-        aliases=['ro'],
-        brief='',
-        description='Display clan roster',
-        usage='',
-        help='Display users currently registered and all users in the clan. Additionally, display the current location '
-             'of players. This is useful for CWL when the clanmates are scattered.'
+    @commands.slash_command(
+        name="roster",
+        auto_sync=True,
+        dm_permission=False
     )
-    async def roster(self, ctx, *, arg_string=None):
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="roster",
-                                   args=None,
-                                   arg_string=arg_string)
+    async def roster(self,
+                     inter: disnake.ApplicationCommandInteraction) -> None:
+        """
+        Display the currently registered users and users in the clan.
+
+        Parameters
+        ----------
+        inter: Interaction object
+        """
+
+        panels = []
 
         # Create legend to display
         clan = self.bot.settings.emojis["reddit_zulu"]
@@ -40,12 +71,14 @@ class GroupStats(commands.Cog):
         legend += f'{db} Member is registered with Pantherlily.\n'
         legend += f'{waze} Get realtime location of members.\n'
 
-        await self.bot.send(ctx, legend)
+        panels.append(legend)
 
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
-            members_db = await con.fetch(select_all_active_users().format(get_utc_monday()))
-            unregistered_users = await con.fetch(select_clash_members_not_registered())
+            members_db = await con.fetch(
+                select_all_active_users().format(get_utc_monday()))
+            unregistered_users = await con.fetch(
+                select_clash_members_not_registered())
         members_db.sort(key=lambda x: x['clash_name'].lower())
 
         roster = {}
@@ -89,7 +122,7 @@ class GroupStats(commands.Cog):
                 "clash_tag": player['clash_tag']
             }
         # Display the roster panel
-        panel = f'{clan}{db}\u0080\n'
+        panel = f'{clan}{db}\n'
         count = 0
         for player, stats in roster.items():
             panel += true if stats['in_mother_clan'] else false
@@ -97,7 +130,8 @@ class GroupStats(commands.Cog):
             count += 1
             panel += f"  **{count:>2}**  {player}\n"
 
-        await self.bot.send(ctx, panel, footnote=False)
+        panels.append(panel)
+        # await self.bot.send(inter, panel, footnote=False)
 
         # Create the strength panel the tiny one that shows how many there are
         strength_panel = f'__**Registered Members**__\n`⠀{"Total members":\u00A0<13}⠀` `⠀{strength_count:>2}⠀`\n'
@@ -107,28 +141,12 @@ class GroupStats(commands.Cog):
             town_hall = f'Total TH{level}'
             strength_panel += f"`⠀{town_hall:\u00A0<13}⠀` `⠀{strength[level]:>2}⠀`\n"
 
-        strength_embed = await self.bot.send(ctx, strength_panel, _return=True)
-        for embed in strength_embed:
-            strength_panel = await ctx.send(embed=embed)
-        await strength_panel.add_reaction(waze)
-
-        # Display the location panels
-        def check(reaction, user):
-            return not user.bot and str(reaction.emoji) == waze
-
-        try:
-            await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
-            location_panels = ''
-            for clan, players in clan_locations.items():
-                panel = f'__**{clan}**__\n'
-                for player in players:
-                    panel += f"`⠀{player['name']:<14.14} ` `⠀{player['clash_tag']:<12.12} `\n"
-
-                location_panels += panel
-            await self.bot.send(ctx, location_panels)
-
-        except asyncio.TimeoutError:
-            pass
+        panels.append(strength_panel)
+        await self.bot.inter_send(inter,
+                                  panels=panels,
+                                  view=RosterSearch(self.bot,
+                                                    inter,
+                                                    clan_locations))
 
     @commands.command(
         aliases=['t'],
@@ -207,10 +225,12 @@ class GroupStats(commands.Cog):
                 frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
                 await ctx.send(frame)
 
+
 def _in_clan(clan_tag: str) -> bool:
     if clan_tag == '#2Y28CGP8':
         return True
     return False
+
 
 def setup(bot):
     bot.add_cog(GroupStats(bot))

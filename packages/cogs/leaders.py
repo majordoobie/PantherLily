@@ -32,7 +32,7 @@ class ViewNotes(disnake.ui.View):
 
         if not note_records:
             await self.bot.inter_send(
-                self.inter,
+                inter,
                 panel="User does not have any notes"
             )
             self.stop()
@@ -68,7 +68,7 @@ class ViewNotes(disnake.ui.View):
             )
 
         await self.bot.inter_send(
-            self.inter,
+            inter,
             panels=notes
         )
         self.stop()
