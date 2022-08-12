@@ -8,6 +8,7 @@ import logging
 from bot import BotClient
 from packages.utils.bot_sql import select_all_active_users, \
     select_clash_members_not_registered, select_classic_view
+from packages.utils.paginator import Paginator
 from packages.utils.utils import parse_args, get_utc_monday
 
 
@@ -147,49 +148,26 @@ class GroupStats(commands.Cog):
                                                     inter,
                                                     clan_locations))
 
-    @commands.command(
-        aliases=['t'],
-        brief='-t for trophies',
-        description='Display clan rankings for trophies or donations',
-        usage='[-w int][-d(Default)][-t]',
-        help='Display donation or trophy rankings of the clan. By default, top 20 donations will be shown and only '
-             'the current week is shown. If you would like to display trophy rankings instead, use the -t switch.\n\n'
-             'Additionally, you are able to show previous weeks with the -w switch followed by the number of weeks you '
-             'you would like to display.\n\n'
-             '-w || --weeks [integer]\n-d || --donations\n-t || --trophies'
+    @commands.slash_command(
+        name="top",
+        auto_sync=True,
+        dm_permission=False
     )
-    async def top(self, ctx, *, arg_string=None):
-        arg_dict = {
-            'weeks': {
-                'flags': ['-w', '--weeks'],
-                'type': 'int',
-                'default': 1
-            },
-            'donations': {
-                'flags': ['-d', '--donations'],
-                'switch_action': True,
-                'switch': True,
-                'default': True
-            },
-            'trophies': {
-                'flags': ['-t', '--trophies'],
-                'switch_action': True,
-                'switch': True,
-                'default': False
-            }
-        }
-        args = await parse_args(ctx, self.bot.settings, arg_dict, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="top",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def top(self,
+                  inter: disnake.ApplicationCommandInteraction,
+                  weeks: int = 1) -> None:
+        """
+        Display top trophies and donations in the clan
 
-        donation = True if not args['trophies'] else False
+        Parameters
+        ----------
+        inter:
+        weeks: Number of weeks to display
+        """
 
         # Get the amount of weeks to pull back
         dates = []
-        for i in range(0, args['weeks']):
+        for i in range(0, weeks):
             dates.append(get_utc_monday() - timedelta(days=(i * 7)))
 
         # Get report blocks based on dates
@@ -199,30 +177,40 @@ class GroupStats(commands.Cog):
                 players = await con.fetch(select_classic_view().format(date))
                 data_blocks.append(players)
 
-        if not donation:
-            for date, players in enumerate(data_blocks):
-                players.sort(key=lambda x: x['current_trophy'], reverse=True)
-                frame = f'__**Trophy Ranking**__\n'
-                frame += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'trop':<4}⠀{'diff':>5}⠀`\n"
-                for count, player in enumerate(players):
-                    count += 1
-                    name = player['clash_name'][:14]
-                    frame += f"`⠀{count:<2}⠀{player['town_hall']:<2}⠀{player['current_trophy']:<4}⠀" \
-                             f"{player['trophy_diff']:<5}⠀{name:<14}`\n"
-                frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
-                await ctx.send(frame)
-        else:
-            for date, players in enumerate(data_blocks):
-                players.sort(key=lambda x: x['donation_gains'], reverse=True)
-                frame = f'__**Donation Ranking**__\n'
-                frame += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'Donation':<8}⠀`\n"
-                for count, player in enumerate(players[:20]):
-                    count += 1
-                    frame += f"`⠀{str(count):<2}⠀{player['town_hall']:<2}⠀{player['donation_gains']:<4}⠀" \
-                             f"{player['clash_name']:<14.14}`\n"
+        trophies = ""
+        donations = ""
+        for date, players in enumerate(data_blocks):
+            players.sort(key=lambda x: x['current_trophy'], reverse=True)
+            trophies = f'__**Trophy Ranking**__\n'
+            trophies += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'trop':<4}⠀{'diff':>4}⠀`\n"
+            for count, player in enumerate(players):
+                count += 1
+                name = player['clash_name'][:14]
+                trophies += f"`⠀{count:<2}⠀{player['town_hall']:<2}⠀{player['current_trophy']:<4}⠀" \
+                         f"{player['trophy_diff']:<5}⠀{name:<11.11}`\n"
+            trophies += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
 
-                frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
-                await ctx.send(frame)
+        for date, players in enumerate(data_blocks):
+            players.sort(key=lambda x: x['donation_gains'], reverse=True)
+            donations = f'__**Donation Ranking**__\n'
+            donations += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'Donation':<8}⠀`\n"
+            for count, player in enumerate(players[:20]):
+                count += 1
+                donations += f"`⠀{str(count):<2}⠀{player['town_hall']:<2}⠀{player['donation_gains']:<4}⠀" \
+                         f"{player['clash_name']:<14.14}`\n"
+
+            donations += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+
+        embeds = await self.bot.inter_send(
+            inter,
+            panels=[donations, trophies],
+            return_embed=True,
+            flatten_list=True
+        )
+
+        view = Paginator(embeds)
+        await inter.send(embeds=view.embed, view=view)
+
 
 
 def _in_clan(clan_tag: str) -> bool:
