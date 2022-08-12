@@ -142,8 +142,7 @@ class GroupStats(commands.Cog):
             strength_panel += f"`⠀{town_hall:\u00A0<13}⠀` `⠀{strength[level]:>2}⠀`\n"
 
         panels.append(strength_panel)
-        await self.bot.inter_send(inter,
-                                  panels=panels,
+        await self.bot.inter_send(inter, panels=panels,
                                   view=RosterSearch(self.bot,
                                                     inter,
                                                     clan_locations))
