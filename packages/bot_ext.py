@@ -60,7 +60,7 @@ class BotExt:
         return
 
     async def inter_send(self,
-                         inter: disnake.ApplicationCommandInteraction,
+                         inter: Union[disnake.ApplicationCommandInteraction, disnake.MessageInteraction],
                          panel: str = "",
                          panels: List[str] = [],
                          title: str = "",
@@ -137,12 +137,17 @@ class BotExt:
         if return_embed:
             return total_embeds
 
+        if isinstance(inter, disnake.ApplicationCommandInteraction):
+            send_func = inter.send
+        else:
+            send_func = inter.response.send_message
+
         last_embed = len(total_embeds) - 1
         for index, embeds in enumerate(total_embeds):
             if last_embed == index and view:
-                await inter.send(embeds=embeds, view=view)
+                await send_func(embeds=embeds, view=view)
             else:
-                await inter.send(embeds=embeds)
+                await send_func(embeds=embeds)
 
     @staticmethod
     async def text_splitter(text: str, code_block: bool) -> list[str]:
