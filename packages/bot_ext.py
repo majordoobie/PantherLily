@@ -16,6 +16,7 @@ class BotExt:
     EMBED_FOOTER = 2048
     EMBED_AUTHOR = 256
     EMBED_TOTAL = 6000
+    EMBED_SEND_TOTAL = 10
 
     def __init__(self, settings):
         self.settings = settings
@@ -120,6 +121,10 @@ class BotExt:
             # If the current embed is going to make the embeds block exceed
             # to send size, then create a new embed block
             embeds_size = sum(len(embed) for embed in embeds)
+            if len(embeds) == BotExt.EMBED_SEND_TOTAL:
+                total_embeds.append(embeds.copy())
+                embeds = []
+
             if embeds_size + len(embed) > BotExt.EMBED_TOTAL:
                 total_embeds.append(embeds.copy())
                 embeds = []

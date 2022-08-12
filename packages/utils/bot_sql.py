@@ -93,6 +93,8 @@ def insert_user_note() -> str:
     return '''INSERT INTO user_note(discord_id, clash_tag, note_date, commit_by, note) VALUES($1, $2, $3, $4, $5)'''
 
 
+def select_user_notes() -> str:
+    return "SELECT * FROM user_note WHERE discord_id = $1"
 #
 # Donation queries
 #
