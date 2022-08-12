@@ -22,27 +22,12 @@ class Tester(commands.Cog):
 
     @commands.slash_command(auto_sync=True)
     async def test(self, inter):
-        embeds = [
-            disnake.Embed(
-                title="Paginator example",
-                description="This is the first embed.",
-                colour=disnake.Colour.random(),
-            ),
-            disnake.Embed(
-                title="Paginator example",
-                description="This is the second embed.",
-                colour=disnake.Color.random(),
-            ),
-            disnake.Embed(
-                title="Paginator example",
-                description="This is the third embed.",
-                colour=disnake.Color.random(),
-            ),
-        ]
+        async with self.bot.pool.acquire() as conn:
+            sql = """SELECT panel_name FROM happy"""
+            rows = await conn.fetch(sql)
 
-        view = Paginator(embeds, 5)
-        await inter.send(embeds=view.embed, view=view)
-
+        print(type(rows))
+        print(rows)
 
 
     # Creates the embeds as a list.

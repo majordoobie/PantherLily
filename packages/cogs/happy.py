@@ -1,7 +1,8 @@
-from asyncpg import pool, Record
+import disnake
+import asyncpg
 import json
 import logging
-from typing import Union, Optional, Tuple
+from typing import List, Union, Optional, Tuple
 
 from disnake.ext import commands
 from disnake import RawReactionActionEvent, Message
@@ -27,12 +28,29 @@ EMOJI_REACTIONS = (
 
 
 class Happy(commands.Cog):
+    POOL = None
+
     def __init__(self, bot: BotClient):
         self.bot = bot
-        self.poo: pool
         self.pool = self.bot.pool
+        Happy.POOL = self.pool
         self.log = logging.getLogger(f'{self.bot.settings.log_name}.Happy')
-        self.emojis = {emoji: self.bot.settings.emojis[emoji] for emoji in EMOJI_REACTIONS}
+        self.emojis = {emoji: self.bot.settings.emojis[emoji] for emoji in
+                       EMOJI_REACTIONS}
+
+    @staticmethod
+    async def panel_names(inter: disnake.ApplicationCommandInteraction,
+                          user_input: str) -> List[str]:
+
+        if not Happy.POOL:
+            return [""]
+
+        async with Happy.POOL.acquire() as conn:
+            sql = "SELECT panel_name FROM happy"
+            rows = await conn.fetch(sql)
+
+        return [panel["panel_name"] for panel in rows if user_input.title()
+                in panel["panel_name"]]
 
     @property
     def default_dataset(self) -> dict:
@@ -72,7 +90,8 @@ class Happy(commands.Cog):
             return
 
         # Get the message object to edit it
-        message = await self._get_message(record["message_id"], payload.channel_id, payload.guild_id)
+        message = await self._get_message(record["message_id"],
+                                          payload.channel_id, payload.guild_id)
         if not message:
             return
 
@@ -127,9 +146,11 @@ class Happy(commands.Cog):
             async with self.bot.pool.acquire() as con:
                 await con.execute(sql, False, record['panel_name'])
 
-    async def _refresh_panel(self, record: Union[Record, dict], message: Message, reset_emojis=False):
+    async def _refresh_panel(self, record: Union[asyncpg.Record, dict],
+                             message: Message, reset_emojis=False):
         panel, emoji_stack = self._panel_factory(record)
-        embeds = await self.bot.send(ctx=None, description=panel, footnote=False, _return=True)
+        embeds = await self.bot.send(ctx=None, description=panel,
+                                     footnote=False, _return=True)
         for embed in embeds:
             await message.edit(embed=embed)
 
@@ -138,7 +159,8 @@ class Happy(commands.Cog):
             for reaction in emoji_stack:
                 await message.add_reaction(reaction)
 
-    async def _get_message(self, message_id: int, channel_id: int, guild_id: int) -> Optional[Message]:
+    async def _get_message(self, message_id: int, channel_id: int,
+                           guild_id: int) -> Optional[Message]:
         """Get a message object"""
         guild, channel, message = None, None, None
         try:
@@ -160,25 +182,25 @@ class Happy(commands.Cog):
             return None
         return message
 
-    async def _panel_exists(self, ctx: commands.Context, panel_name: Union[str, None]) -> Optional[Record]:
+    async def _panel_exists(self,
+                            inter: disnake.ApplicationCommandInteraction,
+                            panel_name: Union[str, None]
+                            ) -> Optional[asyncpg.Record]:
         """
-        Check to see if the given panel_name exits in the database. If it does then return the record for it.
-        Parameters
-        ----------
-        ctx: commands.Context
-            Context of the command ran
-        panel_name: str
-            String name of the panel name at question
+        Check to see if the given panel_name exits in the database. If it does
+        then return the record for it.
 
-        Returns
-        -------
-        Either the record if there is a match or a None
-
+        :param inter:
+        :param panel_name: Name of the panel to look up
+        :return:
         """
         if not panel_name:
-            await self.bot.send(ctx, "Please provide a panel name to delete. You can use the `Panther.Happy "
-                                     "list` command to view all the panels available to you.",
-                                EmbedColor.WARNING)
+            await self.bot.inter_send(
+                inter,
+                panel="Please provide a panel name to delete. You can use "
+                      "the `Panther.Happy list` command to view all the "
+                      "panels available to you.",
+                color=EmbedColor.WARNING)
             return None
 
         panel_name = panel_name.title()
@@ -188,96 +210,85 @@ class Happy(commands.Cog):
             row = await conn.fetchrow(sql, panel_name)
 
         if not row:
-            await self.bot.send(ctx, f'Could not find a panel with the name of `{panel_name}`',
-                                EmbedColor.WARNING)
+            await self.bot.inter_send(
+                inter,
+                panel=f'Could not find a panel with the name '
+                      f'of `{panel_name}`',
+                color=EmbedColor.WARNING)
             return None
 
         else:
             return row
 
-    @commands.group(
-        aliases=['h'],
-        invoke_without_command=True,
-        brief='',
-        description='Create and View interactive panels to volunteer for zones to donate to for war preparations. '
-                    'Users are able to click on the emojis to add their name to the panel board.',
-        usage='',
-        help=''
+    @commands.slash_command(
+        name="happy",
+        dm_permission=False,
+        auto_sync=True
     )
     async def happy(self, ctx, *, arg_string=None):
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy",
-                                   args=args,
-                                   arg_string=arg_string)
+        pass
 
-        msg = f'Welcome to the Happy module! To see what I can do, run `panther.help Happy`'
-        await self.bot.send(ctx, msg)
-
-    @happy.command(
-        name='delete',
-        aliases=['d'],
-        brief='',
-        help='Delete the panel specified',
-        usage='(panel_name)'
+    @happy.sub_command(
+        name='delete'
     )
-    async def delete_panel(self, ctx, *, arg_string=None):
-        """Create the panel to be viewed"""
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy delete",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def delete_panel(
+            self,
+            inter: disnake.ApplicationCommandInteraction,
+            panel_name: str = commands.Param(
+                autocomplete=panel_names)) -> None:
+        """
+        Delete a panel from the /happy list
 
-        # Check if panel_name exists, if it does return the record
-        panel_name = await self._panel_exists(ctx, args["positional"])
-        if not panel_name:
+        Parameters
+        ----------
+        inter:
+        panel_name: Name of panel to remove, use /happy list to find name
+        """
+        if panel_name not in await self.panel_names(inter, panel_name):
+            await self.bot.inter_send(
+                inter,
+                panel=f"Panel **{panel_name}** does not exist. Please use "
+                      f"/happy list",
+                color=EmbedColor.WARNING)
             return
 
         async with self.bot.pool.acquire() as conn:
             sql = "DELETE FROM happy WHERE panel_name=$1"
-            await conn.execute(sql, panel_name['panel_name'])
-        await self.bot.send(ctx, f'Deleted panel `{panel_name["panel_name"]}`!', EmbedColor.SUCCESS, footnote=False)
+            await conn.execute(sql, panel_name)
 
-    @happy.command(
-        name='create',
-        aliases=['cr'],
-        brief='',
-        help='Create a panel by providing the name of a panel and the number of rows you would like to '
-             'create.\n\n'
-             'Example:\n'
-             'p.h create sunday_war 10',
-        usage='(panel_name) (rows)'
+        await self.bot.inter_send(
+            inter,
+            panel=f'Deleted panel `{panel_name}`!',
+            color=EmbedColor.SUCCESS)
+
+    @happy.sub_command(
+        name='create'
     )
-    async def create_panel(self, ctx, *, arg_string=None):
-        """Create the panel to be viewed"""
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy create",
-                                   args=args,
-                                   arg_string=arg_string)
-        # Split the positional arguments and make sure that it's str and str(int)
+    async def create_panel(self,
+                           inter: disnake.ApplicationCommandInteraction,
+                           panel_name: str,
+                           row_count: int = commands.Range[1, 10]):
+        # Split the positional arguments and make sure that it's str and
+        # str(int)
         try:
             panel_name, panel_rows = args["positional"].split(' ')
             panel_name = panel_name.title()
             if not panel_rows.isdigit():
                 msg = f'The second argument must be an integer between 1 and 10. You provided `{panel_rows}`'
-                await self.bot.send(ctx, msg, color=EmbedColor.ERROR)
+                await self.bot.send(inter, msg, color=EmbedColor.ERROR)
                 return
             else:
                 panel_rows = int(panel_rows)
                 if not 1 <= panel_rows <= 10:
                     msg = f'The number of rows you provided does not fall within 1 and 10.'
-                    await self.bot.send(ctx, msg, EmbedColor.ERROR)
+                    await self.bot.send(inter, msg, EmbedColor.ERROR)
                     return
         except ValueError:
             msg = f'Too many arguments provided. Args: `{args["positional"]}`\nCommand only takes 2. A name ' \
                   f'followed by the number of rows to populate.'
-            await self.bot.send(ctx, msg, EmbedColor.ERROR)
-            self.log.error(f'{ctx.author.display_name} provided too many arguments to command: {args}')
+            await self.bot.send(inter, msg, EmbedColor.ERROR)
+            self.log.error(
+                f'{inter.author.display_name} provided too many arguments to command: {args}')
             return
 
         async with self.bot.pool.acquire() as conn:
@@ -286,7 +297,9 @@ class Happy(commands.Cog):
             ($1, $2, $3, $4, $5, $6, $7)"""
 
             if await conn.fetchrow(sql, panel_name):
-                await self.bot.send(ctx, f'Panel `{panel_name}` already exists.', EmbedColor.WARNING)
+                await self.bot.send(inter,
+                                    f'Panel `{panel_name}` already exists.',
+                                    EmbedColor.WARNING)
             else:
                 await conn.execute(
                     sql2,
@@ -298,14 +311,11 @@ class Happy(commands.Cog):
                     0,
                     self.default_dataset
                 )
-                await self.bot.send(ctx, f'Panel `{panel_name}` created!', EmbedColor.SUCCESS, footnote=False)
+                await self.bot.send(inter, f'Panel `{panel_name}` created!',
+                                    EmbedColor.SUCCESS, footnote=False)
 
-    @happy.command(
-        name='view',
-        aliases=['v'],
-        brief='',
-        help='Open a panel to start having users volunteer for zones to donate to',
-        usage='(panel_name)'
+    @happy.sub_command(
+        name='view'
     )
     async def view_panel(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -335,14 +345,11 @@ class Happy(commands.Cog):
 
         async with self.bot.pool.acquire() as conn:
             sql = "UPDATE happy SET message_id=$1, active=$2, channel_id=$3, guild_id=$4 WHERE panel_name=$5"
-            await conn.execute(sql, panel.id, True, panel.channel.id, panel.guild.id, instance['panel_name'])
+            await conn.execute(sql, panel.id, True, panel.channel.id,
+                               panel.guild.id, instance['panel_name'])
 
-    @happy.command(
-        name='clear',
-        aliases=['cl'],
-        brief='',
-        help='Clears all the reactions on a panel.',
-        usage="panel_name"
+    @happy.sub_command(
+        name='clear'
     )
     async def clear_panel(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -359,24 +366,23 @@ class Happy(commands.Cog):
         async with self.bot.pool.acquire() as con:
             sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
             sql2 = "SELECT * FROM happy WHERE panel_name=$1"
-            await con.execute(sql, self.default_dataset, instance['panel_name'])
+            await con.execute(sql, self.default_dataset,
+                              instance['panel_name'])
             instance = await con.fetchrow(sql2, instance['panel_name'])
 
         if instance["active"]:
-            message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
+            message = await self._get_message(instance["message_id"],
+                                              instance["channel_id"],
+                                              instance["guild_id"])
             if not message:
                 return
             await self._refresh_panel(instance, message)
         else:
-            await self.bot.send(ctx, 'Cleared panel', EmbedColor.SUCCESS, footnote=False)
+            await self.bot.send(ctx, 'Cleared panel', EmbedColor.SUCCESS,
+                                footnote=False)
 
-    @happy.command(
-        name='stop',
-        aliases=['s'],
-        brief='',
-        help='Stop a panel from receiving reactions. This is useful if you get the error of a panel '
-             'already being open and don\'t want to scoll up to close the panel with the reaction',
-        usage='(panel_name)'
+    @happy.sub_command(
+        name='stop'
     )
     async def stop_panel(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -394,21 +400,20 @@ class Happy(commands.Cog):
             sql = "UPDATE happy SET active=$1 WHERE panel_name=$2"
             await con.execute(sql, False, instance['panel_name'])
 
-        message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
+        message = await self._get_message(instance["message_id"],
+                                          instance["channel_id"],
+                                          instance["guild_id"])
         if not message:
             return
         instance = dict(instance)
         instance["active"] = False
         await self._refresh_panel(instance, message)
         await message.clear_reactions()
-        await self.bot.send(ctx, 'Stopped panel from running.', EmbedColor.SUCCESS, footnote=False)
+        await self.bot.send(ctx, 'Stopped panel from running.',
+                            EmbedColor.SUCCESS, footnote=False)
 
-    @happy.command(
-        name='list',
-        aliases=['l'],
-        brief='',
-        help='List all panels that have been created',
-        usage='(panel_name)'
+    @happy.sub_command(
+        name='list'
     )
     async def list_panels(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -427,14 +432,8 @@ class Happy(commands.Cog):
             panel += f'{row["panel_name"]:<18} {row["panel_rows"]:<2} {active:<1}\n'
         await self.bot.send(ctx, panel, code_block=True)
 
-    @happy.command(
-        name='edit',
-        aliases=['e'],
-        brief='',
-        usage='(panel_name)(+/-)(int)',
-        help='Edit the amount of rows available to a panel.\n\nExample:\n'
-             'edit +3\n'
-             'edit -3'
+    @happy.sub_command(
+        name='edit'
     )
     async def edit_panel(self, ctx, *, arg_string=None):
         args = await parse_args(ctx, self.bot.settings, {}, arg_string)
@@ -451,25 +450,31 @@ class Happy(commands.Cog):
             return
 
         if len(string_objects) not in [2, 3]:
-            await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.')
+            await self.bot.send(ctx,
+                                'Invalid arguments used. Please see the help menu.')
             return
         elif len(string_objects) == 2:
             try:
                 operator, integer = string_objects[1][0], string_objects[1][1:]
             except:
-                await self.bot.send(ctx, 'Invalid arguments used. Please see the help menu.', EmbedColor.ERROR)
+                await self.bot.send(ctx,
+                                    'Invalid arguments used. Please see the help menu.',
+                                    EmbedColor.ERROR)
                 return
         else:
             operator, integer = string_objects[1], string_objects[2]
 
         if operator not in ['+', '-']:
-            await self.bot.send(ctx, 'Invalid operators used', EmbedColor.ERROR)
+            await self.bot.send(ctx, 'Invalid operators used',
+                                EmbedColor.ERROR)
             return
         if not integer.isdigit():
-            await self.bot.send(ctx, 'Invalid integer provided', EmbedColor.ERROR)
+            await self.bot.send(ctx, 'Invalid integer provided',
+                                EmbedColor.ERROR)
             return
         elif int(integer) not in range(0, 11):
-            await self.bot.send(ctx, 'Invalid integer range provided', EmbedColor.ERROR)
+            await self.bot.send(ctx, 'Invalid integer range provided',
+                                EmbedColor.ERROR)
             return
 
         if operator == '+':
@@ -477,7 +482,8 @@ class Happy(commands.Cog):
         else:
             new_rows = instance["panel_rows"] - int(integer)
         if new_rows not in range(0, 11):
-            await self.bot.send(ctx, 'New row count exceeds range of 0 to 10', EmbedColor.ERROR)
+            await self.bot.send(ctx, 'New row count exceeds range of 0 to 10',
+                                EmbedColor.ERROR)
             return
 
         async with self.bot.pool.acquire() as con:
@@ -485,13 +491,17 @@ class Happy(commands.Cog):
             await con.execute(sql, new_rows, instance['panel_name'])
 
         instance = await self._panel_exists(ctx, instance["panel_name"])
-        message = await self._get_message(instance["message_id"], instance["channel_id"], instance["guild_id"])
-        await self.bot.send(ctx, 'Panel edited', EmbedColor.SUCCESS, footnote=False)
+        message = await self._get_message(instance["message_id"],
+                                          instance["channel_id"],
+                                          instance["guild_id"])
+        await self.bot.send(ctx, 'Panel edited', EmbedColor.SUCCESS,
+                            footnote=False)
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
     def _panel_factory(self, instance) -> Tuple[str, list]:
-        ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25', '26 - 30', '31 - 35', '36 - 40',
+        ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25',
+                  '26 - 30', '31 - 35', '36 - 40',
                   '41 - 45', '46 - 50']
 
         data = instance["data"]
