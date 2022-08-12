@@ -8,6 +8,7 @@ from disnake.ext import commands
 
 from bot import BotClient
 from packages.utils import bot_sql as sql
+from packages.utils.paginator import Paginator
 from packages.utils.utils import *
 
 
@@ -31,10 +32,8 @@ class ViewNotes(disnake.ui.View):
                                             self.member.id)
 
         if not note_records:
-            await self.bot.inter_send(
-                inter,
-                panel="User does not have any notes"
-            )
+            await self.bot.inter_send(inter,
+                                      panel="User does not have any notes")
             self.stop()
             return
 
@@ -67,10 +66,11 @@ class ViewNotes(disnake.ui.View):
                 f"{note['note']}"
             )
 
-        await self.bot.inter_send(
-            inter,
-            panels=notes
-        )
+        embeds = await self.bot.inter_send(inter, panels=notes,
+                                           return_embed=True,
+                                           flatten_list=True)
+        view = Paginator(embeds, 3)
+        await inter.send(embeds=view.embed, view=view)
         self.stop()
 
 
@@ -144,11 +144,10 @@ class Leaders(commands.Cog):
                 for db_acc in db_cocs:
                     if db_acc["clash_tag"] == player.tag:
                         if db_acc["is_primary_account"]:
-                            await self.bot.inter_send(
-                                inter,
-                                panel=f"Clash [{player.tag}] is already set to primary",
-                                title="No action taken",
-                                color=EmbedColor.WARNING)
+                            await self.bot.inter_send(inter,
+                                                      panel=f"Clash [{player.tag}] is already set to primary",
+                                                      title="No action taken",
+                                                      color=EmbedColor.WARNING)
                             return
 
                 await con.execute(sql.update_discord_user_names(),
@@ -513,12 +512,9 @@ class Leaders(commands.Cog):
                                          "you still want to assign this tag " \
                                          "then you must delete the tag first " \
                                          "with **/delete_clash_account**"
-                        await self.bot.inter_send(
-                            inter,
-                            title="Unique Key Violation Error",
-                            panel=msg,
-                            color=EmbedColor.ERROR
-                        )
+                        await self.bot.inter_send(inter, panel=msg,
+                                                  title="Unique Key Violation Error",
+                                                  color=EmbedColor.ERROR)
                         return
 
                     msg = "New clash account added"
@@ -589,11 +585,9 @@ class Leaders(commands.Cog):
 
         clash_tag = coc.utils.correct_tag(clash_tag)
         if not coc.utils.is_valid_tag(clash_tag):
-            await self.bot.inter_send(
-                inter,
-                title=f"[{clash_tag}] is an invalid tag",
-                color=EmbedColor.ERROR
-            )
+            await self.bot.inter_send(inter,
+                                      title=f"[{clash_tag}] is an invalid tag",
+                                      color=EmbedColor.ERROR)
             return
 
         conn: asyncpg.Pool
@@ -605,12 +599,9 @@ class Leaders(commands.Cog):
                                           panel=f"Deleted [{clash_tag}]",
                                           color=EmbedColor.SUCCESS)
             except Exception as error:
-                await self.bot.inter_send(
-                    inter,
-                    title="Unknown error",
-                    panel=str(error),
-                    color=EmbedColor.ERROR
-                )
+                await self.bot.inter_send(inter, panel=str(error),
+                                          title="Unknown error",
+                                          color=EmbedColor.ERROR)
 
     @commands.check(is_leader)
     @commands.slash_command(
@@ -635,11 +626,8 @@ class Leaders(commands.Cog):
 
         db_member, db_cocs = await self._get_updates(member.id)
         msg = _get_account_panel(db_member, db_cocs)
-        await self.bot.inter_send(inter,
-                                  panel=msg,
-                                  color=EmbedColor.SUCCESS,
-                                  view=ViewNotes(self.bot, inter, member)
-                                  )
+        await self.bot.inter_send(inter, panel=msg, color=EmbedColor.SUCCESS,
+                                  view=ViewNotes(self.bot, inter, member))
 
     @commands.check(is_leader)
     @commands.slash_command(
@@ -685,11 +673,8 @@ class Leaders(commands.Cog):
                     data_block += f"{emoji}{self.bot.space}`" \
                                   f"{player['clash_name']:<17.17}`{self.bot.space}`{donation:⠀>5}⠀`\n"
 
-                await self.bot.inter_send(
-                    inter,
-                    panel=data_block,
-                    footer=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)"
-                )
+                await self.bot.inter_send(inter, panel=data_block,
+                                          footer=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)")
 
 
 def _get_account_panel(discord_member: asyncpg.Record,

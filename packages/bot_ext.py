@@ -3,6 +3,7 @@ from logging import Logger
 from typing import Union, List, Optional
 
 import disnake
+from disnake import Embed
 from disnake.ext.commands import Context, NotOwner, BadArgument
 
 from packages.utils.utils import EmbedColor
@@ -69,11 +70,13 @@ class BotExt:
                          footer: str = "",
                          author: disnake.Member = None,
                          view: disnake.ui.View = None,
-                         return_embed: bool = False
-                         ) -> Optional[List[List[disnake.Embed]]]:
+                         return_embed: bool = False,
+                         flatten_list: bool = False
+                         ) -> Union[list[Embed], list[list[Embed]]]:
         """
         Limits:
 
+        :param flatten_list:
         :param return_embed:
         :param view:
         :param panel:
@@ -135,6 +138,8 @@ class BotExt:
             total_embeds.append(embeds)
 
         if return_embed:
+            if flatten_list:
+                return [embed for embed_list in total_embeds for embed in embed_list]
             return total_embeds
 
         if isinstance(inter, disnake.ApplicationCommandInteraction):

@@ -25,7 +25,6 @@ class Paginator(disnake.ui.View):
 
         self.first_page.disabled = True
         self.prev_page.disabled = True
-        print(len(self.embed_chunks))
         if len(self.embed_chunks) == 1:
             self.next_page.disabled = True
             self.last_page.disabled = True
