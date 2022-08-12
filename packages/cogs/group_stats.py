@@ -177,33 +177,35 @@ class GroupStats(commands.Cog):
                 players = await con.fetch(select_classic_view().format(date))
                 data_blocks.append(players)
 
-        trophies = ""
-        donations = ""
+        trophies = []
+        donations = []
         for date, players in enumerate(data_blocks):
             players.sort(key=lambda x: x['current_trophy'], reverse=True)
-            trophies = f'__**Trophy Ranking**__\n'
-            trophies += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'trop':<4}⠀{'diff':>4}⠀`\n"
+            t_frame = f'__**Trophy Ranking**__\n'
+            t_frame += f"`{'rk':<3}{'th':<3}{'trop':<5}{'diff':>3}`\n"
             for count, player in enumerate(players):
                 count += 1
                 name = player['clash_name'][:14]
-                trophies += f"`⠀{count:<2}⠀{player['town_hall']:<2}⠀{player['current_trophy']:<4}⠀" \
-                         f"{player['trophy_diff']:<5}⠀{name:<11.11}`\n"
-            trophies += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+                t_frame += f"`{count:<3}{player['town_hall']:<3}{player['current_trophy']:<5}" \
+                         f"{player['trophy_diff']:<5}{name:<11.11}`\n"
+            t_frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+            trophies.append(t_frame)
 
         for date, players in enumerate(data_blocks):
             players.sort(key=lambda x: x['donation_gains'], reverse=True)
-            donations = f'__**Donation Ranking**__\n'
-            donations += f"`⠀{'rk':<2}⠀{'th':<2}⠀{'Donation':<8}⠀`\n"
+            d_frame = f'__**Donation Ranking**__\n'
+            d_frame += f"`{'rk':<3}{'th':<3}{'Donation':<9}`\n"
             for count, player in enumerate(players[:20]):
                 count += 1
-                donations += f"`⠀{str(count):<2}⠀{player['town_hall']:<2}⠀{player['donation_gains']:<4}⠀" \
+                d_frame += f"`{str(count):<3}{player['town_hall']:<3}{player['donation_gains']:<5}" \
                          f"{player['clash_name']:<14.14}`\n"
 
-            donations += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+            d_frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
+            donations.append(d_frame)
 
         embeds = await self.bot.inter_send(
             inter,
-            panels=[donations, trophies],
+            panels=donations + trophies,
             return_embed=True,
             flatten_list=True
         )
