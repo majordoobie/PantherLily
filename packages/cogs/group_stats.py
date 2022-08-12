@@ -6,8 +6,7 @@ from disnake.ext import commands
 import logging
 
 from bot import BotClient
-from packages.utils.bot_sql import select_all_active_users, \
-    select_clash_members_not_registered, select_classic_view
+import packages.utils.bot_sql as sql
 from packages.utils.paginator import Paginator
 from packages.utils.utils import parse_args, get_utc_monday
 
@@ -30,7 +29,7 @@ class RosterSearch(disnake.ui.View):
         for clan, players in self.clan.items():
             panel = f'__**{clan}**__\n'
             for player in players:
-                panel += f"`⠀{player['name']:<14.14} ` `⠀{player['clash_tag']:<12.12} `\n"
+                panel += f"`{player['name']:<15.15}{player['clash_tag']:<13.13}`\n"
 
             location_panels += panel
 
@@ -77,9 +76,9 @@ class GroupStats(commands.Cog):
         # Get users and sort them by name
         async with self.bot.pool.acquire() as con:
             members_db = await con.fetch(
-                select_all_active_users().format(get_utc_monday()))
+                sql.select_all_active_users().format(get_utc_monday()))
             unregistered_users = await con.fetch(
-                select_clash_members_not_registered())
+                sql.select_clash_members_not_registered())
         members_db.sort(key=lambda x: x['clash_name'].lower())
 
         roster = {}
@@ -135,12 +134,12 @@ class GroupStats(commands.Cog):
         # await self.bot.send(inter, panel, footnote=False)
 
         # Create the strength panel the tiny one that shows how many there are
-        strength_panel = f'__**Registered Members**__\n`⠀{"Total members":\u00A0<13}⠀` `⠀{strength_count:>2}⠀`\n'
+        strength_panel = f'__**Registered Members**__\n`{"Total members:":{self.bot.space}<15}{strength_count:>2}`\n'
         levels = [level for level in strength.keys()]
         levels.sort(reverse=True)
         for level in levels:
-            town_hall = f'Total TH{level}'
-            strength_panel += f"`⠀{town_hall:\u00A0<13}⠀` `⠀{strength[level]:>2}⠀`\n"
+            town_hall = f'Total TH{level}:'
+            strength_panel += f"`{town_hall:<15}{strength[level]:>2}`\n"
 
         panels.append(strength_panel)
         await self.bot.inter_send(inter, panels=panels,
@@ -174,7 +173,8 @@ class GroupStats(commands.Cog):
         data_blocks = []
         async with self.bot.pool.acquire() as con:
             for date in dates:
-                players = await con.fetch(select_classic_view().format(date))
+                players = await con.fetch(
+                    sql.select_classic_view().format(date))
                 data_blocks.append(players)
 
         trophies = []
@@ -187,7 +187,7 @@ class GroupStats(commands.Cog):
                 count += 1
                 name = player['clash_name'][:14]
                 t_frame += f"`{count:<3}{player['town_hall']:<3}{player['current_trophy']:<5}" \
-                         f"{player['trophy_diff']:<5}{name:<11.11}`\n"
+                           f"{player['trophy_diff']:<5}{name:<11.11}`\n"
             t_frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
             trophies.append(t_frame)
 
@@ -198,7 +198,7 @@ class GroupStats(commands.Cog):
             for count, player in enumerate(players[:20]):
                 count += 1
                 d_frame += f"`{str(count):<3}{player['town_hall']:<3}{player['donation_gains']:<5}" \
-                         f"{player['clash_name']:<14.14}`\n"
+                           f"{player['clash_name']:<14.14}`\n"
 
             d_frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
             donations.append(d_frame)
@@ -212,7 +212,6 @@ class GroupStats(commands.Cog):
 
         view = Paginator(embeds)
         await inter.send(embeds=view.embed, view=view)
-
 
 
 def _in_clan(clan_tag: str) -> bool:
