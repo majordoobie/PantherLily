@@ -1,16 +1,77 @@
 import asyncio
 import logging
 import traceback
-from asyncio import TimeoutError
 from typing import Tuple
 
-import asyncpg
 import coc.utils
 from disnake.ext import commands
 
 from bot import BotClient
 from packages.utils import bot_sql as sql
 from packages.utils.utils import *
+
+
+class ViewNotes(disnake.ui.View):
+    def __init__(self, bot: BotClient,
+                 inter: disnake.ApplicationCommandInteraction,
+                 member: disnake.Member):
+        super().__init__()
+        self.bot = bot
+        self.member = member
+        self.inter = inter
+
+    @disnake.ui.button(label="View Users Notes",
+                       style=disnake.ButtonStyle.green)
+    async def confirm(self,
+                      button: disnake.ui.Button,
+                      inter: disnake.MessageInteraction):
+
+        async with self.bot.pool.acquire() as conn:
+            note_records = await conn.fetch(sql.select_user_notes(),
+                                            self.member.id)
+
+        if not note_records:
+            await self.bot.inter_send(
+                self.inter,
+                panel="User does not have any notes"
+            )
+            self.stop()
+            return
+
+        notes = []
+        for note in note_records:
+            try:
+                player = await self.bot.coc_client.get_player(
+                    note["clash_tag"])
+            except:
+                player = None
+
+            try:
+                commit_by = self.bot.get_user(note["commit_by"])
+            except:
+                commit_by = None
+
+            clash_player = player.name if player else note["clash_tag"]
+            clash_tag = note["clash_tag"]
+
+            commit_by_name = commit_by.display_name if commit_by else note[
+                "commit_by"]
+
+            date = note["note_date"].strftime("%Y-%m-%d %H:%M")
+
+            notes.append(
+                f"`{'Player:':<11}{clash_player}`\n"
+                f"`{'Commit By:':<11}{commit_by_name}`\n"
+                f"`{'Tag:':<11}{clash_tag}`\n"
+                f"`{'Date:':<11}{date}`\n\n"
+                f"{note['note']}"
+            )
+
+        await self.bot.inter_send(
+            self.inter,
+            panels=notes
+        )
+        self.stop()
 
 
 class Leaders(commands.Cog):
@@ -562,10 +623,23 @@ class Leaders(commands.Cog):
             inter: disnake.ApplicationCommandInteraction,
             member: disnake.Member = commands.Param(lambda inter: inter.author)
     ) -> None:
+        """
+        Display the users current enrollment status. Additionally, view the
+        users notes
+
+        Parameters
+        -----------
+        inter:
+        member: Member to display information of
+        """
 
         db_member, db_cocs = await self._get_updates(member.id)
         msg = _get_account_panel(db_member, db_cocs)
-        await self.bot.inter_send(inter, msg, color=EmbedColor.SUCCESS)
+        await self.bot.inter_send(inter,
+                                  panel=msg,
+                                  color=EmbedColor.SUCCESS,
+                                  view=ViewNotes(self.bot, inter, member)
+                                  )
 
     @commands.check(is_leader)
     @commands.slash_command(
