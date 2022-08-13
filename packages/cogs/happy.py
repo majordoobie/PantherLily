@@ -27,14 +27,11 @@ EMOJI_REACTIONS = (
 )
 
 
-
 class Happy(commands.Cog):
-    POOL = None
 
     def __init__(self, bot: BotClient):
         self.bot = bot
         self.pool = self.bot.pool
-        Happy.POOL = self.pool
         self.log = logging.getLogger(f'{self.bot.settings.log_name}.Happy')
         self.emojis = {emoji: self.bot.settings.emojis[emoji] for emoji in
                        EMOJI_REACTIONS}
@@ -254,7 +251,15 @@ class Happy(commands.Cog):
     async def create_panel(self,
                            inter: disnake.ApplicationCommandInteraction,
                            panel_name: str,
-                           row_count: commands.Range[1, 10]):
+                           row_count: commands.Range[1, 10]) -> None:
+        """
+        Create a new panel for donation requests
+        Parameters
+        ----------
+        inter:
+        panel_name: Name of the panel
+        row_count: Number of rows to have, this can always be changed
+        """
         panel_name = panel_name.title()
         if panel_name in await self.panel_names(inter, panel_name):
             await self.bot.inter_send(
@@ -473,10 +478,8 @@ class Happy(commands.Cog):
     async def panel_names(self,
                           inter: disnake.ApplicationCommandInteraction,
                           user_input: str) -> List[str]:
-        if not Happy.POOL:
-            return [""]
 
-        async with Happy.POOL.acquire() as conn:
+        async with self.pool.acquire() as conn:
             sql = "SELECT panel_name FROM happy"
             rows = await conn.fetch(sql)
 
