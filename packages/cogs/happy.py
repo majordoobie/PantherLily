@@ -27,6 +27,7 @@ EMOJI_REACTIONS = (
 )
 
 
+
 class Happy(commands.Cog):
     POOL = None
 
@@ -38,19 +39,6 @@ class Happy(commands.Cog):
         self.emojis = {emoji: self.bot.settings.emojis[emoji] for emoji in
                        EMOJI_REACTIONS}
 
-    @staticmethod
-    async def panel_names(inter: disnake.ApplicationCommandInteraction,
-                          user_input: str) -> List[str]:
-
-        if not Happy.POOL:
-            return [""]
-
-        async with Happy.POOL.acquire() as conn:
-            sql = "SELECT panel_name FROM happy"
-            rows = await conn.fetch(sql)
-
-        return [panel["panel_name"] for panel in rows if user_input.title()
-                in panel["panel_name"]]
 
     @property
     def default_dataset(self) -> dict:
@@ -231,11 +219,10 @@ class Happy(commands.Cog):
     @happy.sub_command(
         name='delete'
     )
-    async def delete_panel(
+    async def delete(
             self,
             inter: disnake.ApplicationCommandInteraction,
-            panel_name: str = commands.Param(
-                autocomplete=panel_names)) -> None:
+            panel_name: str) -> None:
         """
         Delete a panel from the /happy list
 
@@ -248,7 +235,7 @@ class Happy(commands.Cog):
             await self.bot.inter_send(
                 inter,
                 panel=f"Panel **{panel_name}** does not exist. Please use "
-                      f"/happy list",
+                      f"`/happy list`",
                 color=EmbedColor.WARNING)
             return
 
@@ -267,52 +254,35 @@ class Happy(commands.Cog):
     async def create_panel(self,
                            inter: disnake.ApplicationCommandInteraction,
                            panel_name: str,
-                           row_count: int = commands.Range[1, 10]):
-        # Split the positional arguments and make sure that it's str and
-        # str(int)
-        try:
-            panel_name, panel_rows = args["positional"].split(' ')
-            panel_name = panel_name.title()
-            if not panel_rows.isdigit():
-                msg = f'The second argument must be an integer between 1 and 10. You provided `{panel_rows}`'
-                await self.bot.send(inter, msg, color=EmbedColor.ERROR)
-                return
-            else:
-                panel_rows = int(panel_rows)
-                if not 1 <= panel_rows <= 10:
-                    msg = f'The number of rows you provided does not fall within 1 and 10.'
-                    await self.bot.send(inter, msg, EmbedColor.ERROR)
-                    return
-        except ValueError:
-            msg = f'Too many arguments provided. Args: `{args["positional"]}`\nCommand only takes 2. A name ' \
-                  f'followed by the number of rows to populate.'
-            await self.bot.send(inter, msg, EmbedColor.ERROR)
-            self.log.error(
-                f'{inter.author.display_name} provided too many arguments to command: {args}')
+                           row_count: commands.Range[1, 10]):
+        panel_name = panel_name.title()
+        if panel_name in await self.panel_names(inter, panel_name):
+            await self.bot.inter_send(
+                inter,
+                panel=f"Panel **{panel_name}** already exist. Please use "
+                      f"`/happy view`",
+                color=EmbedColor.WARNING)
             return
 
         async with self.bot.pool.acquire() as conn:
-            sql = "SELECT panel_name FROM happy WHERE panel_name=$1"
-            sql2 = f"""INSERT INTO happy (panel_name, panel_rows, active, message_id, channel_id, guild_id, data) VALUES 
+            sql2 = f"""INSERT INTO happy (panel_name, panel_rows, active, 
+            message_id, channel_id, guild_id, data) VALUES 
             ($1, $2, $3, $4, $5, $6, $7)"""
 
-            if await conn.fetchrow(sql, panel_name):
-                await self.bot.send(inter,
-                                    f'Panel `{panel_name}` already exists.',
-                                    EmbedColor.WARNING)
-            else:
-                await conn.execute(
-                    sql2,
-                    panel_name,
-                    panel_rows,
-                    False,
-                    0,
-                    0,
-                    0,
-                    self.default_dataset
-                )
-                await self.bot.send(inter, f'Panel `{panel_name}` created!',
-                                    EmbedColor.SUCCESS, footnote=False)
+            await conn.execute(
+                sql2,
+                panel_name,
+                row_count,
+                False,
+                0,
+                0,
+                0,
+                self.default_dataset
+            )
+            await self.bot.inter_send(
+                inter,
+                panel=f'Panel `{panel_name}` created!',
+                color=EmbedColor.SUCCESS)
 
     @happy.sub_command(
         name='view'
@@ -499,6 +469,20 @@ class Happy(commands.Cog):
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
+    @delete.autocomplete("panel_name")
+    async def panel_names(self,
+                          inter: disnake.ApplicationCommandInteraction,
+                          user_input: str) -> List[str]:
+        if not Happy.POOL:
+            return [""]
+
+        async with Happy.POOL.acquire() as conn:
+            sql = "SELECT panel_name FROM happy"
+            rows = await conn.fetch(sql)
+
+        return [panel["panel_name"] for panel in rows if user_input.title()
+                in panel["panel_name"]]
+
     def _panel_factory(self, instance) -> Tuple[str, list]:
         ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25',
                   '26 - 30', '31 - 35', '36 - 40',
@@ -524,6 +508,7 @@ class Happy(commands.Cog):
         emoji_stack.append(self.emojis["stop"])
 
         return panel, emoji_stack
+
 
 
 def setup(bot):
