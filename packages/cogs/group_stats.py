@@ -203,12 +203,9 @@ class GroupStats(commands.Cog):
             d_frame += f'`Week of: {dates[date].strftime("%Y-%m-%d")}`'
             donations.append(d_frame)
 
-        embeds = await self.bot.inter_send(
-            inter,
-            panels=donations + trophies,
-            return_embed=True,
-            flatten_list=True
-        )
+        embeds = await self.bot.inter_send(inter, panels=donations + trophies,
+                                           return_embed=True,
+                                           flatten_list=True)
 
         view = Paginator(embeds)
         await inter.send(embeds=view.embed, view=view)
