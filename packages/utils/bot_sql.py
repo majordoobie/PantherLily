@@ -183,3 +183,8 @@ WHERE
     )
     AND discord_user.discord_id = clash_account.discord_id;
     '''
+
+
+def update_happy_panel() -> str:
+    return ("UPDATE happy SET message_id=$1, active=$2, channel_id=$3,"
+            "guild_id=$4 WHERE panel_name=$5")
