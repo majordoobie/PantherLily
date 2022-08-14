@@ -36,7 +36,6 @@ class Happy(commands.Cog):
         self.emojis = {emoji: self.bot.settings.emojis[emoji] for emoji in
                        EMOJI_REACTIONS}
 
-
     @property
     def default_dataset(self) -> dict:
         """Return the default data parameter"""
@@ -109,7 +108,7 @@ class Happy(commands.Cog):
             sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
             await con.execute(sql, _dict, record['panel_name'])
 
-       # Automatically remove reactions when panel is full
+        # Automatically remove reactions when panel is full
         done = True
         for index, value in enumerate(record["data"].values()):
             if index >= record["panel_rows"]:
@@ -167,7 +166,8 @@ class Happy(commands.Cog):
             return None
         return message
 
-    async def _get_panel(self, panel_name: Union[str, None]) -> Optional[asyncpg.Record]:
+    async def _get_panel(self, panel_name: Union[str, None]) -> Optional[
+        asyncpg.Record]:
         """
         Check to see if the given panel_name exits in the database. If it does
         then return the record for it.
@@ -202,7 +202,8 @@ class Happy(commands.Cog):
         inter:
         panel_name: Name of panel to remove, use /happy list to find name
         """
-        if panel_name not in await self.panel_names(inter, panel_name):
+        panel_name = panel_name.title()
+        if not await self.panel_exists(panel_name):
             await self.bot.inter_send(
                 inter,
                 panel=f"Panel **{panel_name}** does not exist. Please use "
@@ -235,7 +236,7 @@ class Happy(commands.Cog):
         row_count: Number of rows to have, this can always be changed
         """
         panel_name = panel_name.title()
-        if panel_name in await self.panel_names(inter, panel_name):
+        if panel_name in await self.panel_name_autocmp(inter, panel_name):
             await self.bot.inter_send(
                 inter,
                 panel=f"Panel **{panel_name}** already exist. Please use "
@@ -267,8 +268,7 @@ class Happy(commands.Cog):
         name='list'
     )
     async def list_panels(self,
-                          inter: disnake.ApplicationCommandInteraction
-                          ) -> None:
+                          inter: disnake.ApplicationCommandInteraction) -> None:
         """
         View the created panels and their status
         """
@@ -288,9 +288,17 @@ class Happy(commands.Cog):
     async def view_panel(self,
                          inter: disnake.ApplicationCommandInteraction,
                          panel_name: str):
+        panel_name = panel_name.title()
+        if not await self.panel_exists(panel_name):
+            await self.bot.inter_send(
+                inter,
+                color=EmbedColor.WARNING,
+                panel=f"Panel **{panel_name}** does not exist"
+            )
+            return
 
         panel_name = panel_name.title()
-        if panel_name not in await self.panel_names(inter, panel_name):
+        if panel_name not in await self.panel_name_autocmp(inter, panel_name):
             await self.bot.inter_send(
                 inter,
                 color=EmbedColor.WARNING,
@@ -311,7 +319,8 @@ class Happy(commands.Cog):
         instance["active"] = True
         panel, emoji_stack = self._panel_factory(instance)
 
-        embeds = await self.bot.send(inter, panel, footnote=False, _return=True)
+        embeds = await self.bot.send(inter, panel, footnote=False,
+                                     _return=True)
         for embed in embeds:
             panel = await inter.send(embed=embed)
 
@@ -456,19 +465,6 @@ class Happy(commands.Cog):
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
-    @delete_panel.autocomplete("panel_name")
-    @view_panel.autocomplete("panel_name")
-    async def panel_names(self,
-                          inter: disnake.ApplicationCommandInteraction,
-                          user_input: str) -> List[str]:
-
-        async with self.pool.acquire() as conn:
-            sql = "SELECT panel_name FROM happy"
-            rows = await conn.fetch(sql)
-
-        return [panel["panel_name"] for panel in rows if user_input.title()
-                in panel["panel_name"]]
-
     def _panel_factory(self, instance) -> Tuple[str, list]:
         ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25',
                   '26 - 30', '31 - 35', '36 - 40',
@@ -495,7 +491,33 @@ class Happy(commands.Cog):
 
         return panel, emoji_stack
 
+    @delete_panel.autocomplete("panel_name")
+    @view_panel.autocomplete("panel_name")
+    async def panel_name_autocmp(
+            self,
+            inter: Optional[disnake.ApplicationCommandInteraction],
+            user_input: str) -> List[str]:
+        """
+        Autocomplete callback. To add this callback to a function add the
+        decorator for the function.
 
+        :param inter: Interaction
+        :param user_input: The current input of the user
+        :return: List of possible options based on the user input
+        """
+
+        async with self.pool.acquire() as conn:
+            sql = "SELECT panel_name FROM happy"
+            rows = await conn.fetch(sql)
+
+        return [panel["panel_name"] for panel in rows if user_input.title()
+                in panel["panel_name"]]
+
+    async def panel_exists(self, panel_name: str) -> bool:
+        """Wrapper for checking if the panel name is in the database"""
+        if panel_name in await self.panel_name_autocmp(None, panel_name):
+            return True
+        return False
 
 def setup(bot):
     bot.add_cog(Happy(bot))
