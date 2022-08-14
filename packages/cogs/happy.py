@@ -264,6 +264,25 @@ class Happy(commands.Cog):
                 color=EmbedColor.SUCCESS)
 
     @happy.sub_command(
+        name='list'
+    )
+    async def list_panels(self,
+                          inter: disnake.ApplicationCommandInteraction
+                          ) -> None:
+        """
+        View the created panels and their status
+        """
+        async with self.bot.pool.acquire() as conn:
+            sql = """SELECT * FROM happy"""
+            rows = await conn.fetch(sql)
+
+        panel = f'{"NAME":<15} {"ROWS":<5} {"ACTIVE"}\n'
+        for row in rows:
+            active = "T" if row["active"] else "F"
+            panel += f'{row["panel_name"]:<18} {row["panel_rows"]:<2} {active:<1}\n'
+        await self.bot.send(inter, panel, code_block=True)
+
+    @happy.sub_command(
         name='view'
     )
     async def view_panel(self,
@@ -367,26 +386,6 @@ class Happy(commands.Cog):
         await message.clear_reactions()
         await self.bot.send(ctx, 'Stopped panel from running.',
                             EmbedColor.SUCCESS, footnote=False)
-
-    @happy.sub_command(
-        name='list'
-    )
-    async def list_panels(self, ctx, *, arg_string=None):
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy list_panels",
-                                   args=args,
-                                   arg_string=arg_string)
-        async with self.bot.pool.acquire() as conn:
-            sql = """SELECT * FROM happy"""
-            rows = await conn.fetch(sql)
-
-        panel = f'{"NAME":<15} {"ROWS":<5} {"ACTIVE"}\n'
-        for row in rows:
-            active = "T" if row["active"] else "F"
-            panel += f'{row["panel_name"]:<18} {row["panel_rows"]:<2} {active:<1}\n'
-        await self.bot.send(ctx, panel, code_block=True)
 
     @happy.sub_command(
         name='edit'
