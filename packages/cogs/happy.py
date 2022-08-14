@@ -109,7 +109,7 @@ class Happy(commands.Cog):
             sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
             await con.execute(sql, _dict, record['panel_name'])
 
-        # Automatically remove reactions when panel is full
+       # Automatically remove reactions when panel is full
         done = True
         for index, value in enumerate(record["data"].values()):
             if index >= record["panel_rows"]:
@@ -167,43 +167,17 @@ class Happy(commands.Cog):
             return None
         return message
 
-    async def _panel_exists(self,
-                            inter: disnake.ApplicationCommandInteraction,
-                            panel_name: Union[str, None]
-                            ) -> Optional[asyncpg.Record]:
+    async def _get_panel(self, panel_name: Union[str, None]) -> Optional[asyncpg.Record]:
         """
         Check to see if the given panel_name exits in the database. If it does
         then return the record for it.
 
-        :param inter:
         :param panel_name: Name of the panel to look up
         :return:
         """
-        if not panel_name:
-            await self.bot.inter_send(
-                inter,
-                panel="Please provide a panel name to delete. You can use "
-                      "the `Panther.Happy list` command to view all the "
-                      "panels available to you.",
-                color=EmbedColor.WARNING)
-            return None
-
-        panel_name = panel_name.title()
-
         async with self.bot.pool.acquire() as conn:
             sql = "SELECT * FROM happy WHERE panel_name=$1"
-            row = await conn.fetchrow(sql, panel_name)
-
-        if not row:
-            await self.bot.inter_send(
-                inter,
-                panel=f'Could not find a panel with the name '
-                      f'of `{panel_name}`',
-                color=EmbedColor.WARNING)
-            return None
-
-        else:
-            return row
+            return await conn.fetchrow(sql, panel_name)
 
     @commands.slash_command(
         name="happy",
@@ -216,7 +190,7 @@ class Happy(commands.Cog):
     @happy.sub_command(
         name='delete'
     )
-    async def delete(
+    async def delete_panel(
             self,
             inter: disnake.ApplicationCommandInteraction,
             panel_name: str) -> None:
@@ -292,29 +266,36 @@ class Happy(commands.Cog):
     @happy.sub_command(
         name='view'
     )
-    async def view_panel(self, ctx, *, arg_string=None):
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy view_panel",
-                                   args=args,
-                                   arg_string=arg_string)
+    async def view_panel(self,
+                         inter: disnake.ApplicationCommandInteraction,
+                         panel_name: str):
 
-        instance = await self._panel_exists(ctx, args["positional"])
+        panel_name = panel_name.title()
+        if panel_name not in await self.panel_names(inter, panel_name):
+            await self.bot.inter_send(
+                inter,
+                color=EmbedColor.WARNING,
+                panel=f"Panel **{panel_name}** does not exist"
+            )
+            return
+
+        instance = await self._get_panel(panel_name)
         if not instance:
             return
 
         if instance["active"]:
             msg = f'Panel `{instance["panel_name"]}` is already open. Please close it first.'
-            await self.bot.send(ctx, msg, EmbedColor.WARNING)
+            await self.bot.send(inter, msg, EmbedColor.WARNING)
             return
 
         instance = dict(instance)
         instance["active"] = True
         panel, emoji_stack = self._panel_factory(instance)
-        embeds = await self.bot.send(ctx, panel, footnote=False, _return=True)
+
+        embeds = await self.bot.send(inter, panel, footnote=False, _return=True)
         for embed in embeds:
-            panel = await ctx.send(embed=embed)
+            panel = await inter.send(embed=embed)
+
         for emoji in emoji_stack:
             await panel.add_reaction(emoji)
 
@@ -334,7 +315,7 @@ class Happy(commands.Cog):
                                    args=args,
                                    arg_string=arg_string)
 
-        instance = await self._panel_exists(ctx, args["positional"])
+        instance = await self._get_panel(args["positional"])
         if not instance:
             return
 
@@ -367,7 +348,7 @@ class Happy(commands.Cog):
                                    args=args,
                                    arg_string=arg_string)
 
-        instance = await self._panel_exists(ctx, args["positional"])
+        instance = await self._get_panel(args["positional"])
         if not instance:
             return
 
@@ -420,7 +401,7 @@ class Happy(commands.Cog):
 
         string_objects = args["positional"].split(' ')
 
-        instance = await self._panel_exists(ctx, string_objects[0])
+        instance = await self._get_panel(string_objects[0])
         if not instance:
             return
 
@@ -465,16 +446,19 @@ class Happy(commands.Cog):
             sql = "UPDATE happy SET panel_rows=$1 WHERE panel_name=$2"
             await con.execute(sql, new_rows, instance['panel_name'])
 
-        instance = await self._panel_exists(ctx, instance["panel_name"])
+        instance = await self._get_panel(instance["panel_name"])
         message = await self._get_message(instance["message_id"],
                                           instance["channel_id"],
                                           instance["guild_id"])
-        await self.bot.send(ctx, 'Panel edited', EmbedColor.SUCCESS,
+        await self.bot.send(ctx,
+                            'Panel edited',
+                            EmbedColor.SUCCESS,
                             footnote=False)
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
-    @delete.autocomplete("panel_name")
+    @delete_panel.autocomplete("panel_name")
+    @view_panel.autocomplete("panel_name")
     async def panel_names(self,
                           inter: disnake.ApplicationCommandInteraction,
                           user_input: str) -> List[str]:
