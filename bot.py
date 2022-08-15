@@ -15,7 +15,7 @@ from packages.private.settings import Settings
 from packages.utils.utils import EmbedColor
 
 
-class BotClient(commands.Bot, BotExt):
+class BotClient(disnake.ext.commands.Bot, BotExt):
     def __init__(self, settings: Settings, pool: Pool, coc_client: coc.Client, *args, **kwargs):
         """
         Inherits the Discord.py bot to create a bot that manages a group of clash of clans players

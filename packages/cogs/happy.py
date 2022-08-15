@@ -49,10 +49,10 @@ class HappyDropdown(disnake.ui.Select):
             options=options,
         )
 
-    async def _stop_panel(self,
-                          inter: disnake.MessageInteraction,
-                          record: asyncpg.Record,
-                          ) -> None:
+    async def stop_panel(self,
+                         message: disnake.Message,
+                         record: asyncpg.Record,
+                         ) -> None:
         """
         Stop a panel from running and remove the selection box
 
@@ -61,7 +61,7 @@ class HappyDropdown(disnake.ui.Select):
         """
         record = dict(record)
         record["active"] = False
-        await _refresh_panel(record, self.bot, inter.message, kill=True)
+        await _refresh_panel(record, self.bot, message, kill=True)
         sql = "UPDATE happy SET active=$1 WHERE panel_name=$2"
         async with self.bot.pool.acquire() as con:
             await con.execute(sql, False, record['panel_name'])
@@ -72,7 +72,7 @@ class HappyDropdown(disnake.ui.Select):
             record = await con.fetchrow(sql, inter.message.id)
 
         if "Stop" in self.values or record["active"] == False:
-            await self._stop_panel(inter, record)
+            await self.stop_panel(inter, record)
             return
 
         for opt in self.values:
@@ -104,21 +104,30 @@ class HappyDropdown(disnake.ui.Select):
 
         # If done, remove reactions and set panel to false
         if done:
-            await self._stop_panel(inter, record)
-
+            await self.stop_panel(inter.message, record)
 
 
 class HappyView(disnake.ui.View):
     children: List[HappyDropdown]
 
-    def __init__(self, bot: BotClient, panel_name: str, emojis: List[str],
+    def __init__(self, bot: BotClient,  panel_name: str, emojis: List[str],
                  rows: int):
-        super().__init__()
+        super().__init__(timeout=86400)
+        self.message = None
         self.bot = bot
         self.panel_name = panel_name
         self.rows = rows
+        self.selection = HappyDropdown(bot, emojis)
+        self.add_item(self.selection)
 
-        self.add_item(HappyDropdown(bot, emojis))
+    async def on_timeout(self) -> None:
+        """Clear the panel on timeout"""
+        async with self.bot.pool.acquire() as con:
+            sql = "SELECT * FROM happy WHERE message_id=$1"
+            record = await con.fetchrow(sql, self.message.id)
+
+        self.remove_item(self.selection)
+        await self.selection.stop_panel(self.message, record)
 
 
 class Happy(commands.Cog):
@@ -406,6 +415,7 @@ class Happy(commands.Cog):
                          panel_name,
                          emoji_stack,
                          instance["panel_rows"])
+
         embed = await self.bot.inter_send(inter,
                                           panel=panel,
                                           flatten_list=True,
@@ -413,6 +423,7 @@ class Happy(commands.Cog):
 
         await inter.response.send_message(embed=embed[0], view=view)
         message = await inter.original_message()
+        view.message = message
 
         async with self.bot.pool.acquire() as conn:
             await conn.execute(sql.update_happy_panel(),
@@ -425,15 +436,11 @@ class Happy(commands.Cog):
     @happy.sub_command(
         name='clear'
     )
-    async def clear_panel(self, ctx, *, arg_string=None):
-        args = await parse_args(ctx, self.bot.settings, {}, arg_string)
-        self.bot.log_user_commands(self.log,
-                                   user=ctx.author.display_name,
-                                   command="happy clear_panel",
-                                   args=args,
-                                   arg_string=arg_string)
-
-        instance = await self._get_panel(args["positional"])
+    async def clear_panel(self,
+                          inter: disnake.ApplicationCommandInteraction,
+                          panel_name: str = commands.Param(converter=to_title),
+                          ) -> None:
+        instance = await self._get_panel(panel_name)
         if not instance:
             return
 
@@ -450,10 +457,17 @@ class Happy(commands.Cog):
                                               instance["guild_id"])
             if not message:
                 return
-            await self._refresh_panel(instance, message)
+            await _refresh_panel(instance, self.bot, message)
+            await inter.response.defer(with_message=False)
+            await self.bot.inter_send(
+                inter,
+                panel=f"Cleared the **{panel_name}** panel",
+                color=EmbedColor.SUCCESS)
         else:
-            await self.bot.send(ctx, 'Cleared panel', EmbedColor.SUCCESS,
-                                footnote=False)
+            await self.bot.inter_send(
+                inter,
+                panel=f"Panel **{panel_name}** is already closed",
+                color=EmbedColor.WARNING)
 
     @happy.sub_command(
         name='stop'
@@ -479,7 +493,6 @@ class Happy(commands.Cog):
         instance = dict(instance)
         instance["active"] = False
         await _refresh_panel(instance, self.bot, message, kill=True)
-        await message.clear_reactions()
         await self.bot.inter_send(
             inter,
             panel=f"Stopped **{panel_name}** from running.",
@@ -557,6 +570,7 @@ class Happy(commands.Cog):
     @view_panel.autocomplete("panel_name")
     @delete_panel.autocomplete("panel_name")
     @stop_panel.autocomplete("panel_name")
+    @clear_panel.autocomplete("panel_name")
     async def panel_name_autocmp(
             self,
             inter: Optional[disnake.ApplicationCommandInteraction],
