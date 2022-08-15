@@ -8,7 +8,7 @@ from disnake.ext import commands
 from disnake import RawReactionActionEvent, Message
 
 from bot import BotClient
-from packages.utils.utils import EmbedColor, parse_args
+from packages.utils.utils import EmbedColor, parse_args, to_title
 import packages.utils.bot_sql as sql
 
 EMOJIS = {
@@ -30,6 +30,8 @@ EMOJIS = {
 EXTRA_EMOJI = 3
 
 
+
+
 class HappyDropdown(disnake.ui.Select):
     def __init__(self, bot: BotClient, emojis: List[str]):
         self.bot = bot
@@ -47,29 +49,63 @@ class HappyDropdown(disnake.ui.Select):
             options=options,
         )
 
+    async def _stop_panel(self,
+                          inter: disnake.MessageInteraction,
+                          record: asyncpg.Record,
+                          ) -> None:
+        """
+        Stop a panel from running and remove the selection box
+
+        :param inter: Inter object to send to
+        :param record: The record of the panel
+        """
+        record = dict(record)
+        record["active"] = False
+        await _refresh_panel(record, self.bot, inter.message, kill=True)
+        sql = "UPDATE happy SET active=$1 WHERE panel_name=$2"
+        async with self.bot.pool.acquire() as con:
+            await con.execute(sql, False, record['panel_name'])
+
     async def callback(self, inter: disnake.MessageInteraction):
         async with self.bot.pool.acquire() as con:
             sql = "SELECT * FROM happy WHERE message_id=$1"
             record = await con.fetchrow(sql, inter.message.id)
 
-        print(dir(inter))
-        print(inter.message.id)
-        print(inter.id)
-        print(inter.user)
-        embed = await self.bot.inter_send(inter, panel="Hi",
-                                          return_embed=True)
-        await inter.response.edit_message(embed=embed[0][0])
-        print(inter.message.id)
-        return
+        if "Stop" in self.values or record["active"] == False:
+            await self._stop_panel(inter, record)
+            return
 
-        current_user = record["data"][payload.emoji.name]
-        if current_user == payload.member.display_name:
-            record["data"][payload.emoji.name] = None
-        else:
-            record["data"][payload.emoji.name] = payload.member.display_name
+        for opt in self.values:
+            if record["data"][opt] is not None:
+                record["data"][opt] = None
+            else:
+                record["data"][opt] = inter.user.display_name
 
-        await self._refresh_panel(record, message)
-        await inter.response.edit_message(embed=embed[0][0])
+        # Update the panel and defer to complete the interaction
+        await _refresh_panel(record, self.bot, inter.message)
+        await inter.response.defer()
+
+        # Update the database
+        async with self.bot.pool.acquire() as con:
+            sql = "UPDATE happy SET data=$1 WHERE panel_name=$2"
+            await con.execute(sql, record["data"], record["panel_name"])
+
+        # Automatically remove reactions when panel is full
+        done = True
+        for index, value in enumerate(record["data"].values()):
+            if index >= record["panel_rows"]:
+                continue
+            if value is None:
+                done = False
+        if record["data"]["Top-off"] is None:
+            done = False
+        if record["data"]["Super Troop"] is None:
+            done = False
+
+        # If done, remove reactions and set panel to false
+        if done:
+            await self._stop_panel(inter, record)
+
 
 
 class HappyView(disnake.ui.View):
@@ -188,24 +224,6 @@ class Happy(commands.Cog):
             async with self.bot.pool.acquire() as con:
                 await con.execute(sql, False, record['panel_name'])
 
-    async def _refresh_panel(self,
-                             record: Union[asyncpg.Record, dict],
-                             message: Message,
-                             reset_emojis=False,
-                             kill: bool=False):
-        panel, emoji_stack = self._panel_factory(record)
-        embeds = await self.bot.send(ctx=None, description=panel,
-                                     footnote=False, _return=True)
-        for embed in embeds:
-            if kill:
-                await message.edit(embed=embed, view=None)
-            else:
-                await message.edit(embed=embed)
-
-        if reset_emojis:
-            await message.clear_reactions()
-            for reaction in emoji_stack:
-                await message.add_reaction(reaction)
 
     async def _get_message(self, message_id: int, channel_id: int,
                            guild_id: int) -> Optional[Message]:
@@ -244,6 +262,7 @@ class Happy(commands.Cog):
             sql = "SELECT * FROM happy WHERE panel_name=$1"
             return await conn.fetchrow(sql, panel_name)
 
+
     @commands.slash_command(
         name="happy",
         dm_permission=False,
@@ -258,8 +277,7 @@ class Happy(commands.Cog):
     async def delete_panel(
             self,
             inter: disnake.ApplicationCommandInteraction,
-            panel_name: str = commands.Param(
-                converter=lambda inter, panel_name: panel_name.title()),
+            panel_name: str = commands.Param(converter=to_title),
     ) -> None:
         """
         Delete a panel from the /happy list
@@ -289,8 +307,8 @@ class Happy(commands.Cog):
     )
     async def create_panel(self,
                            inter: disnake.ApplicationCommandInteraction,
-                           panel_name: str,
-                           row_count: commands.Range[1, 10]) -> None:
+                           panel_name: str = commands.Param(converter=to_title),
+                           row_count: int = commands.Range[1, 10]) -> None:
         """
         Create a new panel for donation requests
         Parameters
@@ -349,7 +367,7 @@ class Happy(commands.Cog):
     )
     async def view_panel(self,
                          inter: disnake.ApplicationCommandInteraction,
-                         panel_name: str = commands.Param(converter=lambda inter, panel_name: panel_name.title())
+                         panel_name: str = commands.Param(converter=to_title),
                          ):
         """
         Activate the donation panel.
@@ -382,7 +400,7 @@ class Happy(commands.Cog):
         # Cast the instance to a dict to enable writing
         instance = dict(instance)
         instance["active"] = True
-        panel, emoji_stack = self._panel_factory(instance)
+        panel, emoji_stack = _panel_factory(instance)
 
         view = HappyView(self.bot,
                          panel_name,
@@ -442,7 +460,7 @@ class Happy(commands.Cog):
     )
     async def stop_panel(self,
                          inter: disnake.ApplicationCommandInteraction,
-                         panel_name: str = commands.Param(converter=lambda inter, panel_name: panel_name.title())):
+                         panel_name: str = commands.Param(converter=to_title)):
 
         instance = await self._get_panel(panel_name)
         if not instance:
@@ -460,11 +478,11 @@ class Happy(commands.Cog):
             return
         instance = dict(instance)
         instance["active"] = False
-        await self._refresh_panel(instance, message, kill=True)
+        await _refresh_panel(instance, self.bot, message, kill=True)
         await message.clear_reactions()
         await self.bot.inter_send(
             inter,
-            panel="Stopped panel from running.",
+            panel=f"Stopped **{panel_name}** from running.",
             color=EmbedColor.SUCCESS)
 
     @happy.sub_command(
@@ -536,33 +554,6 @@ class Happy(commands.Cog):
         if instance["active"]:
             await self._refresh_panel(instance, message, reset_emojis=True)
 
-    def _panel_factory(self, instance: dict) -> Tuple[str, list]:
-        """Parses the Record to create the content that is displayed and
-        creates the emoji stack that associates with the amount of rows"""
-        ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25',
-                  '26 - 30', '31 - 35', '36 - 40',
-                  '41 - 45', '46 - 50']
-
-        data = instance["data"]
-        emoji_stack = []
-
-        status = 'Active' if instance["active"] else 'Inactive'
-        panel = f'**Panel Name:**   `{instance["panel_name"]}`\n' \
-                f'**Panel Status:** `{status}`\n\n'
-
-        for i in range(0, instance["panel_rows"]):
-            emoji = f"Zone {i + 1}"
-            emoji_stack.append(emoji)
-            panel += f'{self.emojis[emoji]} `[{ranges[i]:>7}]: {data[emoji] if data[emoji] else "":<20}`\n'
-
-        panel += f'{self.emojis["Top-off"]} `[{"Top-off":>7}]: {data["Top-off"] if data["Top-off"] else "":<20}`\n'
-        panel += f'{self.emojis["Super Troop"]} `[{"Super Troop":>7}]: {data["Super Troop"] if data["Super Troop"] else "":<20}`\n'
-        emoji_stack.append("Top-off")
-        emoji_stack.append("Super Troop")
-        emoji_stack.append("Stop")
-
-        return panel, emoji_stack
-
     @view_panel.autocomplete("panel_name")
     @delete_panel.autocomplete("panel_name")
     @stop_panel.autocomplete("panel_name")
@@ -595,6 +586,61 @@ class Happy(commands.Cog):
 
 def title_str(inter: disnake.CommandInteraction, string: str) -> str:
     return string.title()
+
+
+def _panel_factory(instance: dict) -> Tuple[str, list]:
+    """Parses the Record to create the content that is displayed and
+    creates the emoji stack that associates with the amount of rows"""
+    ranges = ['1 - 5', '6 - 10', '11 - 15', '16 - 20', '21 - 25',
+              '26 - 30', '31 - 35', '36 - 40',
+              '41 - 45', '46 - 50']
+
+    data = instance["data"]
+    emoji_stack = []
+
+    status = 'Active' if instance["active"] else 'Inactive'
+    panel = f'**Panel Name:**   `{instance["panel_name"]}`\n' \
+            f'**Panel Status:** `{status}`\n\n'
+
+    for i in range(0, instance["panel_rows"]):
+        emoji = f"Zone {i + 1}"
+        emoji_stack.append(emoji)
+        panel += f'{EMOJIS[emoji]} `[{ranges[i]:>7}]: {data[emoji] if data[emoji] else "":<20}`\n'
+
+    panel += f'{EMOJIS["Top-off"]} `[{"Top-off":>7}]: {data["Top-off"] if data["Top-off"] else "":<20}`\n'
+    panel += f'{EMOJIS["Super Troop"]} `[{"Super Troop":>7}]: {data["Super Troop"] if data["Super Troop"] else "":<20}`\n'
+    emoji_stack.append("Top-off")
+    emoji_stack.append("Super Troop")
+    emoji_stack.append("Stop")
+
+    return panel, emoji_stack
+
+
+async def _refresh_panel(record: Union[asyncpg.Record, dict],
+                         bot: BotClient,
+                         message: disnake.Message,
+                         reset_emojis: bool = False,
+                         kill: bool = False) -> None:
+    """Handle updating the Embed with the updated information"""
+    panel, emoji_stack = _panel_factory(record)
+
+    embed = await bot.inter_send(
+        None,
+        panel=panel,
+        return_embed=True,
+        flatten_list=True
+    )
+
+    if kill:
+        await message.edit(embed=embed[0], view=None)
+    else:
+        await message.edit(embed=embed[0])
+
+    # if reset_emojis:
+    #     await message.clear_reactions()
+    #     for reaction in emoji_stack:
+    #         await message.add_reaction(reaction)
+
 
 
 def setup(bot):

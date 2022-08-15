@@ -61,7 +61,7 @@ class BotExt:
         return
 
     async def inter_send(self,
-                         inter: Union[disnake.ApplicationCommandInteraction, disnake.MessageInteraction],
+                         inter: Union[disnake.ApplicationCommandInteraction, disnake.MessageInteraction, None],
                          panel: str = "",
                          panels: List[str] = [],
                          title: str = "",
