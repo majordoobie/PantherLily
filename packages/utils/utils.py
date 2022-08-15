@@ -330,3 +330,8 @@ def get_utc_monday() -> datetime:
 
     return last_monday
 
+
+def to_title(inter: disnake.ApplicationCommandInteraction, panel_name: str
+             ) -> str:
+    """Function acts as a parameter function for  Happy.py"""
+    return panel_name.title()
