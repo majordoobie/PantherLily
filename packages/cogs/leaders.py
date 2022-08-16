@@ -33,9 +33,12 @@ class ViewNotes(disnake.ui.View):
 
         await inter.response.edit_message(view=None)
         if not note_records:
-            await self.bot.inter_send(
+            embed = await self.bot.inter_send(
                 inter,
-                panel="User does not have any notes")
+                panel="User does not have any notes",
+                return_embed=True,
+                flatten_list=True)
+            await inter.send(embed=embed[0])
             self.stop()
             return
 

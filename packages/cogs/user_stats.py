@@ -28,7 +28,7 @@ class CoCAccountLink(disnake.ui.View):
 
     @property
     def clash_of_stats(self):
-        user = f"{self.player.name}-{self.player.tag.lstrip('#')}"
+        user = f"{'-'.join(self.player.name.split(' '))}-{self.player.tag.lstrip('#')}"
         return f"https://www.clashofstats.com/players/{user}/summary"
 
 
