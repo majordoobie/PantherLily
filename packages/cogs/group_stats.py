@@ -15,6 +15,7 @@ class RosterSearch(disnake.ui.View):
                  inter: disnake.ApplicationCommandInteraction,
                  clan_locations: dict):
         super().__init__()
+        self.message = None
         self.bot = bot
         self.inter = inter
         self.clan = clan_locations
@@ -28,13 +29,13 @@ class RosterSearch(disnake.ui.View):
         for clan, players in self.clan.items():
             panel = f'__**{clan}**__\n'
             for player in players:
-                panel += f"`{player['name']:<15.15}{player['clash_tag']:<13.13}`\n"
-
+                panel += f"`{player['name']:<15.15}" \
+                         f"{player['clash_tag']:<13.13}`\n"
+            panel += "\n"
             location_panels += panel
 
-        self.clear_items()
-        await inter.edit_original_message(view=self)
         await self.bot.inter_send(inter, location_panels)
+        await self.message.edit(view=None)
         self.stop()
 
 
@@ -63,14 +64,12 @@ class GroupStats(commands.Cog):
 
         # Create legend to display
         clan = self.bot.settings.emojis["reddit_zulu"]
-        db = self.bot.settings.emojis["database"]
-        waze = self.bot.settings.emojis["waze"]
+        db = "<:database1:1009225443846664242>"
         true = self.bot.settings.emojis["true"]
         false = self.bot.settings.emojis["false"]
 
         legend = f'{clan} Member is in Reddit Zulu in-game.\n'
         legend += f'{db} Member is registered with Pantherlily.\n'
-        legend += f'{waze} Get realtime location of members.\n'
 
         panels.append(legend)
 
@@ -123,7 +122,7 @@ class GroupStats(commands.Cog):
                 "clash_tag": player['clash_tag']
             }
         # Display the roster panel
-        panel = f'{clan}{db}\n'
+        panel = f'{clan} {db}\n'
         count = 0
         for player, stats in roster.items():
             panel += true if stats['in_mother_clan'] else false
@@ -143,10 +142,10 @@ class GroupStats(commands.Cog):
             strength_panel += f"`{town_hall:<15}{strength[level]:>2}`\n"
 
         panels.append(strength_panel)
-        await self.bot.inter_send(inter, panels=panels,
-                                  view=RosterSearch(self.bot,
-                                                    inter,
-                                                    clan_locations))
+        view = RosterSearch(self.bot, inter, clan_locations)
+        await self.bot.inter_send(inter, panels=panels, view=view)
+        view.message = await inter.original_message()
+
 
     @commands.slash_command(
         name="top",
@@ -196,7 +195,9 @@ class GroupStats(commands.Cog):
             players.sort(key=lambda x: x['donation_gains'], reverse=True)
             d_frame = f'__**Donation Ranking**__\n'
             d_frame += f"`{'rk':<3}{'th':<3}{'Donation':<9}`\n"
-            for count, player in enumerate(players[:20]):
+            for count, player in enumerate(players):
+                if player["donation_gains"] < 300:
+                    continue
                 count += 1
                 d_frame += f"`{str(count):<3}{player['town_hall']:<3}{player['donation_gains']:<5}" \
                            f"{player['clash_name']:<14.14}`\n"
