@@ -17,19 +17,22 @@ class Administrator(commands.Cog):
         auto_sync=True
     )
     async def help(self, inter: disnake.ApplicationCommandInteraction):
+        """
+        Display the help menu
+        """
         admin_embed = disnake.Embed(
             title="Admin Commands",
             color=EmbedColor.INFO.value
         )
 
         admin_embed.add_field("/add",
-                              "Add a new user to PantherLily",
+                              "Add a new user to PantherLily.",
                               inline=False)
 
         admin_embed.add_field("/remove",
                               "Disable a user from PantherLily. Their "
                               "records will be saved but their stats "
-                              "tracking will be paused",
+                              "tracking will be paused.",
                               inline=False)
 
         admin_embed.add_field("/view",
@@ -64,7 +67,7 @@ class Administrator(commands.Cog):
         user_embed.add_field("/donation",
                              "View your current donation progress for the "
                              "week. An optional argument to check another "
-                             "user is a is also supported",
+                             "user is a is also supported.",
                              inline=False)
 
         user_embed.add_field("/stats",
@@ -80,7 +83,7 @@ class Administrator(commands.Cog):
                              "output will also show users that are in the "
                              "clan but not registered. The output also has "
                              "the ability to show the current location of "
-                             "all users",
+                             "all users.",
                              inline=False)
 
         user_embed.add_field("/top",
