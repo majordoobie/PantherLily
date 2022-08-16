@@ -40,6 +40,7 @@ class BackgroundTasks(commands.Cog):
         messages = [
             (ActivityType.playing, "Spotify"),
             (ActivityType.playing, "Overwatch"),
+            (ActivityType.watching, "/help"),
             (ActivityType.playing, "Clash of Clans"),
             (ActivityType.playing, "with cat nip~"),
             (ActivityType.watching, "Fairy Tail"),
@@ -47,6 +48,7 @@ class BackgroundTasks(commands.Cog):
             (ActivityType.watching, "/help"),
             (ActivityType.playing, "/top"),
             (ActivityType.watching, "Dragon Ball Z"),
+            (ActivityType.watching, "/help"),
             (ActivityType.playing, "Reddit Zulu is #1")
         ]
         activity = choice(messages)

@@ -14,6 +14,8 @@ services:
       - 1.0.0.1
     networks:
       - panther_network
+    depends_on:
+      - panther_db
 
   panther_db:
     platform: linux/amd64
@@ -39,6 +41,8 @@ services:
       - .:/opt/code
     networks:
       - panther_network
+    depends_on:
+      - panther_db
 
 volumes:
   panther_volume:
