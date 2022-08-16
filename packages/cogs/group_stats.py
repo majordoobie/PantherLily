@@ -1,14 +1,13 @@
-import asyncio
+import logging
 from datetime import timedelta
 
 import disnake
 from disnake.ext import commands
-import logging
 
-from bot import BotClient
 import packages.utils.bot_sql as sql
+from bot import BotClient
 from packages.utils.paginator import Paginator
-from packages.utils.utils import parse_args, get_utc_monday
+from packages.utils.utils import get_utc_monday
 
 
 class RosterSearch(disnake.ui.View):
@@ -209,6 +208,7 @@ class GroupStats(commands.Cog):
 
         view = Paginator(embeds)
         await inter.send(embeds=view.embed, view=view)
+        view.message = await inter.original_message()
 
 
 def _in_clan(clan_tag: str) -> bool:

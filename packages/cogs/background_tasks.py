@@ -45,8 +45,7 @@ class BackgroundTasks(commands.Cog):
             (ActivityType.watching, "Fairy Tail"),
             (ActivityType.playing, "I'm not a cat!"),
             (ActivityType.watching, "/help"),
-            (ActivityType.playing, "p.top --trophy"),
-            (ActivityType.playing, "p.t --weeks 3"),
+            (ActivityType.playing, "/top"),
             (ActivityType.watching, "Dragon Ball Z"),
             (ActivityType.playing, "Reddit Zulu is #1")
         ]

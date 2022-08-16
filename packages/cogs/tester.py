@@ -71,8 +71,10 @@ class Tester(commands.Cog):
         await self.bot.send(ctx=ctx, description='ponnnnnnnnng')
 
     @commands.slash_command(auto_sync=True)
-    async def test(self, inter):
-        await inter.send("Tic Tac Toe: X goes first", view=TicTacToe())
+    async def test(self, inter: disnake.ApplicationCommandInteraction):
+        for i in inter.guild.emojis:
+            print(f"<{i.name}:{i.id}>")
+        #await inter.send("Tic Tac Toe: X goes first", view=TicTacToe())
         # await inter.send("Here are some buttons!", view=RowButtons())
 
 class TicTacToeButton(disnake.ui.Button["TicTacToe"]):
