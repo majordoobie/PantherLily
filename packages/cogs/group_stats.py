@@ -32,6 +32,8 @@ class RosterSearch(disnake.ui.View):
 
             location_panels += panel
 
+        self.clear_items()
+        await inter.edit_original_message(view=self)
         await self.bot.inter_send(inter, location_panels)
         self.stop()
 
