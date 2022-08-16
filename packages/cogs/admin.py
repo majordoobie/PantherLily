@@ -2,6 +2,7 @@ from disnake.ext import commands
 import logging
 import traceback
 
+from packages.utils.paginator import Paginator
 from packages.utils.utils import *
 from bot import BotClient
 
@@ -10,6 +11,95 @@ class Administrator(commands.Cog):
     def __init__(self, bot: BotClient):
         self.bot = bot
         self.log = logging.getLogger(f'{self.bot.settings.log_name}.Administrator')
+
+    @commands.slash_command(
+        name="help",
+        auto_sync=True
+    )
+    async def help(self, inter: disnake.ApplicationCommandInteraction):
+        admin_embed = disnake.Embed(
+            title="Admin Commands",
+            color=EmbedColor.INFO.value
+        )
+
+        admin_embed.add_field("/add",
+                              "Add a new user to PantherLily",
+                              inline=False)
+
+        admin_embed.add_field("/remove",
+                              "Disable a user from PantherLily. Their "
+                              "records will be saved but their stats "
+                              "tracking will be paused",
+                              inline=False)
+
+        admin_embed.add_field("/view",
+                              "View a users current enrollment status with "
+                              "the option of viewing a users records. A "
+                              "record is added each time a user is enabled "
+                              "or disabled with the \"kick message\".",
+                              inline=False)
+
+        admin_embed.add_field("/report",
+                              "View an overall summary of the clans "
+                              "donation progress for the week with the "
+                              "option of requesting more weeks.",
+                              inline=False)
+
+        admin_embed.add_field("/del_coc",
+                              "Clash tags are uniquely linked to one discord "
+                              "account. If a user wants to switch their "
+                              "discord account then you must use this "
+                              "command to disassociate the clash tag with "
+                              "the old discord account before adding them. "
+                              "Failing to do so will result in an error "
+                              "when enrolling them. This is no problem, the "
+                              "error will let you know to use this command.",
+                              inline=False)
+
+        user_embed = disnake.Embed(
+            title="User Commands",
+            color=EmbedColor.INFO.value
+        )
+
+        user_embed.add_field("/donation",
+                             "View your current donation progress for the "
+                             "week. An optional argument to check another "
+                             "user is a is also supported",
+                             inline=False)
+
+        user_embed.add_field("/stats",
+                             "View the users Clash of Clans stats with the "
+                             "option of also viewing other users. The "
+                             "response also provides two buttons. One for "
+                             "the Clash Of Stats website and another to "
+                             "open the users account in game.",
+                             inline=False)
+
+        user_embed.add_field("/roster",
+                             "Overall view of the users in the clan. The "
+                             "output will also show users that are in the "
+                             "clan but not registered. The output also has "
+                             "the ability to show the current location of "
+                             "all users",
+                             inline=False)
+
+        user_embed.add_field("/top",
+                             "Show the top donors and top trophy gains "
+                             "for the week.",
+                             inline=False)
+
+        view = Paginator([user_embed, admin_embed], 1)
+        await inter.send(embeds=view.embed, view=view)
+        view.message = await inter.original_message()
+
+
+
+
+
+
+
+
+
 
     @commands.command(
         alias='bot_roles',

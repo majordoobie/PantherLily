@@ -31,9 +31,11 @@ class ViewNotes(disnake.ui.View):
             note_records = await conn.fetch(sql.select_user_notes(),
                                             self.member.id)
 
+        await inter.response.edit_message(view=None)
         if not note_records:
-            await self.bot.inter_send(inter,
-                                      panel="User does not have any notes")
+            await self.bot.inter_send(
+                inter,
+                panel="User does not have any notes")
             self.stop()
             return
 
@@ -71,6 +73,7 @@ class ViewNotes(disnake.ui.View):
                                            flatten_list=True)
         view = Paginator(embeds, 3)
         await inter.send(embeds=view.embed, view=view)
+        view.message = await inter.original_message()
         self.stop()
 
 
@@ -582,6 +585,16 @@ class Leaders(commands.Cog):
     async def del_coc(self,
                       inter: disnake.ApplicationCommandInteraction,
                       clash_tag: str) -> None:
+        """
+        Remove a clash tag from the database allowing the tag to be linked
+        with another user.
+
+        Parameters
+        -----------
+
+        inter:
+        clash_tag: The tag to remove
+        """
 
         clash_tag = coc.utils.correct_tag(clash_tag)
         if not coc.utils.is_valid_tag(clash_tag):
@@ -626,7 +639,8 @@ class Leaders(commands.Cog):
 
         db_member, db_cocs = await self._get_updates(member.id)
         msg = _get_account_panel(db_member, db_cocs)
-        await self.bot.inter_send(inter, panel=msg, color=EmbedColor.SUCCESS,
+        await self.bot.inter_send(inter, panel=msg,
+                                  color=EmbedColor.SUCCESS,
                                   view=ViewNotes(self.bot, inter, member))
 
     @commands.check(is_leader)
