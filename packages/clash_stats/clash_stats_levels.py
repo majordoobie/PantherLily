@@ -1,4 +1,5 @@
 from pathlib import Path
+import pandas as pd
 from sys import argv
 
 from oauth2client.service_account import ServiceAccountCredentials
@@ -34,23 +35,24 @@ def _get_spreadsheet() -> list:
 
 
 def get_levels(level: int) -> dict:
-    clash_data = _get_spreadsheet()
-    town_hall = 'TH' + str(level)
-    results_obj = {}
+    town_hall = f'TH{level}'
+    troop_df = pd.read_csv(Path(".").resolve() / "assets/CoC_Troop_Levels.csv",
+                           skip_blank_lines=True,
+                           header=0,
+                           dtype={"max_level": "Int32"}
+                           ).set_index('Object', drop=False)
 
-    for troop in clash_data:
-        if troop.get(town_hall):
-            if isinstance(troop['Object'], str):
-                results_obj[troop['Object']] = ClashTroopLevel({
-                    'name': troop['Object'],
-                    'town_hall': town_hall,
-                    'max_level': troop[town_hall],
-                    'type': troop['Type'],
-                    'source': troop['Source'],
-                    'emoji': troop['Emoji'],
-                })
+    troop_df = troop_df.loc[troop_df[town_hall] > 0, ['Object', 'Type', 'Source', 'Emoji', town_hall]]
+    troop_df[town_hall] = troop_df[town_hall].astype(int)
+    troop_df['town_hall'] = level
+    troop_df = troop_df.transpose().rename(
+        {'Object': 'name',
+         'Type': 'type',
+         'Source': 'source',
+         town_hall: 'max_level',
+         'Emoji': 'emoji'})
 
-    return results_obj
+    return troop_df
 
 
 if __name__ == '__main__':
