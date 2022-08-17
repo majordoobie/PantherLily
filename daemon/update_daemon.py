@@ -1,12 +1,9 @@
 """
-This service will be used to automatically update the database with fresh information away from the bot to avoid
-any slowdowns from I/O.
+This service will be used to automatically update the database with fresh
+information away from the bot to avoid any slowdowns from I/O.
 """
 # Little hack to get the parent packages for the bot working in here
-import sys
 from pathlib import Path
-
-sys.path.append('/opt/code/')
 
 import asyncio
 import asyncpg
