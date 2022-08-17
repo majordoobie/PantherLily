@@ -1,9 +1,11 @@
 """
-This service will be used to automatically update the database with fresh
-information away from the bot to avoid any slowdowns from I/O.
+This service will be used to automatically update the database with fresh information away from the bot to avoid
+any slowdowns from I/O.
 """
 # Little hack to get the parent packages for the bot working in here
+import sys
 from pathlib import Path
+
 
 import asyncio
 import asyncpg
@@ -190,6 +192,7 @@ def _get_coc_client(settings: Settings) -> coc.Client:
 async def main():
     """Async start point will for all background tasks"""
     project_path = Path.cwd().resolve().parent
+    sys.path.append(project_path.as_posix())
     settings = Settings(project_path, "live_mode", daemon=True)
 
     LoggerSetup(settings)
@@ -211,6 +214,7 @@ async def main():
 
 
 if __name__ == '__main__':
+
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
