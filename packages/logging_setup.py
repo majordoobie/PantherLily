@@ -26,7 +26,7 @@ class BotLogger:
         self._set_webhook_logging()
 
         # Set up file logging
-        self._set_file_logging()
+        # self._set_file_logging()
 
         # Set up terminal handler
         self._set_stdout_logging()
