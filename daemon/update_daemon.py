@@ -5,7 +5,7 @@ any slowdowns from I/O.
 # Little hack to get the parent packages for the bot working in here
 import sys
 from pathlib import Path
-
+sys.path.append(Path.cwd().resolve().parent.as_posix())
 
 import asyncio
 import asyncpg
