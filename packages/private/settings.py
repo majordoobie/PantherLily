@@ -33,7 +33,7 @@ class Settings:
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
         self.owner = OWNER
-        self.dsn = DSN
+        self.dsn = get_dsn(bot_mode)
 
         # Paths
         self.cog_path = COG_LOCATION
