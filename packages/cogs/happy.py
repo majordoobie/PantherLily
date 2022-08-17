@@ -289,7 +289,9 @@ class Happy(commands.Cog):
         for row in rows:
             active = "T" if row["active"] else "F"
             panel += f'{row["panel_name"]:<18} {row["panel_rows"]:<2} {active:<1}\n'
-        await self.bot.send(inter, panel, code_block=True)
+        await self.bot.inter_send(inter,
+                                  panel=panel,
+                                  code_block=True)
 
     @happy.sub_command(
         name='view'

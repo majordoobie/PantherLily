@@ -108,7 +108,6 @@ def get_users(all_data):
             else:
                 users[user] +=1
 
-    print(users)
 
 def migrate_note(db_obj: RecordObject, conn):
 

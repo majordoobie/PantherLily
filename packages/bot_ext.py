@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from logging import Logger
 from typing import Union, List, Optional
 
@@ -106,7 +107,7 @@ class BotExt:
             embed = disnake.Embed(
                 description=panel,
                 color=color.value,
-                title=title if index == 0 else ""
+                title=title if index == 0 else "",
             )
 
             if index == 0:
@@ -120,6 +121,7 @@ class BotExt:
             if index == last_index:
                 if footer != "":
                     embed.set_footer(text=footer)
+                embed.timestamp = datetime.now()
 
             # If the current embed is going to make the embeds block exceed
             # to send size, then create a new embed block
@@ -142,10 +144,10 @@ class BotExt:
                 return [embed for embed_list in total_embeds for embed in embed_list]
             return total_embeds
 
-        if isinstance(inter, disnake.ApplicationCommandInteraction):
-            send_func = inter.send
-        else:
+        if hasattr(inter, "response"):
             send_func = inter.response.send_message
+        else:
+            send_func = inter.send
 
         last_embed = len(total_embeds) - 1
         for index, embeds in enumerate(total_embeds):

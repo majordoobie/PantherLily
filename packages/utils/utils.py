@@ -75,7 +75,9 @@ async def get_discord_member(inter: disnake.ApplicationCommandInteraction,
             return None
 
         if print_prt:
-            await print_prt(inter, f'Discord member: {disco_id} was not found', color=EmbedColor.WARNING)
+            await print_prt(inter,
+                            panel=f'Discord member: {disco_id} was not found',
+                            color=EmbedColor.WARNING)
             return None
         else:
             print(f'Discord member: {disco_id} was not found')

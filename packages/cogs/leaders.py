@@ -289,7 +289,9 @@ class Leaders(commands.Cog):
             if return_msg:
                 return msg
             else:
-                await self.bot.send(ctx, msg, color=EmbedColor.SUCCESS)
+                await self.bot.inter_send(ctx,
+                                          panel=msg,
+                                          color=EmbedColor.SUCCESS)
 
     @commands.check(is_leader)
     @commands.slash_command(
@@ -373,7 +375,7 @@ class Leaders(commands.Cog):
         # attempt to get the discord member object
         member = await get_discord_member(inter,
                                           db_member["discord_id"],
-                                          self.bot.send, _return=True)
+                                          self.bot.inter_send, _return=True)
 
         if set_message:
             await inter.response.send_modal(
@@ -640,7 +642,17 @@ class Leaders(commands.Cog):
         member: Member to display information of
         """
 
-        db_member, db_cocs = await self._get_updates(member.id)
+        payload = await self._get_updates(member.id)
+        if not any(payload):
+            await self.bot.inter_send(
+                inter,
+                panel=f"Could not find any data for **{member.display_name}** "
+                      f"in the database.",
+                color=EmbedColor.WARNING
+            )
+            return
+
+        db_member, db_cocs = payload
         msg = _get_account_panel(db_member, db_cocs)
         await self.bot.inter_send(inter, panel=msg,
                                   color=EmbedColor.SUCCESS,
@@ -675,11 +687,15 @@ class Leaders(commands.Cog):
             dates.append(get_utc_monday() - timedelta(days=(i * 7)))
 
         # Get report blocks based on dates
+        reports = []
         async with self.bot.pool.acquire() as con:
             for date in dates:
                 players = await con.fetch(
                     sql.select_classic_view().format(date))
                 players.sort(key=lambda x: x["donation_gains"], reverse=True)
+                legend = f"{true} User met weekly quota\n"
+                legend += f"{false} User has yet to meet quota\n"
+                legend += f"{warning} User is exempt from quota\n\n"
                 data_block = f"`{self.bot.space * 3}{'Player':<14}{self.bot.space}{'Donation'}`\n"
                 for player in players:
                     donation = player["donation_gains"]
@@ -690,9 +706,19 @@ class Leaders(commands.Cog):
                     data_block += f"{emoji}{self.bot.space}`" \
                                   f"{player['clash_name']:<17.17}`{self.bot.space}`{donation:>5}`\n"
 
-                await self.bot.inter_send(inter, panel=data_block,
-                                          footer=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)")
+                embed = await self.bot.inter_send(
+                    inter,
+                    panels=[legend, data_block],
+                    title=f"Week of: {date.strftime('%Y-%m-%d')} (GMT)",
+                    return_embed=True,
+                    flatten_list=True
+                )
+                reports.append(embed[0])
+                reports.append(embed[1])
 
+        view = Paginator(reports, 2)
+        await inter.send(embeds=view.embed, view=view)
+        view.message = await inter.original_message()
 
 def _get_account_panel(discord_member: asyncpg.Record,
                        coc_accounts: List[asyncpg.Record],

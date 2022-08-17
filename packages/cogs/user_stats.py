@@ -56,20 +56,15 @@ class UserStats(commands.Cog):
         ctx: disnake.ApplicationCommandInteraction
         member: Optional discord member to specify
         """
-        self.bot.log_user_commands(self.log,
-                                   user=inter.author.display_name,
-                                   command="donation",
-                                   args=None,
-                                   arg_string=member)
 
         async with self.bot.pool.acquire() as conn:
             player = await conn.fetchrow(
                 select_active_account().format(member.id))
 
         if not player:
-            await self.bot.send(
+            await self.bot.inter_send(
                 inter,
-                f"User `{member.display_name}` is no longer an active member",
+                panel=f"User `{member.display_name}` is not an active member",
                 color=EmbedColor.WARNING)
             return
 
@@ -81,11 +76,11 @@ class UserStats(commands.Cog):
             player_record = await conn.fetchrow(donation_sql)
 
         if not player_record:
-            await self.bot.send(
+            await self.bot.inter_send(
                 inter,
                 title="Donation",
-                description="No results return. Please allow 10 minutes to "
-                            "pass to calculate donations")
+                panel="No results return. Please allow 10 minutes to "
+                      "pass to calculate donations")
             return
 
         week_end = week_start + timedelta(days=7)
@@ -137,16 +132,16 @@ class UserStats(commands.Cog):
                     pass
 
                 if not player:
-                    await self.bot.send(
+                    await self.bot.inter_send(
                         inter,
-                        description=f"User with the tag of {clash_tag} "
-                                    f"was not found",
+                        panel=f"User with the tag of {clash_tag} "
+                              f"was not found",
                         color=EmbedColor.WARNING)
                     return
             else:
-                await self.bot.send(
+                await self.bot.inter_send(
                     inter,
-                    description=f"{clash_tag} is an invalid tag",
+                    panel=f"{clash_tag} is an invalid tag",
                     color=EmbedColor.WARNING)
                 return
 
@@ -155,9 +150,9 @@ class UserStats(commands.Cog):
                 active_player = await conn.fetchrow(
                     select_active_account().format(member.id))
                 if not active_player:
-                    await self.bot.send(
+                    await self.bot.inter_send(
                         inter,
-                        f"User `{member.display_name}` is no longer "
+                        f"User `{member.display_name}` is not "
                         f"an active member. You could query their "
                         f"stats using their clash tag instead if you "
                         f"like.",
@@ -175,7 +170,8 @@ class UserStats(commands.Cog):
                                       set_lvl=display_level
                                       ).display_all()
 
-        await self.bot.inter_send(inter, panels=[panel_a, panel_b],
+        await self.bot.inter_send(inter,
+                                  panels=[panel_a, panel_b],
                                   view=CoCAccountLink(player))
 
 

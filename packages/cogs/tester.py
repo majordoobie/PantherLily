@@ -21,7 +21,6 @@ class RowButtons(disnake.ui.View):
             self, button: disnake.ui.Button,
             interaction: disnake.MessageInteraction
     ):
-        print(type(interaction))
         await interaction.response.edit_message("New massage")
 
     @disnake.ui.button(label="this is", style=disnake.ButtonStyle.red)
