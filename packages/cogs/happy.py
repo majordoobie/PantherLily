@@ -236,7 +236,7 @@ class Happy(commands.Cog):
     async def create_panel(self,
                            inter: disnake.ApplicationCommandInteraction,
                            panel_name: str = commands.Param(converter=to_title),
-                           row_count: int = commands.Range[1, 10]) -> None:
+                           row_count: int = 3) -> None:
         """
         Create a new panel for donation requests
         Parameters
@@ -245,7 +245,13 @@ class Happy(commands.Cog):
         panel_name: Name of the panel
         row_count: Number of rows to have, this can always be changed
         """
-        panel_name = panel_name.title()
+        if row_count not in range(1, 11):
+            await self.bot.inter_send(
+                inter,
+                panel=f"Invalid number used, please input 1 - 10",
+                color=EmbedColor.ERROR)
+            return
+
         if panel_name in await self.panel_name_autocmp(inter, panel_name):
             await self.bot.inter_send(inter,
                                       panel=f"Panel **{panel_name}** already exist. Please use "
@@ -508,6 +514,7 @@ class Happy(commands.Cog):
     @stop_panel.autocomplete("panel_name")
     @clear_panel.autocomplete("panel_name")
     @edit_panel.autocomplete("panel_name")
+    @create_panel.autocomplete("panel_name")
     async def panel_name_autocmp(
             self,
             inter: Optional[disnake.ApplicationCommandInteraction],

@@ -9,7 +9,7 @@ from logging import DEBUG
 PANTHER_LOG = "packages/private/panther.log"
 PANTHER_DEBUG_LOG = "packages/private/panther_debug.log"
 COG_LOCATION = "packages.cogs"
-VERSION = "4.0.0"
+VERSION = "4.0.1"
 
 ENABLED_COGS = (
     "admin",
@@ -106,7 +106,7 @@ class Settings:
             self.web_log_url = WEBHOOK_URL
             self.web_log_name = "PantherLily Log"
             self.web_log_level = DEBUG
-            self.file_log = PANTHER_LOG
+            self.file_log = self.project_path / PANTHER_LOG
             self.file_log_level = DEBUG
 
         if daemon:
@@ -114,7 +114,7 @@ class Settings:
             self.web_log_url = WEBHOOK_DAEMON
             self.web_log_name = "Panther Daemon"
             self.web_log_level = DEBUG
-            self.file_log = PANTHER_DEBUG_LOG
+            self.file_log = self.project_path / PANTHER_DEBUG_LOG
             self.file_log_level = DEBUG
 
 

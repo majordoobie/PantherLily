@@ -4,11 +4,11 @@ any slowdowns from I/O.
 """
 # Little hack to get the parent packages for the bot working in here
 import sys
+from pathlib import Path
 
 sys.path.append('/opt/code/')
 
 import asyncio
-import nest_asyncio
 import asyncpg
 import coc
 from datetime import datetime, timedelta
@@ -17,7 +17,7 @@ import traceback
 
 from packages.private.settings import Settings
 from packages.logging_setup import BotLogger as LoggerSetup
-from packages.cogs.utils.utils import get_utc_monday
+from packages.utils.utils import get_utc_monday
 
 SQL_GET_ACTIVE = """SELECT * 
 FROM discord_user, clash_account
@@ -174,32 +174,47 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
             print(exc)
             await asyncio.sleep(sleep_time)
 
+def _get_coc_client(settings: Settings) -> coc.Client:
+    """
+    Init the Client class with custom settings
 
-async def main(coc_client_):
+    :param settings: configuration for the bot
+    :type settings: settings
+    :return: Configured Client class
+    """
+    return coc.Client(
+        key_count=4,
+        throttler_limit=30,
+        client=coc.EventsClient,
+        key_names=settings.bot_config["key_name"],
+    )
+
+
+async def main():
     """Async start point will for all background tasks"""
-    LoggerSetup(SETTINGS)
+    project_path = Path.cwd().resolve().parent
+    settings = Settings(project_path, "live_mode", daemon=True)
+
+    LoggerSetup(settings)
+
     log = logging.getLogger('PantherDaemon')
     log.debug("['DAEMON ROOT] Starting background loops")
-    pool: asyncpg.pool.Pool = await asyncpg.create_pool(SETTINGS.dsn)
+    pool: asyncpg.pool.Pool = await asyncpg.create_pool(settings.dsn)
     loop = asyncio.get_running_loop()
 
+    coc_client = _get_coc_client(settings)
+    await coc_client.login(settings.coc_user, settings.coc_pass)
+
     tasks = [
-        loop.create_task(update_active_users(300, coc_client_, pool)),
+        loop.create_task(update_active_users(300, coc_client, pool)),
         loop.create_task(update_weekly_counts(300, pool)),
-        loop.create_task(update_in_clan(300, coc_client_, pool))
+        loop.create_task(update_in_clan(300, coc_client, pool))
     ]
     await asyncio.wait(tasks)
 
 
 if __name__ == '__main__':
-    SETTINGS = Settings("live_mode", daemon=True)
-
-    # Nest patches asyncio to allow for nested loops to allow logging into coc
-    nest_asyncio.apply()
-
-    _coc_client: coc.client.Client = coc.login(
-        SETTINGS.coc_user,
-        SETTINGS.coc_pass,
-        key_names="Panther Daemon",
-    )
-    asyncio.run(main(_coc_client))
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
