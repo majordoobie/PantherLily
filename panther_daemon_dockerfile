@@ -6,9 +6,6 @@ FROM python:3.9-buster as build_stage
 ENV PYTHONUNBUFFERED 1
 
 ARG WORKDIR=/opt/code
-#ARG SOURCE_REQ=daemon/requirements.txt
-ARG SOURCE_REQ=requirements.txt
-
 WORKDIR ${WORKDIR}
 
 RUN python -m venv /opt/venv
@@ -16,7 +13,7 @@ RUN python -m venv /opt/venv
 # https://stackoverflow.com/questions/48561981/activate-python-virtualenv-in-dockerfile
 ENV PATH="/opt/venv/bin:${PATH}"
 
-COPY ${SOURCE_REQ} ${WORKDIR}/requirements.txt
+COPY ./requirements.txt ${WORKDIR}/requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -U -r requirements.txt
 
@@ -35,5 +32,5 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . ${WORKDIR}
 
 # Entry point of dev null used for debugging
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
 CMD ["python", "daemon/update_daemon.py"]
