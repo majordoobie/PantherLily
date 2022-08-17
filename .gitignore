@@ -21,7 +21,6 @@ __init__.py
 *.db
 /packages/private/google_login.json
 *.sql
-*.csv
 
 # Keys module
 packages/private/PantherLily_Keys/*.py

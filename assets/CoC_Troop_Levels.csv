@@ -1,0 +1,53 @@
+Object,Type,Source,TH14,TH13,TH12,TH11,TH10,TH9,TH8,TH7,TH6,TH5,TH4,TH3,TH2,TH1,Emoji
+Archer Queen,Hero,Home Village,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:archerqueen:531661745266098200>
+Barbarian King,Hero,Home Village,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:barbking:531661752027447296>
+Grand Warden,Hero,Home Village,55,50,40,20,0,0,0,0,0,0,0,0,0,0,<:grandwarden:531661755022311446>
+Royal Champion,Hero,Home Village,30,25,0,0,0,0,0,0,0,0,0,0,0,0,<:royalchampion:653935133904338944>
+,,,,,,,,,,,,,,,,,
+Battle Blimp,Siege,Home Village,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smair1:531661752660787201>
+Log Launcher,Siege,Home Village,4,4,0,0,0,0,0,0,0,0,0,0,0,0,<:log_launcher:798739961578258469>
+Siege Barracks,Siege,Home Village,4,4,0,0,0,0,0,0,0,0,0,0,0,0,<:barracks:653937171836698625>
+Stone Slammer,Siege,Home Village,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smair2:531661989504876553>
+Wall Wrecker,Siege,Home Village,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smground:531661753721815040>
+,,,,,,,,,,,,,,,,,
+Archer,Troop,Home Village,10,9,9,8,7,,,,,,,,,,<:archer:531661745157046274>
+Baby Dragon,Troop,Home Village,8,7,6,5,4,,,,,,,,,,<:babydragon:531661745031348235>
+Balloon,Troop,Home Village,10,9,8,7,6,,,,,,,,,,<:loon:531661754162216970>
+Barbarian,Troop,Home Village,10,9,9,8,7,,,,,,,,,,<:barbarian:531661752757125149>
+Bowler,Troop,Home Village,6,5,4,3,0,0,0,0,0,0,0,0,0,0,<:bowler:531661753495584768>
+Dragon,Troop,Home Village,9,8,7,6,5,,,,,,,,,,<:drag:531661752971165708>
+Electro Dragon,Troop,Home Village,5,4,3,2,0,0,0,0,0,0,0,0,0,0,<:edrag:531661755781349396>
+Giant,Troop,Home Village,10,10,9,8,7,,,,,,,,,,<:golem:531661755542405131>
+Goblin,Troop,Home Village,8,8,8,7,7,,,,,,,,,,<:goblin:531661755185627156>
+Golem,Troop,Home Village,11,10,9,7,5,,,,,,,,,,<:giant:531661755428896789>
+Headhunter,Troop,Home Village,3,3,2,0,0,0,0,0,0,0,0,0,0,0,<:head_hunter:798741316762730507>
+Healer,Troop,Home Village,7,6,5,5,4,,,,,,,,,,<:healer:531661755286552587>
+Hog Rider,Troop,Home Village,11,10,9,7,6,,,,,,,,,,<:hogrider:531661752090230785>
+Ice Golem,Troop,Home Village,6,5,5,3,0,0,0,0,0,0,0,0,0,0,<:icegolem:531662117690933268>
+Lava Hound,Troop,Home Village,6,6,5,4,3,,,,,,,,,,<:lavahound:531661755714371594>
+Miner,Troop,Home Village,8,7,6,5,0,0,0,0,0,0,0,0,0,0,<:miner:531661752954257430>
+Minion,Troop,Home Village,10,9,8,7,6,,,,,,,,,,<:minion:531661755978481675>
+P.E.K.K.A,Troop,Home Village,9,9,8,7,6,,,,,,,,,,<:pekka:531661755558920203>
+Valkyrie,Troop,Home Village,9,8,7,6,5,,,,,,,,,,<:valkyrie:531661755688943627>
+Wall Breaker,Troop,Home Village,10,9,8,7,6,,,,,,,,,,<:wallbreaker:531661755815034890>
+Witch,Troop,Home Village,5,5,5,4,3,,,,,,,,,,<:witch:531661755953446922>
+Wizard,Troop,Home Village,10,10,9,8,7,,,,,,,,,,<:wizard:531661754653212692>
+Yeti,Troop,Home Village,4,3,2,0,0,0,0,0,0,0,0,0,0,0,<:yeti:653935238422200330>
+,,,,,,,,,,,,,,,,,
+Bat Spell,Spell,Home Village,5,5,5,4,3,,,,,,,,,,<:batspell:531667965813325832>
+Clone Spell,Spell,Home Village,7,6,5,5,3,,,,,,,,,,<:clone:531661755114586113>
+Earthquake Spell,Spell,Home Village,5,5,5,5,4,,,,,,,,,,<:earthquake:531661752119853071>
+Freeze Spell,Spell,Home Village,7,7,7,6,5,,,,,,,,,,<:freeze:531661755873492992>
+Haste Spell,Spell,Home Village,5,5,5,5,4,,,,,,,,,,<:haste:531661753541722121>
+Healing Spell,Spell,Home Village,8,8,7,7,7,,,,,,,,,,<:heal:531661755370307604>
+Invisibility Spell,Spell,Home Village,4,4,3,2,0,0,0,0,0,0,0,0,0,0,<:invisibility:798770805345222697>
+Jump Spell,Spell,Home Village,4,4,3,3,3,,,,,,,,,,<:jump:531661755651325962>
+Lightning Spell,Spell,Home Village,9,9,9,8,7,,,,,,,,,,<:lightning:531661755894595584>
+Poison Spell,Spell,Home Village,8,7,6,5,4,,,,,,,,,,<:poison:531661754007158794>
+Rage Spell,Spell,Home Village,6,6,6,5,5,,,,,,,,,,<:rage:531661755940864030>
+Skeleton Spell,Spell,Home Village,7,7,6,4,3,,,,,,,,,,<:skeleton:531661754204291101>
+,,,,,,,,,,,,,,,,,
+Electro Owl,Hero Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:ElectroOwl:830511434269982790>
+L.A.S.S.I,Hero Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:LASSI:830510531168829521>
+Mighty Yak,Hero Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:MightyYak:830510531222962278>
+Unicorn,Hero Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:Unicorn:830510531483795516>
