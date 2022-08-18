@@ -1,15 +1,18 @@
 import asyncio
 import logging
 import traceback
-from typing import Tuple
+from typing import Tuple, List, Optional
 
 import coc.utils
+import disnake
 from disnake.ext import commands
+from datetime import datetime
 
+import asyncpg
 from bot import BotClient
 from packages.utils import bot_sql as sql
 from packages.utils.paginator import Paginator
-from packages.utils.utils import *
+from packages.utils import utils
 
 
 class ViewNotes(disnake.ui.View):
@@ -121,7 +124,8 @@ class Leaders(commands.Cog):
 
         self.log.error(panel)
 
-        await self.bot.inter_send(inter, panel=panel, color=EmbedColor.SUCCESS)
+        await self.bot.inter_send(inter, panel=panel,
+                                  color=utils.EmbedColor.SUCCESS)
 
         await self._set_defaults(inter, member,
                                  player.town_hall,
@@ -142,7 +146,7 @@ class Leaders(commands.Cog):
                 self.log.error(msg)
                 await self.bot.inter_send(inter, panel=msg,
                                           title="Multiple clash accounts",
-                                          color=EmbedColor.WARNING)
+                                          color=utils.utils.EmbedColor.WARNING)
                 return
                 # if the user added the flag then add the new clash account
                 # and set it to primary
@@ -153,7 +157,7 @@ class Leaders(commands.Cog):
                             await self.bot.inter_send(inter,
                                                       panel=f"Clash [{player.tag}] is already set to primary",
                                                       title="No action taken",
-                                                      color=EmbedColor.WARNING)
+                                                      color=utils.utils.EmbedColor.WARNING)
                             return
 
                 await con.execute(sql.update_discord_user_names(),
@@ -205,16 +209,16 @@ class Leaders(commands.Cog):
                             clash_level: int,
                             in_game_name: str) -> None:
         """Set default roles and name change"""
-        default_roles = get_default_roles(inter.guild,
-                                          self.bot.settings,
-                                          clash_level)
+        default_roles = utils.get_default_roles(inter.guild,
+                                                self.bot.settings,
+                                                clash_level)
 
         if default_roles is None:
             msg = f"Unable to retrieve `th{clash_level}s` role or `CoC " \
                   f"Members` role. please make sure it " \
                   f"exits for me to automatically assign it to users."
             await self.bot.inter_send(inter, panel=msg, title="Role not found",
-                                      color=EmbedColor.ERROR)
+                                      color=utils.utils.EmbedColor.ERROR)
         else:
             try:
                 await member.add_roles(*default_roles)
@@ -227,7 +231,7 @@ class Leaders(commands.Cog):
                                                          chain=True))
                 await self.bot.inter_send(inter, panel=exc,
                                           title="User role change error",
-                                          color=EmbedColor.ERROR)
+                                          color=utils.utils.EmbedColor.ERROR)
 
         try:
             if member.display_name != in_game_name:
@@ -242,7 +246,7 @@ class Leaders(commands.Cog):
                                                      chain=True))
             await self.bot.inter_send(inter, panel=exc,
                                       title="Unable to change users nickname",
-                                      color=EmbedColor.ERROR)
+                                      color=utils.EmbedColor.ERROR)
 
     async def _remove_defaults(self, member: disnake.member) -> None:
         """
@@ -291,9 +295,9 @@ class Leaders(commands.Cog):
             else:
                 await self.bot.inter_send(ctx,
                                           panel=msg,
-                                          color=EmbedColor.SUCCESS)
+                                          color=utils.EmbedColor.SUCCESS)
 
-    @commands.check(is_leader)
+    @commands.check(utils.is_leader)
     @commands.slash_command(
         auto_sync=True,
         name="remove_user",
@@ -320,16 +324,16 @@ class Leaders(commands.Cog):
             await self.bot.inter_send(inter,
                                       panel="**Player** or **Member** option must be used",
                                       title="Option Missing",
-                                      color=EmbedColor.ERROR)
+                                      color=utils.EmbedColor.ERROR)
             return
 
         # Get the database user object
         db_member: asyncpg.Record
         query = member.id if member else player
         try:
-            db_member = await get_database_user(query, self.bot.pool)
+            db_member = await utils.get_database_user(query, self.bot.pool)
         except RuntimeError as error:
-            records: Record = error.args[-1]
+            records: asyncpg.Record = error.args[-1]
             discord_id = records[0]["discord_id"]
             # Check if there is multiple results of different users
             for record in records:
@@ -347,7 +351,7 @@ class Leaders(commands.Cog):
 
                     await self.bot.inter_send(inter, panel=msg,
                                               title="Multiple Results",
-                                              color=EmbedColor.WARNING)
+                                              color=utils.EmbedColor.WARNING)
                     return
             db_member = records[0]
 
@@ -355,7 +359,7 @@ class Leaders(commands.Cog):
             await self.bot.inter_send(inter,
                                       panel=f"Database user [{query}] was not found",
                                       title="User not found",
-                                      color=EmbedColor.WARNING)
+                                      color=utils.EmbedColor.WARNING)
             return
 
         # Fetch all the clash account
@@ -373,9 +377,10 @@ class Leaders(commands.Cog):
 
         # If database user object exists, then
         # attempt to get the discord member object
-        member = await get_discord_member(inter,
-                                          db_member["discord_id"],
-                                          self.bot.inter_send, _return=True)
+        member = await utils.get_discord_member(inter,
+                                                db_member["discord_id"],
+                                                self.bot.inter_send,
+                                                _return=True)
 
         if set_message:
             await inter.response.send_modal(
@@ -418,7 +423,7 @@ class Leaders(commands.Cog):
         if member:
             await self._remove_defaults(member)
 
-    @commands.check(is_leader)
+    @commands.check(utils.is_leader)
     @commands.slash_command(
         auto_sync=True,
         name="add_user",
@@ -444,10 +449,11 @@ class Leaders(commands.Cog):
         :return:
         """
         # Get the coc player object. If it fails it will print a message
-        player = await get_coc_player(inter,
-                                      clash_tag,
-                                      self.bot.coc_client,
-                                      self.bot.inter_send)
+        player = await utils.get_coc_player(inter,
+                                            clash_tag,
+                                            self.bot.coc_client,
+                                            self.bot.inter_send)
+        print(member.joined_at)
         if not player or not member:
             return
 
@@ -456,9 +462,9 @@ class Leaders(commands.Cog):
             member.name,
             member.display_name,
             member.discriminator,
-            member.joined_at,
-            member.created_at,
-            datetime.now(),
+            member.joined_at.replace(tzinfo=None),
+            member.created_at.replace(tzinfo=None),
+            datetime.now().replace(tzinfo=None)
         )
         coc_record = (
             player.tag,
@@ -522,7 +528,7 @@ class Leaders(commands.Cog):
                                          "with **/delete_clash_account**"
                         await self.bot.inter_send(inter, panel=msg,
                                                   title="Unique Key Violation Error",
-                                                  color=EmbedColor.ERROR)
+                                                  color=utils.EmbedColor.ERROR)
                         return
 
                     msg = "New clash account added"
@@ -581,7 +587,7 @@ class Leaders(commands.Cog):
                                                     player,
                                                     set_alternate)
 
-    @commands.check(is_leader)
+    @commands.check(utils.is_leader)
     @commands.slash_command(
         auto_sync=True,
         name="delete_clash_account",
@@ -605,7 +611,7 @@ class Leaders(commands.Cog):
         if not coc.utils.is_valid_tag(clash_tag):
             await self.bot.inter_send(inter,
                                       title=f"[{clash_tag}] is an invalid tag",
-                                      color=EmbedColor.ERROR)
+                                      color=utils.EmbedColor.ERROR)
             return
 
         conn: asyncpg.Pool
@@ -615,13 +621,13 @@ class Leaders(commands.Cog):
                                    clash_tag)
                 await self.bot.inter_send(inter,
                                           panel=f"Deleted [{clash_tag}]",
-                                          color=EmbedColor.SUCCESS)
+                                          color=utils.EmbedColor.SUCCESS)
             except Exception as error:
                 await self.bot.inter_send(inter, panel=str(error),
                                           title="Unknown error",
-                                          color=EmbedColor.ERROR)
+                                          color=utils.EmbedColor.ERROR)
 
-    @commands.check(is_leader)
+    @commands.check(utils.is_leader)
     @commands.slash_command(
         auto_sync=True,
         name="view",
@@ -648,17 +654,17 @@ class Leaders(commands.Cog):
                 inter,
                 panel=f"Could not find any data for **{member.display_name}** "
                       f"in the database.",
-                color=EmbedColor.WARNING
+                color=utils.EmbedColor.WARNING
             )
             return
 
         db_member, db_cocs = payload
         msg = _get_account_panel(db_member, db_cocs)
         await self.bot.inter_send(inter, panel=msg,
-                                  color=EmbedColor.SUCCESS,
+                                  color=utils.EmbedColor.SUCCESS,
                                   view=ViewNotes(self.bot, inter, member))
 
-    @commands.check(is_leader)
+    @commands.check(utils.is_leader)
     @commands.slash_command(
         auto_sync=True,
         name="report",
@@ -682,9 +688,10 @@ class Leaders(commands.Cog):
 
         # Get the amount of weeks to pull back
         dates = []
-        current_week = get_utc_monday()
+        current_week = utils.get_utc_monday()
         for i in range(0, weeks):
-            dates.append(get_utc_monday() - timedelta(days=(i * 7)))
+            dates.append(
+                utils.get_utc_monday() - utils.timedelta(days=(i * 7)))
 
         # Get report blocks based on dates
         reports = []
@@ -719,6 +726,7 @@ class Leaders(commands.Cog):
         view = Paginator(reports, 2)
         await inter.send(embeds=view.embed, view=view)
         view.message = await inter.original_message()
+
 
 def _get_account_panel(discord_member: asyncpg.Record,
                        coc_accounts: List[asyncpg.Record],

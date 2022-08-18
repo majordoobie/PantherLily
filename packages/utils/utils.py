@@ -1,22 +1,21 @@
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 import asyncpg
-import coc
-from asyncpg.pool import Pool
-from asyncpg import Record
-from coc import NotFound, EventsClient, Player
-from coc.utils import is_valid_tag
-from datetime import datetime, timedelta
-from disnake.member import Member
-from disnake.ext.commands import NotOwner
-from disnake.ext.commands import Context
-from disnake import Role, Guild
 import disnake
+from disnake import Guild, Role
+from disnake.ext.commands import Context
+from disnake.ext.commands import NotOwner
+from disnake.member import Member
 
+import coc
+from coc import EventsClient, NotFound, Player
+from coc.utils import is_valid_tag
 from packages.private.settings import *
-from packages.utils.discord_arg_parser import DiscordArgParse, DiscoArgParseException, DiscordCommandError
 from packages.utils.bot_sql import select_member_find
+from packages.utils.discord_arg_parser import DiscoArgParseException, \
+    DiscordArgParse
 
 
 class EmbedColor(Enum):
