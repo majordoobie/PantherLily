@@ -121,7 +121,6 @@ class BotExt:
             if index == last_index:
                 if footer != "":
                     embed.set_footer(text=footer)
-                embed.timestamp = datetime.now()
 
             # If the current embed is going to make the embeds block exceed
             # to send size, then create a new embed block

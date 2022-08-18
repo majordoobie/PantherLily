@@ -253,10 +253,11 @@ class Happy(commands.Cog):
             return
 
         if panel_name in await self.panel_name_autocmp(inter, panel_name):
-            await self.bot.inter_send(inter,
-                                      panel=f"Panel **{panel_name}** already exist. Please use "
-                                            f"`/happy view`",
-                                      color=EmbedColor.WARNING)
+            await self.bot.inter_send(
+                inter,
+                panel=f"Panel **{panel_name}** already exist. Please use "
+                      f"`/happy view`",
+                color=EmbedColor.WARNING)
             return
 
         async with self.bot.pool.acquire() as conn:
@@ -389,23 +390,16 @@ class Happy(commands.Cog):
                               instance['panel_name'])
             instance = await con.fetchrow(sql2, instance['panel_name'])
 
-        if instance["active"]:
-            message = await self._get_message(instance["message_id"],
-                                              instance["channel_id"],
-                                              instance["guild_id"])
-            if not message:
-                return
-            await _refresh_panel(instance, self.bot, message)
-            await inter.response.defer(with_message=False)
-            await self.bot.inter_send(
-                inter,
-                panel=f"Cleared the **{panel_name}** panel",
-                color=EmbedColor.SUCCESS)
-        else:
-            await self.bot.inter_send(
-                inter,
-                panel=f"Panel **{panel_name}** is already closed",
-                color=EmbedColor.WARNING)
+        message = await self._get_message(instance["message_id"],
+                                          instance["channel_id"],
+                                          instance["guild_id"])
+        if not message:
+            return
+        await _refresh_panel(instance, self.bot, message)
+        await self.bot.inter_send(
+            inter,
+            panel=f"Cleared the **{panel_name}** panel",
+            color=EmbedColor.SUCCESS)
 
     @happy.sub_command(
         name='stop'

@@ -9,7 +9,7 @@ from logging import DEBUG
 PANTHER_LOG = "packages/private/panther.log"
 PANTHER_DEBUG_LOG = "packages/private/panther_debug.log"
 COG_LOCATION = "packages.cogs"
-VERSION = "4.0.1"
+VERSION = "4.0.2"
 
 ENABLED_COGS = (
     "admin",

@@ -458,7 +458,7 @@ class Leaders(commands.Cog):
             member.discriminator,
             member.joined_at,
             member.created_at,
-            datetime.utcnow(),
+            datetime.now(),
         )
         coc_record = (
             player.tag,
