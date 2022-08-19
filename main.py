@@ -1,16 +1,13 @@
 import argparse
 import asyncio
 import json
-import logging
-from asyncio import CancelledError, shield
 from pathlib import Path
 
 import asyncpg
-import coc
 import disnake
 
+import coc
 from bot import BotClient
-from packages.logging_setup import BotLogger
 from packages.private.settings import Settings
 
 
@@ -46,6 +43,19 @@ def _bot_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _get_settings() -> Settings:
+    # Get args
+    args = _bot_args()
+
+    # Get settings based on args mode
+    project_path = Path.cwd().resolve()
+
+    if args.dev_mode:
+        return Settings(project_path, "dev_mode")
+    elif args.live_mode:
+        return Settings(project_path, "live_mode")
+
+
 async def _get_pool(settings: Settings) -> asyncpg.pool.Pool:
     """
     Creates a conection pool to the database. Before it does that it sets
@@ -69,7 +79,7 @@ async def _get_pool(settings: Settings) -> asyncpg.pool.Pool:
         exit(error)
 
 
-def _get_coc_client(settings: Settings) -> coc.Client:
+async def _get_coc_client(settings: Settings) -> coc.EventsClient:
     """
     Init the Client class with custom settings
 
@@ -77,74 +87,71 @@ def _get_coc_client(settings: Settings) -> coc.Client:
     :type settings: settings
     :return: Configured Client class
     """
-    return coc.Client(
+    coc_client = coc.EventsClient(
         key_count=4,
         throttler_limit=30,
-        client=coc.EventsClient,
         key_names=settings.bot_config["key_name"],
     )
+    await coc_client.login(settings.coc_user, settings.coc_pass)
+    return coc_client
 
-async def main() -> None:
-    """
-    Sets up the environment for the bot
 
-    :return: None
-    """
-
-    # Get args
-    args = _bot_args()
-
-    # Get settings based on args mode
-    project_path = Path.cwd().resolve()
-    settings = None
-
-    if args.dev_mode:
-        settings = Settings(project_path, "dev_mode")
-    elif args.live_mode:
-        settings = Settings(project_path, "live_mode")
-
-    # Get a coc client to call into
-    client = _get_coc_client(settings)
-
-    BotLogger(settings)
-
-    # Get the db connection pool for the bot
-    pool = await _get_pool(settings)
-
-    # Log into coc client
-    await client.login(settings.coc_user, settings.coc_pass)
-
+def _get_bot_client(settings: Settings, coc_client: coc.EventsClient, pool: asyncpg.Pool) -> BotClient:
     intents = disnake.Intents.default()
     intents.message_content = True
     intents.members = True
     intents.reactions = True
     intents.emojis = True
 
-    bot = BotClient(
+    return BotClient(
         settings=settings,
         pool=pool,
-        coc_client=client,
+        coc_client=coc_client,
         command_prefix=settings.bot_config["bot_prefix"],
         intents=intents,
         sync_command_debug=True,
-        activity=disnake.Game(name=settings.bot_config.get("version"))
+        activity=disnake.Game(name=settings.bot_config.get("version")),
     )
 
-    log = logging.getLogger(f"{settings.bot_config['log_name']}.Main")
 
-    # Shield catches the keyboard interrupt giving time to clean up
+def main():
+    settings = _get_settings()
+
+    # Get a fresh event loop
+    loop = asyncio.get_event_loop()
+
+    # Fetch the pool and coc_client
+    pool = loop.run_until_complete(_get_pool(settings))
+    coc_client = loop.run_until_complete(_get_coc_client(settings))
+
+    # Get bot class
+    bot = _get_bot_client(settings, coc_client, pool)
+
+    # Run the runner function
     try:
-        await shield(bot.start(settings.bot_config["bot_token"]))
-    except CancelledError:
-        msg = "Closing db connection pool before exiting"
-        log.debug(msg)
-        print(msg)
-        await pool.close()
+        loop.run_until_complete(bot.start(settings.bot_config["bot_token"]))
+
+    except KeyboardInterrupt:
+        pass  # Ignore interrupts and go to clean up
+
+    finally:
+        # Close both pool and client sessions
+        loop.run_until_complete(pool.close())
+        loop.run_until_complete(coc_client.close_client())
+
+        # Close any pending tasks
+        for task in asyncio.all_tasks(loop):
+            task.cancel()
+
+        # Take the time to clean up generators
+        loop.run_until_complete(loop.shutdown_asyncgens())
+
+        # Close loop
+        loop.close()
 
 
 if __name__ == "__main__":
-    # Run bot loop. Ignore keyboard interrupt errors
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         pass
