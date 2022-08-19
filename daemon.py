@@ -3,9 +3,7 @@ This service will be used to automatically update the database with fresh inform
 any slowdowns from I/O.
 """
 # Little hack to get the parent packages for the bot working in here
-import sys
 from pathlib import Path
-sys.path.append(Path.cwd().resolve().parent.as_posix())
 
 import asyncio
 import asyncpg
@@ -173,36 +171,17 @@ async def update_weekly_counts(sleep_time: int, pool: asyncpg.pool.Pool):
             print(exc)
             await asyncio.sleep(sleep_time)
 
-def _get_coc_client(settings: Settings) -> coc.Client:
-    """
-    Init the Client class with custom settings
 
-    :param settings: configuration for the bot
-    :type settings: settings
-    :return: Configured Client class
-    """
-    return coc.Client(
-        key_count=4,
-        throttler_limit=30,
-        client=coc.EventsClient,
-        key_names=settings.bot_config["key_name"],
-    )
-
-
-async def main():
+async def run(settings: Settings, coc_client: coc.Client, pool: asyncpg.Pool):
     """Async start point will for all background tasks"""
-    project_path = Path.cwd().resolve().parent
-    sys.path.append(project_path.as_posix())
-    settings = Settings(project_path, "live_mode", daemon=True)
 
     LoggerSetup(settings)
 
     log = logging.getLogger('PantherDaemon')
     log.debug("['DAEMON ROOT] Starting background loops")
-    pool: asyncpg.pool.Pool = await asyncpg.create_pool(settings.dsn)
+    # pool: asyncpg.pool.Pool = await asyncpg.create_pool(settings.dsn)
     loop = asyncio.get_running_loop()
 
-    coc_client = _get_coc_client(settings)
     await coc_client.login(settings.coc_user, settings.coc_pass)
 
     tasks = [
@@ -210,12 +189,53 @@ async def main():
         loop.create_task(update_weekly_counts(300, pool)),
         loop.create_task(update_in_clan(300, coc_client, pool))
     ]
+
     await asyncio.wait(tasks)
 
 
-if __name__ == '__main__':
+async def get_pool(settings: Settings) -> asyncpg.pool.Pool:
+    return await asyncpg.create_pool(settings.dsn)
+
+
+def main():
+    project_path = Path.cwd().resolve().parent
+    settings = Settings(project_path, "live_mode", daemon=True)
+
+    # Set up CoC Client class
+    client = coc.Client(
+        key_count=4,
+        throttler_limit=30,
+        key_names=settings.bot_config["key_name"],
+    )
+
+    # Manually create loop object instead of asyncio.run() for Events
+    loop = asyncio.get_event_loop()
+
+    # Get pool object
+    pool = loop.run_until_complete(get_pool(settings))
 
     try:
-        asyncio.run(main())
+        loop.run_until_complete(run(settings, client, pool))
+    except KeyboardInterrupt:
+        pass  # Ignore keyboard interrupt
+    finally:
+        # Close both pool and client sessions
+        loop.run_until_complete(pool.close())
+        loop.run_until_complete(client.close_client())
+
+        # Close any pending tasks
+        for task in asyncio.all_tasks(loop):
+            task.cancel()
+
+        # Take the time to clean up generators
+        loop.run_until_complete(loop.shutdown_asyncgens())
+
+        # Close loop
+        loop.close()
+
+
+if __name__ == '__main__':
+    try:
+        main()
     except KeyboardInterrupt:
         pass
