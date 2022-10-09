@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import List, Optional
 
 import coc
-from packages.clash_stats.clash_stats_levels import get_levels
+import pandas as pd
+from packages.clash_stats.clash_stats_levels import get_df_and_level, get_df_level
 from packages.private.settings import LEVEL_MAX, LEVEL_MIN
 
 HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
@@ -9,19 +10,22 @@ HERO_PETS_ORDER = ["L.A.S.S.I", "Electro Owl", "Mighty Yak", "Unicorn"]
 
 class ClashStats:
     TOWN_HALLS = {
+        "15": "<:15:1028478312928002118>",
         "14": "<:14:828991721181806623>",
         "13": "<:th13:651099879686406145>",
         "12": "<:townhall12:546080710406963203>",
         "11": "<:townhall11:546080741545738260>",
         "10": "<:townhall10:546080756628324353>",
         "9": "<:townhall9:546080772118020097>",
-        "8": "<:townhall8:546080798097539082>"
+        "8": "<:townhall8:546080798097539082>",
+        "warning": "<:warning:807778609825447968>",
     }
 
     def __init__(self,
                  player: coc.Player,
                  active_player: Optional[dict] = None,
-                 set_lvl=None):
+                 set_lvl=None,
+                 troop_df: Optional[pd.DataFrame]=None):
         """
         Create the panel used to display the users stats
 
@@ -35,7 +39,11 @@ class ClashStats:
             self.town_hall = self._get_lvl(set_lvl)
         else:
             self.town_hall = str(player.town_hall)
-        self.troops = get_levels(int(self.town_hall))
+
+        if troop_df is not None:
+            self.troops = get_df_level(troop_df, int(self.town_hall))
+        else:
+            self.troops = get_df_and_level(int(self.town_hall))
         self._set_panels()
 
     def _get_lvl(self, set_lvl):
@@ -66,6 +74,7 @@ class ClashStats:
         self.troop_panel = self._get_troops_panels()
         self.siege_panel = self._get_sieges_panel()
         self.spell_panel = self._get_spells_panels()
+        self.super_troops = self._get_super_panels()
 
     def _get_administration_panel(self) -> str:
         """Creates the administration information. This should only be available to registered users"""
@@ -108,120 +117,83 @@ class ClashStats:
         )
         return frame
 
-    def _get_heroes_panel(self):
-        frame = '**Heroes**\n'
+    def _build_frame(self, coc_objs: List, frame: str) -> str:
+        """Iterates over the list of objects and builds the frame string"""
         count = 0
-        for hero in self.player.heroes:
-            try:
-                emoji = self.troops[hero.name].emoji
-                current_lvl = hero.level
-                max_lvl = self.troops[hero.name].max_level
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += "\n"
-                    count = 0
-            except KeyError:
-                continue
-
-        if frame[-1] != "\n":
-            frame += "\n"
-        return frame
-
-    def _get_hero_pets_panel(self):
-        frame = ""
-        count = 0
-        for troop in self.player.troops:
-            if troop.name in HERO_PETS_ORDER:
-                try:
-                    emoji = self.troops[troop.name].emoji
-                    current_lvl = troop.level
-                    max_lvl = self.troops[troop.name].max_level
-                    frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                    count += 1
-                    if count == 4:
-                        frame += "\n"
-                        count = 0
-                except KeyError:
-                    continue
-
-        if frame:
-            _frame = "**Hero Pets**\n"
-            _frame += frame
-            if _frame[-1] != "\n":
-                _frame += "\n"
-            return _frame
-
-        return frame
-        pass
-
-    def _get_sieges_panel(self):
-        frame = ''
-        count = 0
-        for siege in self.player.siege_machines:
-            try:
-                emoji = self.troops[siege.name].emoji
-                current_lvl = siege.level
-                max_lvl = self.troops[siege.name].max_level
+        if not coc_objs or coc_objs is None:
+            return ""
+        for obj in coc_objs:
+            obj_df = self.troops.get(obj.name)
+            if obj_df is not None:
+                emoji = obj_df.emoji
+                if pd.isna(emoji):
+                    emoji = ClashStats.TOWN_HALLS.get("warning")
+                current_lvl = obj.level
+                max_lvl = obj_df.max_level
                 frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
                 count += 1
                 if count == 4:
                     frame += '\n'
                     count = 0
-            except KeyError:
-                continue
-        if frame:
-            _frame = '**Sieges**\n'
-            _frame += frame
-            if _frame[-1] != "\n":
-                _frame += "\n"
-            return _frame
+        if frame[-1] != "\n":
+            frame += "\n"
+        return frame
 
+    def _get_super_panels(self):
+        troops = [i for i in self.player.super_troops if i.is_active]
+        frame = "**Active Super Troops**\n"
+        if troops:
+            count = 0
+            for troop in troops:
+                obj_df = self.troops.get(troop.name)
+                if obj_df is not None:
+                    emoji = obj_df.emoji
+                    if pd.isna(emoji):
+                        emoji = ClashStats.TOWN_HALLS.get("warning")
+                    frame += f"{emoji} `{troop.name}`\n"
+                    count += 1
+                    if count == 4:
+                        frame += '\n'
+                        count = 0
+            if frame[-1] != "\n":
+                frame += "\n"
+            return frame
+        return ""
+
+    def _get_heroes_panel(self):
+        frame = '**Heroes**\n'
+        return self._build_frame(self.player.heroes, frame)
+
+    def _get_hero_pets_panel(self):
+        frame = ""
+        frame = self._build_frame(self.player.hero_pets, frame)
+        if frame:
+            _frame = "**Hero Pets**\n"
+            _frame += frame
+            frame = _frame
+        return frame
+
+    def _get_sieges_panel(self):
+        frame = ""
+        frame = self._build_frame(self.player.siege_machines, frame)
+        if frame:
+            _frame = "**Siege Machines**\n"
+            _frame += frame
+            frame = _frame
         return frame
 
     def _get_troops_panels(self):
         frame = '**Troops**\n'
-        count = 0
+        exclusions = self.player.siege_machines + self.player.hero_pets
+        troops = []
         for troop in self.player.home_troops:
-            # Skip the sieges from this panel
-            if troop in self.player.siege_machines or troop in HERO_PETS_ORDER:
-                continue
-            try:
-                emoji = self.troops[troop.name].emoji
-                current_lvl = troop.level
-                max_lvl = self.troops[troop.name].max_level
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += '\n'
-                    count = 0
-            except KeyError:
-                continue
-
-        if frame[-1] != "\n":
-            frame += "\n"
-        return frame
+            if troop not in exclusions:
+                troops.append(troop)
+        return self._build_frame(troops, frame)
 
     def _get_spells_panels(self):
         frame = '**Spells**\n'
-        count = 0
-        for spell in self.player.spells:
-            try:
-                emoji = self.troops[spell.name].emoji
-                current_lvl = spell.level
-                max_lvl = self.troops[spell.name].max_level
-                frame += f"{emoji}`{current_lvl:>2}|{max_lvl:<2}`"
-                count += 1
-                if count == 4:
-                    frame += '\n'
-                    count = 0
-            except KeyError:
-                continue
-
-        if frame[-1] != "\n":
-            frame += "\n"
-
-        return frame
+        return self._build_frame(self.player.spells, frame)
 
     @property
     def to_dict(self) -> dict:
@@ -254,10 +226,11 @@ class ClashStats:
     def display_all(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
         panel_b = f'**__Displaying Level:__** `{self.town_hall}`\n{self.hero_panel}{self.hero_pets_panel}' \
-                  f'{self.siege_panel}{self.troop_panel}{self.spell_panel}'
+                  f'{self.siege_panel}{self.troop_panel}{self.spell_panel}{self.super_troops}'
         return panel_a, panel_b
 
     def display_troops(self):
         panel_a = f'{self.title}\n{self.administration_panel}\n'
-        panel_b = f'{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}{self.troop_panel}{self.spell_panel}'
+        panel_b = f'{self.hero_panel}{self.hero_pets_panel}{self.siege_panel}' \
+                  f'{self.troop_panel}{self.spell_panel}{self.super_troops}'
         return panel_a, panel_b

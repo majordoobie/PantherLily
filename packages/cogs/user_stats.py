@@ -167,7 +167,8 @@ class UserStats(commands.Cog):
 
         panel_a, panel_b = ClashStats(player,
                                       active_player,
-                                      set_lvl=display_level
+                                      set_lvl=display_level,
+                                      troop_df=self.bot.troop_df
                                       ).display_all()
 
         await self.bot.inter_send(inter,

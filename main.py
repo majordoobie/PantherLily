@@ -7,7 +7,10 @@ import asyncpg
 import disnake
 
 import coc
+import pandas as pd
+
 from bot import BotClient
+from packages.clash_stats import clash_stats_levels
 from packages.private.settings import Settings
 
 
@@ -96,7 +99,8 @@ async def _get_coc_client(settings: Settings) -> coc.EventsClient:
     return coc_client
 
 
-def _get_bot_client(settings: Settings, coc_client: coc.EventsClient, pool: asyncpg.Pool) -> BotClient:
+def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
+                    pool: asyncpg.Pool, troop_df: pd.DataFrame) -> BotClient:
     intents = disnake.Intents.default()
     intents.message_content = True
     intents.members = True
@@ -106,6 +110,7 @@ def _get_bot_client(settings: Settings, coc_client: coc.EventsClient, pool: asyn
     return BotClient(
         settings=settings,
         pool=pool,
+        troop_df=troop_df,
         coc_client=coc_client,
         command_prefix=settings.bot_config["bot_prefix"],
         intents=intents,
@@ -124,8 +129,12 @@ def main():
     pool = loop.run_until_complete(_get_pool(settings))
     coc_client = loop.run_until_complete(_get_coc_client(settings))
 
+    # Refresh the sheets on disk
+    clash_stats_levels.download_sheets()
+    troop_df = clash_stats_levels.get_troop_df()
+
     # Get bot class
-    bot = _get_bot_client(settings, coc_client, pool)
+    bot = _get_bot_client(settings, coc_client, pool, troop_df)
 
     # Run the runner function
     try:

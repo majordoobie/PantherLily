@@ -10,6 +10,8 @@ from datetime import datetime
 
 import asyncpg
 from bot import BotClient
+from packages.clash_stats.clash_stats_levels import download_sheets, \
+    get_troop_df
 from packages.utils import bot_sql as sql
 from packages.utils.paginator import Paginator
 from packages.utils import utils
@@ -726,6 +728,28 @@ class Leaders(commands.Cog):
         view = Paginator(reports, 2)
         await inter.send(embeds=view.embed, view=view)
         view.message = await inter.original_message()
+
+    @commands.check(utils.is_leader)
+    @commands.slash_command(
+        auto_sync=True,
+        name="reload_csv",
+        dm_permission=False,
+    )
+    async def reload_csv(self,
+                         inter: disnake.ApplicationCommandInteraction) -> None:
+        """
+        After editing the troops Google Sheets, reload the bots version
+        of the sheets.
+
+        Parameters
+        ----------
+        inter:
+        """
+        await inter.response.defer()
+        download_sheets()
+        await asyncio.sleep(1)
+        self.bot.troop_df = get_troop_df()
+        await inter.edit_original_message("Done")
 
 
 def _get_account_panel(discord_member: asyncpg.Record,

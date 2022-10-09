@@ -46,6 +46,61 @@ class GroupStats(commands.Cog):
             f'{self.bot.settings.log_name}.GroupStats')
 
     @commands.slash_command(
+        name="super_troops",
+        auto_sync=True,
+        dm_permission=False
+    )
+    async def super_troops(self,
+                           inter: disnake.ApplicationCommandInteraction) -> None:
+        """
+        List users that have super troops
+
+        Parameters
+        ----------
+        inter:
+        """
+        # Get users and sort them by name
+        async with self.bot.pool.acquire() as con:
+            members_db = await con.fetch(
+                sql.select_all_active_users().format(get_utc_monday()))
+        members_db.sort(key=lambda x: x['clash_name'].lower())
+
+        players_tag = [member.get("clash_tag") for member in members_db]
+        players = []
+
+        # Iterate over the list of players and append to the list
+        # if they have any active super troops
+        async for player in self.bot.coc_client.get_players(players_tag):
+            if any(list(filter(lambda x: x.is_active, player.super_troops))):
+                players.append(player)
+
+        if not players:
+            await self.bot.inter_send(inter, panel="No one has Super Troops")
+
+        super_troops = {}
+        super_troops_name = []
+        for player in players:
+            for sp in player.super_troops:
+                if sp.is_active:
+                    if super_troops.get(sp.name):
+                        super_troops[sp.name].append(player)
+                    else:
+                        super_troops[sp.name] = [player]
+                        super_troops_name.append(sp.name)
+
+        frame = ""
+        super_troops_name.sort()
+        for sp in super_troops_name:
+            frame += f"__**{sp}**__\n"
+            for player in super_troops.get(sp):
+                frame += f"{player.name}\n"
+            frame += "\n"
+
+        await self.bot.inter_send(inter, panel=frame)
+
+
+
+    @commands.slash_command(
         name="roster",
         auto_sync=True,
         dm_permission=False
@@ -145,7 +200,6 @@ class GroupStats(commands.Cog):
         view = RosterSearch(self.bot, inter, clan_locations)
         await self.bot.inter_send(inter, panels=panels, view=view)
         view.message = await inter.original_message()
-
 
     @commands.slash_command(
         name="top",

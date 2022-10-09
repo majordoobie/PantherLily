@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 import asyncpg
 import disnake
+import pandas as pd
 from disnake.errors import Forbidden
 from disnake.ext import commands
 
@@ -23,7 +24,7 @@ class BotClient(disnake.ext.commands.Bot):
     EMBED_TOTAL = 6000
     EMBED_SEND_TOTAL = 10
 
-    def __init__(self, settings: Settings, pool: asyncpg.Pool, coc_client: coc.Client, *args, **kwargs):
+    def __init__(self, settings: Settings, pool: asyncpg.Pool, coc_client: coc.Client, troop_df: pd.DataFrame, *args, **kwargs):
         """
         Inherits the Discord.py bot to create a bot that manages a group of clash of clans players
 
@@ -40,6 +41,7 @@ class BotClient(disnake.ext.commands.Bot):
 
         self.settings = settings
         self.pool = pool
+        self.troop_df = troop_df
         self.coc_client = coc_client
         self.space = "\u00A0"
 

@@ -9,7 +9,7 @@ from logging import DEBUG
 PANTHER_LOG = "packages/private/panther.log"
 PANTHER_DEBUG_LOG = "packages/private/panther_debug.log"
 COG_LOCATION = "packages.cogs"
-VERSION = "4.0.2"
+VERSION = "4.1.0"
 
 ENABLED_COGS = (
     "admin",
@@ -56,6 +56,7 @@ class Settings:
             "th12s": 455572149277687809,
             "th13s": 653562690937159683,
             "th14s": 831212009625747518,
+            "th15s": 1027934306959642745,
             "CoC Members": 294287799010590720
         }
 
@@ -119,6 +120,7 @@ class Settings:
 
 
 emoji_dict = {
+    "warning": "<:warning:807778609825447968>",
     "h1": "<:h1:531458162931269653>",
     "h2": "<:h2:531458184297054208>",
     "h3": "<:h3:531458197962227723>",
