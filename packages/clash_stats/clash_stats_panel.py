@@ -184,7 +184,7 @@ class ClashStats:
 
     def _get_troops_panels(self):
         frame = '**Troops**\n'
-        exclusions = self.player.siege_machines + self.player.hero_pets
+        exclusions = self.player.siege_machines + self.player.hero_pets + self.player.super_troops
         troops = []
         for troop in self.player.home_troops:
             if troop not in exclusions:
