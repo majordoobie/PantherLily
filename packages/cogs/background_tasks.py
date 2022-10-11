@@ -21,7 +21,7 @@ class BackgroundTasks(commands.Cog):
         self._setup_logging()
         self.sync_clash_discord.start()
         self.sync_discord_names.start()
-        self.update_presence.start()
+        # self.update_presence.start()
 
     def _setup_logging(self):
         """Setup custom logging for the background tasks"""
