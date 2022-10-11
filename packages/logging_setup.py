@@ -5,7 +5,6 @@ from queue import Queue
 from disnake import Webhook, SyncWebhook, Embed
 
 from packages.private.settings import Settings
-from packages.bot_ext import BotExt
 
 
 class BotLogger:
