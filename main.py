@@ -12,6 +12,7 @@ import pandas as pd
 from bot import BotClient
 from packages.clash_stats import clash_stats_levels
 from packages.private.settings import Settings
+from packages.logging_setup import BotLogger
 
 
 def _bot_args() -> argparse.Namespace:
@@ -106,6 +107,7 @@ def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
     intents.members = True
     intents.reactions = True
     intents.emojis = True
+    intents.guilds = True
 
     return BotClient(
         settings=settings,
@@ -114,13 +116,13 @@ def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
         coc_client=coc_client,
         command_prefix=settings.bot_config["bot_prefix"],
         intents=intents,
-        sync_command_debug=True,
         activity=disnake.Game(name=settings.bot_config.get("version")),
     )
 
 
 def main():
     settings = _get_settings()
+    BotLogger(settings)
 
     # Get a fresh event loop
     loop = asyncio.get_event_loop()

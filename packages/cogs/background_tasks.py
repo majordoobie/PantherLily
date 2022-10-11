@@ -14,20 +14,21 @@ from packages.utils.utils import get_default_roles, get_utc_monday
 
 class BackgroundTasks(commands.Cog):
     def __init__(self, bot: BotClient):
-        if bot.settings.bot_mode == "dev_mode":
-            return
+        # if bot.settings.bot_mode == "dev_mode":
+        #     return
 
         self.bot = bot
         self._setup_logging()
         self.sync_clash_discord.start()
         self.sync_discord_names.start()
-        # self.update_presence.start()
+        self.update_presence.start()
 
     def _setup_logging(self):
         """Setup custom logging for the background tasks"""
         # settings = Settings(daemon=True)
         # LoggerSetup(settings, self.bot.settings.log_name)
-        self.log = logging.getLogger(f'{self.bot.settings.log_name}.BackgroundSync')
+        self.log = logging.getLogger(
+            f'{self.bot.settings.log_name}.BackgroundSync')
 
         self.log.debug('Logging initialized')
 
@@ -35,21 +36,27 @@ class BackgroundTasks(commands.Cog):
         self.sync_clash_discord.cancel()
         self.update_presence.cancel()
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(seconds=600)
     async def update_presence(self):
         messages = [
+            (
+            ActivityType.playing, self.bot.settings.bot_config.get("version")),
             (ActivityType.playing, "Spotify"),
-            (ActivityType.playing, "Overwatch"),
             (ActivityType.watching, "/help"),
             (ActivityType.playing, "Clash of Clans"),
+            (
+            ActivityType.playing, self.bot.settings.bot_config.get("version")),
             (ActivityType.playing, "with cat nip~"),
             (ActivityType.watching, "Fairy Tail"),
             (ActivityType.playing, "I'm not a cat!"),
+            (
+            ActivityType.playing, self.bot.settings.bot_config.get("version")),
             (ActivityType.watching, "/help"),
             (ActivityType.playing, "/top"),
-            (ActivityType.watching, "Dragon Ball Z"),
             (ActivityType.watching, "/help"),
-            (ActivityType.playing, "Reddit Zulu is #1")
+            (
+            ActivityType.playing, self.bot.settings.bot_config.get("version")),
+
         ]
         activity = choice(messages)
         activity_obj = Activity(type=activity[0], name=activity[1])
@@ -67,7 +74,7 @@ class BackgroundTasks(commands.Cog):
         changes = 0
 
         if (guild := self.bot.get_guild(293943534028062721)) is None:
-            return
+            raise ValueError("Got none when trying to instantiate the guild")
 
         member_ids = {member.id: member for member in guild.members}
 
@@ -103,7 +110,8 @@ class BackgroundTasks(commands.Cog):
     async def sync_clash_discord(self):
         self.log.debug('Starting discord loop')
         async with self.bot.pool.acquire() as conn:
-            active_users = await conn.fetch(sql.select_all_active_users().format(get_utc_monday()))
+            active_users = await conn.fetch(
+                sql.select_all_active_users().format(get_utc_monday()))
 
         # Counter for how many changes were done
         update_count = 0
@@ -113,14 +121,17 @@ class BackgroundTasks(commands.Cog):
             guild = self.bot.get_guild(293943534028062721)
             member = guild.get_member(user['discord_id'])
             if not member:
-                self.log.critical(f'Unable to retrieve member object for {user["discord_id"]}')
+                self.log.critical(
+                    f'Unable to retrieve member object for {user["discord_id"]}')
                 continue
 
             if member.display_name != user['clash_name']:
                 try:
                     old_name = member.display_name
-                    await member.edit(nick=user['clash_name'], reason='Panther Bot Background Sync')
-                    self.log.info(f'Changed `{old_name}` name to `{user["clash_name"]}`')
+                    await member.edit(nick=user['clash_name'],
+                                      reason='Panther Bot Background Sync')
+                    self.log.info(
+                        f'Changed `{old_name}` name to `{user["clash_name"]}`')
                     update_count += 1
                 except errors.Forbidden:
                     msg = f'Unable to change the name of {member.display_name} due to lack of permission'
@@ -128,24 +139,31 @@ class BackgroundTasks(commands.Cog):
                 except Exception as error:
                     self.log.error(error, exc_info=True)
 
-            users_town_hall_role = self.bot.settings.default_roles.get(f"th{user['town_hall']}s")
+            users_town_hall_role = self.bot.settings.default_roles.get(
+                f"th{user['town_hall']}s")
             if users_town_hall_role not in (role.id for role in member.roles):
-                self.log.info(f'{member.display_name} does not contain the role th{user["town_hall"]}s - updating')
+                self.log.info(
+                    f'{member.display_name} does not contain the role th{user["town_hall"]}s - updating')
                 member_roles = member.roles
 
                 for role in member_roles:
-                    if role.id == self.bot.settings.default_roles.get('CoC Members'):
+                    if role.id == self.bot.settings.default_roles.get(
+                            'CoC Members'):
                         continue
                     if role.id in self.bot.settings.default_roles.values():
                         member_roles.pop(member_roles.index(role))
 
-                default_roles = get_default_roles(member.guild, self.bot.settings, user['town_hall'])
+                default_roles = get_default_roles(member.guild,
+                                                  self.bot.settings,
+                                                  user['town_hall'])
                 default_roles = default_roles[0]
                 member_roles.append(default_roles)
                 if default_roles:
                     try:
-                        await member.edit(roles=member_roles, reason="Panther Bot Background Sync")
-                        self.bot.log_role_change(member, member_roles, log=self.log)
+                        await member.edit(roles=member_roles,
+                                          reason="Panther Bot Background Sync")
+                        self.bot.log_role_change(member, member_roles,
+                                                 log=self.log)
                         update_count += 1
                     except errors.Forbidden:
                         msg = f'Unable to provide roles to {member.display_name} due to lack of permissions'
@@ -154,10 +172,13 @@ class BackgroundTasks(commands.Cog):
                         self.log.critical(error, exc_info=True)
         self.log.info(f'Conducted {update_count} changes')
 
+    @update_presence.before_loop
+    @sync_discord_names.before_loop
     @sync_clash_discord.before_loop
-    async def before_sync_clash_discord(self):
+    async def before(self):
         print('waiting...')
         await self.bot.wait_until_ready()
+
 
 def setup(bot):
     bot.add_cog(BackgroundTasks(bot))
