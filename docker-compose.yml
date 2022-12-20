@@ -17,6 +17,11 @@ services:
     depends_on:
       - panther_db
 
+    deploy:
+        restart_policy:
+            condition: on-failure
+            max_attempts: 5
+
   panther_db:
     platform: linux/amd64
     image: postgres
@@ -29,6 +34,7 @@ services:
       - 5432:5432
     networks:
       - panther_network
+    restart: always
 
   panther_daemon:
     platform: linux/amd64
@@ -43,6 +49,11 @@ services:
       - panther_network
     depends_on:
       - panther_db
+
+    deploy:
+        restart_policy:
+            condition: on-failure
+            max_attempts: 5
 
 volumes:
   panther_volume:
