@@ -221,7 +221,7 @@ def main():
     finally:
         # Close both pool and client sessions
         loop.run_until_complete(pool.close())
-        loop.run_until_complete(client.close_client())
+        #loop.run_until_complete(client.close_client())
 
         # Close any pending tasks
         for task in asyncio.all_tasks(loop):
