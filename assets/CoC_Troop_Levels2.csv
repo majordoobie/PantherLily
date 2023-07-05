@@ -1,12 +1,12 @@
 Object,Type,Source,TH15,TH14,TH13,TH12,TH11,TH10,TH9,TH8,TH7,TH6,TH5,TH4,TH3,TH2,TH1,Emoji
-Barbarian King,Hero,Home Village,85,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:barbking:531661752027447296>
-Archer Queen,Hero,Home Village,85,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:archerqueen:531661745266098200>
-Grand Warden,Hero,Home Village,60,55,50,40,20,0,0,0,0,0,0,0,0,0,0,<:grandwarden:531661755022311446>
-Royal Champion,Hero,Home Village,35,30,25,0,0,0,0,0,0,0,0,0,0,0,0,<:royalchampion:653935133904338944>
+Barbarian King,Hero,Home Village,90,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:barbking:531661752027447296>
+Archer Queen,Hero,Home Village,90,80,75,65,50,40,0,0,0,0,0,0,0,0,0,<:archerqueen:531661745266098200>
+Grand Warden,Hero,Home Village,65,55,50,40,20,0,0,0,0,0,0,0,0,0,0,<:grandwarden:531661755022311446>
+Royal Champion,Hero,Home Village,40,30,25,0,0,0,0,0,0,0,0,0,0,0,0,<:royalchampion:653935133904338944>
 ,,,,,,,,,,,,,,,,,,
-Wall Wrecker,Siege,Home Village,4,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smground:531661753721815040>
+Wall Wrecker,Siege,Home Village,5,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smground:531661753721815040>
 Battle Blimp,Siege,Home Village,4,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smair1:531661752660787201>
-Stone Slammer,Siege,Home Village,4,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smair2:531661989504876553>
+Stone Slammer,Siege,Home Village,5,4,4,3,0,0,0,0,0,0,0,0,0,0,0,<:smair2:531661989504876553>
 Siege Barracks,Siege,Home Village,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,<:barracks:653937171836698625>
 Log Launcher,Siege,Home Village,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,<:log_launcher:798739961578258469>
 Flame Flinger,Siege,Home Village,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,<:flame_flinger:1028521833168900246>
@@ -15,63 +15,66 @@ Battle Drill,Siege,Home Village,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Barbarian,Troop,Home Village,11,10,9,9,8,7,6,5,4,3,3,2,2,1,0,<:barbarian:531661752757125149>
 Archer,Troop,Home Village,11,10,9,9,8,7,6,5,4,3,3,2,2,1,0,<:archer:531661745157046274>
 Giant,Troop,Home Village,11,10,10,9,8,7,6,5,4,3,2,2,1,1,0,<:golem:531661755542405131>
-Goblin,Troop,Home Village,8,8,8,8,7,7,6,5,4,3,3,2,2,1,0,<:goblin:531661755185627156>
+Goblin,Troop,Home Village,9,8,8,8,7,7,6,5,4,3,3,2,2,1,0,<:goblin:531661755185627156>
 Wall Breaker,Troop,Home Village,11,10,9,8,7,6,5,5,4,3,2,2,1,0,0,<:wallbreaker:531661755815034890>
 Balloon,Troop,Home Village,10,10,9,8,7,6,6,5,4,3,2,2,0,0,0,<:loon:531661754162216970>
 Wizard,Troop,Home Village,11,10,10,9,8,7,6,5,4,3,2,0,0,0,0,<:wizard:531661754653212692>
-Healer,Troop,Home Village,7,7,6,5,5,4,4,3,2,1,0,0,0,0,0,<:healer:531661755286552587>
-Dragon,Troop,Home Village,9,9,8,7,6,5,4,3,2,0,0,0,0,0,0,<:drag:531661752971165708>
-P.E.K.K.A,Troop,Home Village,9,9,9,8,7,6,4,3,0,0,0,0,0,0,0,<:pekka:531661755558920203>
-Baby Dragon,Troop,Home Village,8,8,7,6,5,4,2,0,0,0,0,0,0,0,0,<:babydragon:531661745031348235>
+Healer,Troop,Home Village,8,7,6,5,5,4,4,3,2,1,0,0,0,0,0,<:healer:531661755286552587>
+Dragon,Troop,Home Village,10,9,8,7,6,5,4,3,2,0,0,0,0,0,0,<:drag:531661752971165708>
+P.E.K.K.A,Troop,Home Village,10,9,9,8,7,6,4,3,0,0,0,0,0,0,0,<:pekka:531661755558920203>
+Baby Dragon,Troop,Home Village,9,8,7,6,5,4,2,0,0,0,0,0,0,0,0,<:babydragon:531661745031348235>
 Miner,Troop,Home Village,9,8,7,6,5,3,0,0,0,0,0,0,0,0,0,<:miner:531661752954257430>
 Electro Dragon,Troop,Home Village,6,5,4,3,2,0,0,0,0,0,0,0,0,0,0,<:edrag:531661755781349396>
-Yeti,Troop,Home Village,4,4,3,2,0,0,0,0,0,0,0,0,0,0,0,<:yeti:653935238422200330>
+Yeti,Troop,Home Village,5,4,3,2,0,0,0,0,0,0,0,0,0,0,0,<:yeti:653935238422200330>
 Dragon Rider,Troop,Home Village,3,3,2,0,0,0,0,0,0,0,0,0,0,0,0,<:DragonRider:854373772412977152>
 Electro Titan,Troop,Home Village,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Minion,Troop,Home Village,11,10,9,8,7,6,5,4,2,0,0,0,0,0,0,<:minion:531661755978481675>
-Hog Rider,Troop,Home Village,11,11,10,9,7,6,5,4,2,0,0,0,0,0,0,<:hogrider:531661752090230785>
-Valkyrie,Troop,Home Village,9,9,8,7,6,5,4,2,0,0,0,0,0,0,0,<:valkyrie:531661755688943627>
+Hog Rider,Troop,Home Village,12,11,10,9,7,6,5,4,2,0,0,0,0,0,0,<:hogrider:531661752090230785>
+Valkyrie,Troop,Home Village,10,9,8,7,6,5,4,2,0,0,0,0,0,0,0,<:valkyrie:531661755688943627>
 Golem,Troop,Home Village,12,11,10,9,7,5,4,2,0,0,0,0,0,0,0,<:giant:531661755428896789>
 Witch,Troop,Home Village,6,5,5,5,4,3,2,0,0,0,0,0,0,0,0,<:witch:531661755953446922>
 Lava Hound,Troop,Home Village,6,6,6,5,4,3,2,0,0,0,0,0,0,0,0,<:lavahound:531661755714371594>
-Bowler,Troop,Home Village,6,6,5,4,3,2,0,0,0,0,0,0,0,0,0,<:bowler:531661753495584768>
-Ice Golem,Troop,Home Village,6,6,5,5,3,0,0,0,0,0,0,0,0,0,0,<:icegolem:531662117690933268>
+Bowler,Troop,Home Village,7,6,5,4,3,2,0,0,0,0,0,0,0,0,0,<:bowler:531661753495584768>
+Ice Golem,Troop,Home Village,7,6,5,5,3,0,0,0,0,0,0,0,0,0,0,<:icegolem:531662117690933268>
 Headhunter,Troop,Home Village,3,3,3,2,0,0,0,0,0,0,0,0,0,0,0,<:head_hunter:798741316762730507>
+Apprentice Warden,Troop,Home Village,4,3,2,0,0,0,0,0,0,0,0,0,0,0,0,
 ,,,,,,,,,,,,,,,,,,
 Lightning Spell,Spell,Home Village,10,9,9,9,8,7,6,5,4,4,4,0,0,0,0,<:lightning:531661755894595584>
 Healing Spell,Spell,Home Village,9,8,8,7,7,7,6,5,4,3,0,0,0,0,0,<:heal:531661755370307604>
 Rage Spell,Spell,Home Village,6,6,6,6,5,5,5,5,4,0,0,0,0,0,0,<:rage:531661755940864030>
 Jump Spell,Spell,Home Village,5,4,4,3,3,3,2,0,0,0,0,0,0,0,0,<:jump:531661755651325962>
 Freeze Spell,Spell,Home Village,7,7,7,7,6,5,2,0,0,0,0,0,0,0,0,<:freeze:531661755873492992>
-Clone Spell,Spell,Home Village,7,7,6,5,5,3,0,0,0,0,0,0,0,0,0,<:clone:531661755114586113>
+Clone Spell,Spell,Home Village,8,7,6,5,5,3,0,0,0,0,0,0,0,0,0,<:clone:531661755114586113>
 Invisibility Spell,Spell,Home Village,4,4,4,3,2,0,0,0,0,0,0,0,0,0,0,<:invisibility:798770805345222697>
 Recall Spell,Spell,Home Village,4,3,2,0,0,0,0,0,0,0,0,0,0,0,0,
 Poison Spell,Spell,Home Village,9,8,7,6,5,4,3,2,0,0,0,0,0,0,0,<:poison:531661754007158794>
 Earthquake Spell,Spell,Home Village,5,5,5,5,5,4,3,2,0,0,0,0,0,0,0,<:earthquake:531661752119853071>
 Haste Spell,Spell,Home Village,5,5,5,5,5,4,2,0,0,0,0,0,0,0,0,<:haste:531661753541722121>
-Skeleton Spell,Spell,Home Village,7,7,7,6,4,3,1,0,0,0,0,0,0,0,0,<:skeleton:531661754204291101>
+Skeleton Spell,Spell,Home Village,8,7,7,6,4,3,1,0,0,0,0,0,0,0,0,<:skeleton:531661754204291101>
 Bat Spell,Spell,Home Village,6,5,5,5,4,3,0,0,0,0,0,0,0,0,0,<:batspell:531667965813325832>
 ,,,,,,,,,,,,,,,,,,
 Electro Owl,Pets,Home Village,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:ElectroOwl:830511434269982790>
-L.A.S.S.I,Pets,Home Village,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:LASSI:830510531168829521>
-Mighty Yak,Pets,Home Village,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:MightyYak:830510531222962278>
+L.A.S.S.I,Pets,Home Village,15,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:LASSI:830510531168829521>
+Mighty Yak,Pets,Home Village,15,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:MightyYak:830510531222962278>
 Unicorn,Pets,Home Village,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,<:Unicorn:830510531483795516>
 Frosty,Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Diggy,Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Poison Lizard,Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Phoenix,Pets,Home Village,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 ,,,,,,,,,,,,,,,,,,
-Super Barbarian,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperBarbarian:701626916087529673>
-Super Archer,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperArcher:750010593045643355>
-Super Giant,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperGiant:701626915902980197>
-Sneaky Goblin,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SneakyGoblin:701626916129734787>
-Super Wall Breaker,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperWallBreaker:701626916133666896>
-Rocket Balloon,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:RocketBalloon:854368171682431006>
-Super Wizard,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperWizard:785536616864153610>
-Super Dragon,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperDragon:918876075809964072>
-Inferno Dragon,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:InfernoDragon:742121658386743366>
-Super Minion,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperMinion:771375748916576286>
-Super Valkyrie,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperValkyrie:771375748815519825>
-Super Witch,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperWitch:742121660324511818>
-Ice Hound,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:IceHound:785539963068481546>
-Super Bowler,Super Troop,Home Village,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,<:SuperBowler:892035736168185876>
+Super Barbarian,Super Troop,Home Village,11,10,9,9,8,0,0,0,0,0,0,0,0,0,0,<:SuperBarbarian:701626916087529673>
+Super Archer,Super Troop,Home Village,11,10,9,9,8,0,0,0,0,0,0,0,0,0,0,<:SuperArcher:750010593045643355>
+Sneaky Goblin,Super Troop,Home Village,9,8,8,8,7,0,0,0,0,0,0,0,0,0,0,<:SneakyGoblin:701626916129734787>
+Super Wall Breaker,Super Troop,Home Village,11,10,9,8,7,0,0,0,0,0,0,0,0,0,0,<:SuperWallBreaker:701626916133666896>
+Super Giant,Super Troop,Home Village,11,10,10,9,0,0,0,0,0,0,0,0,0,0,0,<:SuperGiant:701626915902980197>
+Rocket Balloon,Super Troop,Home Village,10,10,9,8,0,0,0,0,0,0,0,0,0,0,0,<:RocketBalloon:854368171682431006>
+Super Wizard,Super Troop,Home Village,11,10,10,9,0,0,0,0,0,0,0,0,0,0,0,<:SuperWizard:785536616864153610>
+Super Dragon,Super Troop,Home Village,10,9,8,7,0,0,0,0,0,0,0,0,0,0,0,<:SuperDragon:918876075809964072>
+Inferno Dragon,Super Troop,Home Village,9,8,7,6,0,0,0,0,0,0,0,0,0,0,0,<:InfernoDragon:742121658386743366>
+Super Minion,Super Troop,Home Village,11,10,9,8,0,0,0,0,0,0,0,0,0,0,0,<:SuperMinion:771375748916576286>
+Super Valkyrie,Super Troop,Home Village,10,9,8,7,0,0,0,0,0,0,0,0,0,0,0,<:SuperValkyrie:771375748815519825>
+Super Witch,Super Troop,Home Village,6,5,5,5,0,0,0,0,0,0,0,0,0,0,0,<:SuperWitch:742121660324511818>
+Ice Hound,Super Troop,Home Village,7,6,5,5,0,0,0,0,0,0,0,0,0,0,0,<:IceHound:785539963068481546>
+Super Bowler,Super Troop,Home Village,7,6,5,4,0,0,0,0,0,0,0,0,0,0,0,<:SuperBowler:892035736168185876>
+Super Miner,Super Troop,Home Village,9,8,7,0,0,0,0,0,0,0,0,0,0,0,0,
+Super Hog Rider,Super Troop,Home Village,12,11,10,0,0,0,0,0,0,0,0,0,0,0,0,

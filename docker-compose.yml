@@ -1,7 +1,6 @@
 version: '3.7'
 services:
   panther_bot:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_bot_dockerfile
@@ -9,13 +8,8 @@ services:
     container_name: panther_bot
     volumes:
       - .:/opt/code
-    dns:
-      - 1.1.1.1
-      - 1.0.0.1
     networks:
       - panther_network
-    depends_on:
-      - panther_db
 
     deploy:
         restart_policy:
@@ -23,7 +17,6 @@ services:
             max_attempts: 5
 
   panther_db:
-    platform: linux/amd64
     image: postgres
     container_name: panther_db
     env_file:
@@ -37,7 +30,6 @@ services:
     restart: always
 
   panther_daemon:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_daemon_dockerfile

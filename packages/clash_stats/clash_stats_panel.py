@@ -166,7 +166,7 @@ class ClashStats:
 
     def _get_hero_pets_panel(self):
         frame = ""
-        frame = self._build_frame(self.player.hero_pets, frame)
+        frame = self._build_frame(self.player.pets, frame)
         if frame:
             _frame = "**Hero Pets**\n"
             _frame += frame
@@ -184,7 +184,7 @@ class ClashStats:
 
     def _get_troops_panels(self):
         frame = '**Troops**\n'
-        exclusions = self.player.siege_machines + self.player.hero_pets + self.player.super_troops
+        exclusions = self.player.siege_machines + self.player.pets + self.player.super_troops
         troops = []
         for troop in self.player.home_troops:
             if troop not in exclusions:

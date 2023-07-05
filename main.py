@@ -80,6 +80,7 @@ async def _get_pool(settings: Settings) -> asyncpg.pool.Pool:
         pool = await asyncpg.create_pool(settings.dsn, init=init)
         return pool
     except Exception as error:
+        print("Got an error; ", error)
         exit(error)
 
 
@@ -91,13 +92,19 @@ async def _get_coc_client(settings: Settings) -> coc.EventsClient:
     :type settings: settings
     :return: Configured Client class
     """
-    coc_client = coc.EventsClient(
-        key_count=4,
-        throttler_limit=30,
-        key_names=settings.bot_config["key_name"],
-    )
-    await coc_client.login(settings.coc_user, settings.coc_pass)
-    return coc_client
+    client = coc.EventsClient(
+            key_count=4,
+            throttler_limit=30,
+            key_names=settings.bot_config["key_name"],
+        )
+
+    try:
+        await client.login(settings.coc_user, settings.coc_pass)
+        return client
+
+    except coc.InvalidCredentials as error:
+        exit(error)
+
 
 
 def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
@@ -120,16 +127,13 @@ def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
     )
 
 
-def main():
+async def main():
     settings = _get_settings()
     BotLogger(settings)
 
-    # Get a fresh event loop
-    loop = asyncio.get_event_loop()
-
     # Fetch the pool and coc_client
-    pool = loop.run_until_complete(_get_pool(settings))
-    coc_client = loop.run_until_complete(_get_coc_client(settings))
+    pool = await _get_pool(settings)
+    coc_client = await _get_coc_client(settings)
 
     # Refresh the sheets on disk
     clash_stats_levels.download_sheets()
@@ -140,29 +144,19 @@ def main():
 
     # Run the runner function
     try:
-        loop.run_until_complete(bot.start(settings.bot_config["bot_token"]))
+        await bot.start(settings.bot_config["bot_token"])
 
     except KeyboardInterrupt:
         pass  # Ignore interrupts and go to clean up
 
     finally:
         # Close both pool and client sessions
-        loop.run_until_complete(pool.close())
-        loop.run_until_complete(coc_client.close_client())
-
-        # Close any pending tasks
-        for task in asyncio.all_tasks(loop):
-            task.cancel()
-
-        # Take the time to clean up generators
-        loop.run_until_complete(loop.shutdown_asyncgens())
-
-        # Close loop
-        loop.close()
+        await pool.close()
+        await coc_client.close()
 
 
 if __name__ == "__main__":
     try:
-        main()
+        asyncio.run(main())
     except KeyboardInterrupt:
         pass
