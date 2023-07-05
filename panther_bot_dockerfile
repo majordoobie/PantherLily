@@ -1,6 +1,6 @@
 # https://docs.docker.com/develop/develop-images/multistage-build/
 # Setup build sectio
-FROM python:3.9-buster as build_stage
+FROM python:3.10-buster as build_stage
 
 # Do not buffer stdout/stderr just dump it asap
 ENV PYTHONUNBUFFERED 1
@@ -19,7 +19,7 @@ RUN pip install -U -r requirements.txt
 
 
 # Run build section
-FROM python:3.9-buster as run_stage
+FROM python:3.10-buster as run_stage
 RUN echo 'alias ll="ls -lart --color=auto"' >> ~/.bashrc
 ARG WORKDIR=/opt/code
 WORKDIR ${WORKDIR}
@@ -30,5 +30,5 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . ${WORKDIR}
 
 # Entry point of dev null used for debugging
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
-CMD ["python", "main.py", "--live" ]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
+#CMD ["python", "main.py", "--dev" ]

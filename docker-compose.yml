@@ -1,7 +1,6 @@
 version: '3.7'
 services:
   panther_bot:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_bot_dockerfile
@@ -9,13 +8,8 @@ services:
     container_name: panther_bot
     volumes:
       - .:/opt/code
-    dns:
-      - 1.1.1.1
-      - 1.0.0.1
     networks:
       - panther_network
-    depends_on:
-      - panther_db
 
     deploy:
         restart_policy:

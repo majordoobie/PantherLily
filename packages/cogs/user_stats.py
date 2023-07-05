@@ -103,7 +103,7 @@ class UserStats(commands.Cog):
         inter: disnake.ApplicationCommandInteraction,
         member: disnake.Member = commands.Param(lambda inter: inter.author),
         clash_tag: str = None,
-        display_level: commands.Range[LEVEL_MIN, LEVEL_MAX] = 0
+        display_level: commands.Range[int, LEVEL_MIN, LEVEL_MAX] = 0
     ) -> None:
         """
         Display the stats of the Clash of Clans caller or specified user
