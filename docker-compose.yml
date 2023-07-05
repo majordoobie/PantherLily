@@ -17,7 +17,6 @@ services:
             max_attempts: 5
 
   panther_db:
-    platform: linux/amd64
     image: postgres
     container_name: panther_db
     env_file:
@@ -31,7 +30,6 @@ services:
     restart: always
 
   panther_daemon:
-    platform: linux/amd64
     build:
       context: .
       dockerfile: panther_daemon_dockerfile
