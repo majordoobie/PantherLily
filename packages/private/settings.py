@@ -2,8 +2,8 @@
 Settings for all libraries especially the Bot
 """
 from pathlib import Path
+import os
 
-from packages.private.PantherLily_Keys.secrets import *
 from logging import DEBUG
 
 PANTHER_LOG = "packages/private/panther.log"
@@ -24,16 +24,34 @@ ENABLED_COGS = (
 LEVEL_MIN = 8
 LEVEL_MAX = 14
 
+# Static Discord ids
+ZULU_SERVER = 293943534028062721
+OWNER = 265368254761926667
+LEADERS = 294283611870461953
+
+# CoC Developer API login
+COC_USER = os.getenv("COC_USER")
+COC_PASS = os.getenv("COC_PASS")
+
+# Discord Bot token from discord developer portal
+TOKEN_LIVE = os.getenv("TOKEN_LIVE")
+TOKEN_DEV = os.getenv("TOKEN_DEV")
+
+# Logging webhooks (Not needed for contribution)
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_DAEMON = os.getenv("WEBHOOK_DAEMON")
+
 
 class Settings:
-    def __init__(self, project_path: Path, bot_mode: str = None, daemon: bool = False):
+    def __init__(self, project_path: Path, bot_mode: str = None,
+                 daemon: bool = False):
         self.project_path = project_path
         self.bot_mode = bot_mode
         self.daemon = daemon
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
         self.owner = OWNER
-        self.dsn = get_dsn(bot_mode)
+        self.dsn = self.get_dsn(bot_mode)
 
         # Paths
         self.cog_path = COG_LOCATION
@@ -59,6 +77,23 @@ class Settings:
             "th15s": 1027934306959642745,
             "CoC Members": 294287799010590720
         }
+
+    @staticmethod
+    def get_dsn(bot_mode: str) -> str:
+        if bot_mode == "live_mode":
+            db_port = int(os.getenv("PG_PORT_LIVE"))
+            db_host = os.getenv("PG_HOST_LIVE")
+            db_name = os.getenv("PG_DB_LIVE")
+            db_username = os.getenv("PG_USER_LIVE")
+            db_password = os.getenv("PG_PASS_LIVE")
+        else:
+            db_port = int(os.getenv("PG_PORT_DEV"))
+            db_host = os.getenv("PG_HOST_DEV")
+            db_name = os.getenv("PG_DB_DEV")
+            db_username = os.getenv("PG_USER_DEV")
+            db_password = os.getenv("PG_PASS_DEV")
+
+        return f'postgres://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}'
 
     def get_config(self):
         if self.bot_mode == "live_mode":
@@ -117,6 +152,8 @@ class Settings:
             self.web_log_level = DEBUG
             self.file_log = self.project_path / PANTHER_DEBUG_LOG
             self.file_log_level = DEBUG
+
+
 
 
 emoji_dict = {
