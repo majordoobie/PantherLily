@@ -37,6 +37,8 @@ services:
       context: .
       dockerfile: panther_daemon_dockerfile
     image: panther_daemon:v1.0
+    env_file:
+      - packages/private/PantherLily_Keys/database_docker_compose.env
     container_name: panther_daemon
     volumes:
       - .:/opt/code
