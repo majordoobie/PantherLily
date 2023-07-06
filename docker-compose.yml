@@ -21,6 +21,7 @@ services:
   panther_db:
     image: postgres
     container_name: panther_db
+    platform: linux/amd64
     env_file:
       - packages/private/PantherLily_Keys/database_docker_compose.env
     volumes:
