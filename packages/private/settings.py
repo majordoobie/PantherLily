@@ -64,7 +64,7 @@ class Settings:
         if self.bot_mode == "live_mode":
             return {
                 "bot_name": "Panther Lily",
-                "bot_token": LIVE_TOKEN,
+                "bot_token": TOKEN_LIVE,
                 "bot_prefix": ["p.", "P.", "Panther.", "panther."],
                 "version": f"PantherLily v{VERSION}",
                 "key_name": "Panther_Bot3 Keys",
@@ -73,7 +73,7 @@ class Settings:
         elif self.bot_mode == "dev_mode":
             return {
                 "bot_name": "Panther Dev Shell",
-                "bot_token": DEV_TOKEN,
+                "bot_token": TOKEN_DEV,
                 "bot_prefix": ["dev.", "d.", "D."],
                 "version": f"Panther v{VERSION} Beta",
                 "key_name": "DevShell Keys",

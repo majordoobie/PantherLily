@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+from os import getenv
 
 import asyncpg
 import disnake
@@ -80,7 +81,6 @@ async def _get_pool(settings: Settings) -> asyncpg.pool.Pool:
         pool = await asyncpg.create_pool(settings.dsn, init=init)
         return pool
     except Exception as error:
-        print("Got an error; ", error)
         exit(error)
 
 
@@ -128,11 +128,15 @@ def _get_bot_client(settings: Settings, coc_client: coc.EventsClient,
 
 
 async def main():
+    print(f"Env is : {getenv('POSTGRES_DB')}")
+    print("Getting settings")
     settings = _get_settings()
     BotLogger(settings)
 
     # Fetch the pool and coc_client
+    print("Getting Pool")
     pool = await _get_pool(settings)
+    print("Getting client")
     coc_client = await _get_coc_client(settings)
 
     # Refresh the sheets on disk
@@ -140,6 +144,7 @@ async def main():
     troop_df = clash_stats_levels.get_troop_df()
 
     # Get bot class
+    print("Getting bot")
     bot = _get_bot_client(settings, coc_client, pool, troop_df)
 
     # Run the runner function

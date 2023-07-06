@@ -6,6 +6,8 @@ services:
       dockerfile: panther_bot_dockerfile
     image: pantherlily:v3.0
     container_name: panther_bot
+    env_file:
+      - packages/private/PantherLily_Keys/database_docker_compose.env
     volumes:
       - .:/opt/code
     networks:
