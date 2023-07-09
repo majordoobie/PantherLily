@@ -19,9 +19,8 @@ services:
             max_attempts: 5
 
   panther_db:
-    image: postgres
+    image: arm64v8/postgres
     container_name: panther_db
-    platform: linux/amd64
     env_file:
       - packages/private/PantherLily_Keys/database_docker_compose.env
     volumes:
